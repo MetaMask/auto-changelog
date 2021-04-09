@@ -1,0 +1,39 @@
+{
+  "name": "@metamask/module-template",
+  "version": "0.0.0",
+  "description": "The MetaMask Node module template.",
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "engines": {
+    "node": ">=12.0.0"
+  },
+  "files": [
+    "dist/"
+  ],
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "prepublishOnly": "yarn lint && yarn build",
+    "lint": "eslint . --ext js,json,d.ts,ts",
+    "lint:fix": "yarn lint --fix",
+    "build": "tsc --project ."
+  },
+  "devDependencies": {
+    "@metamask/eslint-config": "^5.0.0",
+    "@types/jest": "^26.0.13",
+    "@typescript-eslint/eslint-plugin": "^4.19.0",
+    "@typescript-eslint/parser": "^4.19.0",
+    "eslint": "^7.22.0",
+    "eslint-plugin-import": "^2.22.1",
+    "eslint-plugin-json": "^2.1.2",
+    "eslint-plugin-node": "^11.1.0",
+    "jest": "^26.4.2",
+    "ts-jest": "^26.3.0",
+    "ts-node": "^9.0.0",
+    "typescript": "^4.0.2"
+  }
+}
