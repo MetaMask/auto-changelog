@@ -17,16 +17,22 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "prepublishOnly": "yarn lint && yarn test",
-    "lint": "eslint . --ext js,json",
-    "lint:fix": "yarn lint --fix"
+    "lint:eslint": "eslint . --cache --ext js,ts",
+    "lint:json": "prettier '**/*.json' --ignore-path .gitignore",
+    "lint": "yarn lint:eslint && yarn lint:json --check",
+    "lint:fix": "yarn lint:eslint --fix && yarn lint:json --write"
   },
   "devDependencies": {
-    "@metamask/eslint-config": "^5.0.0",
-    "eslint": "^7.22.0",
+    "@metamask/eslint-config": "^6.0.0",
+    "@metamask/eslint-config-jest": "^6.0.0",
+    "@metamask/eslint-config-nodejs": "^6.0.0",
+    "eslint": "^7.23.0",
+    "eslint-config-prettier": "^8.1.0",
     "eslint-plugin-import": "^2.22.1",
-    "eslint-plugin-jest": "^23.6.0",
-    "eslint-plugin-json": "^2.1.2",
+    "eslint-plugin-jest": "^24.3.4",
     "eslint-plugin-node": "^11.1.0",
-    "jest": "^26.4.2"
+    "eslint-plugin-prettier": "^3.3.1",
+    "jest": "^26.4.2",
+    "prettier": "^2.2.1"
   }
 }
