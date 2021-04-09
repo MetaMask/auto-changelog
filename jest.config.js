@@ -10,10 +10,7 @@ module.exports = {
     },
   },
   moduleFileExtensions: ['js', 'json', 'jsx', 'ts', 'tsx', 'node'],
-  preset: 'ts-jest',
   testEnvironment: 'node',
-  testRegex: [
-    '\\.test\\.ts$',
-  ],
+  testRegex: ['\\.test\\.js$'],
   testTimeout: 5000,
 };
