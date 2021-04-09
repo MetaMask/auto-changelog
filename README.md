@@ -1,14 +1,14 @@
-# MetaMask Module Template
+# MetaMask/auto-changelog
 
-This TypeScript module is maintained in the style of the MetaMask team.
+Utilities for validating and updating \"Keep a Changelog\" formatted changelogs
 
 ## Installation
 
-`yarn add @metamask/this-module`
+`yarn add --dev @metamask/auto-changelog`
 
 or
 
-`npm install @metamask/this-module`
+`npm install --save-dev @metamask/auto-changelog`
 
 ## Usage
 

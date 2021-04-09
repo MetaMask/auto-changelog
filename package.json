@@ -1,39 +1,32 @@
 {
-  "name": "@metamask/module-template",
+  "name": "@metamask/auto-changelog",
   "version": "0.0.0",
-  "description": "The MetaMask Node module template.",
+  "description": "Utilities for validating and updating \"Keep a Changelog\" formatted changelogs",
   "publishConfig": {
     "registry": "https://registry.npmjs.org/",
     "access": "public"
   },
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "src/index.js",
   "engines": {
     "node": ">=12.0.0"
   },
   "files": [
-    "dist/"
+    "src/"
   ],
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watch",
-    "prepublishOnly": "yarn lint && yarn build",
-    "lint": "eslint . --ext js,json,d.ts,ts",
-    "lint:fix": "yarn lint --fix",
-    "build": "tsc --project ."
+    "prepublishOnly": "yarn lint",
+    "lint": "eslint . --ext js,json",
+    "lint:fix": "yarn lint --fix"
   },
   "devDependencies": {
     "@metamask/eslint-config": "^5.0.0",
-    "@types/jest": "^26.0.13",
-    "@typescript-eslint/eslint-plugin": "^4.19.0",
-    "@typescript-eslint/parser": "^4.19.0",
     "eslint": "^7.22.0",
     "eslint-plugin-import": "^2.22.1",
+    "eslint-plugin-jest": "^23.6.0",
     "eslint-plugin-json": "^2.1.2",
     "eslint-plugin-node": "^11.1.0",
-    "jest": "^26.4.2",
-    "ts-jest": "^26.3.0",
-    "ts-node": "^9.0.0",
-    "typescript": "^4.0.2"
+    "jest": "^26.4.2"
   }
 }
