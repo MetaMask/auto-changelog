@@ -16,7 +16,7 @@
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watch",
-    "prepublishOnly": "yarn lint",
+    "prepublishOnly": "yarn lint && yarn test",
     "lint": "eslint . --ext js,json",
     "lint:fix": "yarn lint --fix"
   },
