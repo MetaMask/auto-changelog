@@ -1,4 +1,4 @@
-# MetaMask/auto-changelog
+# @metamask/auto-changelog
 
 Utilities for validating and updating \"Keep a Changelog\" formatted changelogs
 
