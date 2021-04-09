@@ -7,12 +7,17 @@
     "access": "public"
   },
   "main": "src/index.js",
+  "bin": "src/cli.js",
   "engines": {
     "node": ">=12.0.0"
   },
   "files": [
     "src/"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MetaMask/auto-changelog"
+  },
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watch",
@@ -20,7 +25,12 @@
     "lint:eslint": "eslint . --cache --ext js,ts",
     "lint:json": "prettier '**/*.json' --ignore-path .gitignore",
     "lint": "yarn lint:eslint && yarn lint:json --check",
-    "lint:fix": "yarn lint:eslint --fix && yarn lint:json --write"
+    "lint:fix": "yarn lint:eslint --fix && yarn lint:json --write",
+    "update-changelog": "node ./src/cli.js"
+  },
+  "dependencies": {
+    "cross-spawn": "^7.0.3",
+    "semver": "^7.3.5"
   },
   "devDependencies": {
     "@metamask/eslint-config": "^6.0.0",
