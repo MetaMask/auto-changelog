@@ -1,3 +1,5 @@
-module.exports = function greeter(name) {
-  return `Hello, ${name}!`;
+const { updateChangelog } = require('./updateChangelog');
+
+module.exports = {
+  updateChangelog,
 };
