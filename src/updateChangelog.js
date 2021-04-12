@@ -4,11 +4,15 @@ const { parseChangelog } = require('./parseChangelog');
 const { changeCategories } = require('./constants');
 
 async function getMostRecentTag() {
-  const [mostRecentTagCommitHash] = await runCommand('git', [
+  const results = await runCommand('git', [
     'rev-list',
     '--tags',
     '--max-count=1',
   ]);
+  if (results.length === 0) {
+    return null;
+  }
+  const [mostRecentTagCommitHash] = results;
   const [mostRecentTag] = await runCommand('git', [
     'describe',
     '--tags',
@@ -116,9 +120,12 @@ async function updateChangelog({
   // Ensure we have all tags on remote
   await runCommand('git', ['fetch', '--tags']);
   const mostRecentTag = await getMostRecentTag();
+
+  const commitRange =
+    mostRecentTag === null ? 'HEAD' : `${mostRecentTag}..HEAD`;
   const commitsHashesSinceLastRelease = await runCommand('git', [
     'rev-list',
-    `${mostRecentTag}..HEAD`,
+    commitRange,
   ]);
   const commits = await getCommits(commitsHashesSinceLastRelease);
 

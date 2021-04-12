@@ -67,6 +67,7 @@ function stringifyLinkReferenceDefinitions(repoUrl, releases) {
   const orderedReleases = releases
     .map(({ version }) => version)
     .sort((a, b) => semver.gt(a, b));
+  const hasReleases = orderedReleases.length > 0;
 
   // The "Unreleased" section represents all changes made since the *highest*
   // release, not the most recent release. This is to accomodate patch releases
@@ -75,11 +76,14 @@ function stringifyLinkReferenceDefinitions(repoUrl, releases) {
   // For example, if a library has a v2.0.0 but the v1.0.0 release needed a
   // security update, the v1.0.1 release would then be the most recent, but the
   // range of unreleased changes would remain `v2.0.0...HEAD`.
-  const unreleasedLinkReferenceDefinition = `[${unreleased}]: ${getCompareUrl(
-    repoUrl,
-    `v${orderedReleases[0]}`,
-    'HEAD',
-  )}`;
+  //
+  // If there have not been any releases yet, the repo URL is used directly as
+  // the link definition.
+  const unreleasedLinkReferenceDefinition = `[${unreleased}]: ${
+    hasReleases
+      ? getCompareUrl(repoUrl, `v${orderedReleases[0]}`, 'HEAD')
+      : withTrailingSlash(repoUrl)
+  }`;
 
   // The "previous" release that should be used for comparison is not always
   // the most recent release chronologically. The _highest_ version that is
