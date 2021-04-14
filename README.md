@@ -1,6 +1,8 @@
 # @metamask/auto-changelog
 
-Utilities for validating and updating \"Keep a Changelog\" formatted changelogs
+Utilities for validating and updating \"Keep a Changelog\" formatted changelogs.
+
+This package has a CLI (`auto-changelog`), and an API.
 
 ## Installation
 
@@ -10,13 +12,39 @@ or
 
 `npm install --save-dev @metamask/auto-changelog`
 
-## Usage
+## CLI Usage
 
-_Add examples here_
+To update the 'Unreleased' section of the changelog:
 
-## API
+`npx @metamask/auto-changelog `
 
-_Add examples here_
+To update the current release section of the changelog:
+
+`npx @metamask/auto-changelog --rc`
+
+## API Usage
+
+Each supported command is a separate named export.
+
+### `updateChangelog`
+
+This command updates the changelog.
+
+```javascript
+const fs = require('fs').promises;
+const { updateChangelog } = require('@metamask/auto-changelog');
+
+const oldChangelog = await fs.readFile('CHANEGLOG.md', {
+  encoding: 'utf8',
+});
+const updatedChangelog = updateChangelog({
+  changelogContent: oldChangelog,
+  currentVersion: '1.0.0',
+  repoUrl: 'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+  isReleaseCandidate: false,
+});
+await fs.writeFile('CHANEGLOG.md', updatedChangelog);
+```
 
 ## Testing
 
