@@ -30,7 +30,8 @@
   },
   "dependencies": {
     "cross-spawn": "^7.0.3",
-    "semver": "^7.3.5"
+    "semver": "^7.3.5",
+    "yargs": "^16.2.0"
   },
   "devDependencies": {
     "@metamask/eslint-config": "^6.0.0",
