@@ -26,7 +26,7 @@
     "lint:json": "prettier '**/*.json' --ignore-path .gitignore",
     "lint": "yarn lint:eslint && yarn lint:json --check",
     "lint:fix": "yarn lint:eslint --fix && yarn lint:json --write",
-    "update-changelog": "node ./src/cli.js"
+    "changelog": "node ./src/cli.js"
   },
   "dependencies": {
     "cross-spawn": "^7.0.3",

@@ -8,7 +8,7 @@ const { hideBin } = require('yargs/helpers');
 const { updateChangelog } = require('./updateChangelog');
 const { unreleased } = require('./constants');
 
-const epilog = `New commits will be added to the "${unreleased}" section (or \
+const updateEpilog = `New commits will be added to the "${unreleased}" section (or \
 to the section for the current release if the '--rc' flag is used) in reverse \
 chronological order. Any commits for PRs that are represented already in the \
 changelog will be ignored.
@@ -23,17 +23,24 @@ const npmPackageRepositoryUrl = process.env.npm_package_repository_url;
 
 async function main() {
   const { argv } = yargs(hideBin(process.argv))
-    .option('rc', {
-      default: false,
-      description: `Add new changes to the current release header, rather than to the '${unreleased}' section.`,
-      type: 'boolean',
-    })
+    .command(
+      'update',
+      'Update CHANGELOG.md with any changes made since the most recent release.\nUsage: $0 update [options]',
+      (_yargs) =>
+        _yargs
+          .option('rc', {
+            default: false,
+            description: `Add new changes to the current release header, rather than to the '${unreleased}' section.`,
+            type: 'boolean',
+          })
+          .epilog(updateEpilog),
+    )
     .strict()
+    .demandCommand()
     .help('help')
     .usage(
-      `Update CHANGELOG.md with any changes made since the most recent release.\nUsage: $0 [options]`,
-    )
-    .epilog(epilog);
+      `Utilities for validating and updating "Keep a Changelog" formatted changelogs.\nUsage: $0 [command] [options]`,
+    );
 
   if (!npmPackageVersion) {
     console.error(
