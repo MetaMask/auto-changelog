@@ -14,6 +14,8 @@ or
 
 ## CLI Usage
 
+### Update
+
 To update the 'Unreleased' section of the changelog:
 
 `npx @metamask/auto-changelog update`
@@ -21,6 +23,16 @@ To update the 'Unreleased' section of the changelog:
 To update the current release section of the changelog:
 
 `npx @metamask/auto-changelog update --rc`
+
+### Validate
+
+To validate the changelog:
+
+`npx @metamask/auto-changelog validate`
+
+To validate the changelog in a release candidate environment:
+
+`npx @metamask/auto-changelog validate --rc`
 
 ## API Usage
 
@@ -44,6 +56,30 @@ const updatedChangelog = updateChangelog({
   isReleaseCandidate: false,
 });
 await fs.writeFile('CHANEGLOG.md', updatedChangelog);
+```
+
+### `validateChangelog`
+
+This command validates the changelog
+
+```javascript
+const fs = require('fs').promises;
+const { validateChangelog } = require('@metamask/auto-changelog');
+
+const oldChangelog = await fs.readFile('CHANEGLOG.md', {
+  encoding: 'utf8',
+});
+try {
+  validateChangelog({
+    changelogContent: oldChangelog,
+    currentVersion: '1.0.0',
+    repoUrl: 'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+    isReleaseCandidate: false,
+  });
+  // changelog is valid!
+} catch (error) {
+  // changelog is invalid
+}
 ```
 
 ## Testing
