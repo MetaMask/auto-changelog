@@ -64,9 +64,12 @@ function getTagUrl(repoUrl, tag) {
 }
 
 function stringifyLinkReferenceDefinitions(repoUrl, releases) {
-  const orderedReleases = releases
+  const releasesOrderedByVersion = releases
     .map(({ version }) => version)
-    .sort((a, b) => semver.gt(a, b));
+    .sort((a, b) => {
+      return semver.gt(a, b) ? -1 : 1;
+    });
+  const orderedReleases = releases.map(({ version }) => version);
   const hasReleases = orderedReleases.length > 0;
 
   // The "Unreleased" section represents all changes made since the *highest*
@@ -81,7 +84,7 @@ function stringifyLinkReferenceDefinitions(repoUrl, releases) {
   // the link definition.
   const unreleasedLinkReferenceDefinition = `[${unreleased}]: ${
     hasReleases
-      ? getCompareUrl(repoUrl, `v${orderedReleases[0]}`, 'HEAD')
+      ? getCompareUrl(repoUrl, `v${releasesOrderedByVersion[0]}`, 'HEAD')
       : withTrailingSlash(repoUrl)
   }`;
 
