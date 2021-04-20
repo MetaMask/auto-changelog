@@ -16,11 +16,11 @@ or
 
 To update the 'Unreleased' section of the changelog:
 
-`npx @metamask/auto-changelog `
+`npx @metamask/auto-changelog update`
 
 To update the current release section of the changelog:
 
-`npx @metamask/auto-changelog --rc`
+`npx @metamask/auto-changelog update --rc`
 
 ## API Usage
 
