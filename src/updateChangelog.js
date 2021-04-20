@@ -107,7 +107,7 @@ function getAllLoggedPrNumbers(changelog) {
  *   project is in the midst of release preparation or not. If this is set, any
  *   new changes are listed under the current release header. Otherwise, they
  *   are listed under the 'Unreleased' section.
- * @returns
+ * @returns {string} The updated changelog text
  */
 async function updateChangelog({
   changelogContent,
