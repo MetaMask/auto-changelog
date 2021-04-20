@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /* eslint-disable node/no-process-exit */
 
-const fs = require('fs').promises;
+const { promises: fs, constants: fsConstants } = require('fs');
 const yargs = require('yargs/yargs');
 const { hideBin } = require('yargs/helpers');
 
@@ -33,6 +33,11 @@ async function main() {
             description: `Add new changes to the current release header, rather than to the '${unreleased}' section.`,
             type: 'boolean',
           })
+          .option('file', {
+            default: 'CHANGELOG.md',
+            description: 'The changelog file path',
+            type: 'string',
+          })
           .epilog(updateEpilog),
     )
     .strict()
@@ -53,8 +58,20 @@ async function main() {
   }
 
   const isReleaseCandidate = argv.rc;
+  const changelogFilename = argv.file;
 
-  const changelogFilename = 'CHANGELOG.md';
+  try {
+    // eslint-disable-next-line no-bitwise
+    await fs.access(changelogFilename, fsConstants.F_OK | fsConstants.W_OK);
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      console.error(`File does not exist: '${changelogFilename}'`);
+    } else {
+      console.error(`File is not writable: '${changelogFilename}'`);
+    }
+    process.exit(1);
+  }
+
   const changelogContent = await fs.readFile(changelogFilename, {
     encoding: 'utf8',
   });
