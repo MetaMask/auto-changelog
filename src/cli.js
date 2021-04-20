@@ -29,7 +29,7 @@ async function main() {
       type: 'boolean',
     })
     .strict()
-    .help('help', 'test')
+    .help('help')
     .usage(
       `Update CHANGELOG.md with any changes made since the most recent release.\nUsage: $0 [options]`,
     )
