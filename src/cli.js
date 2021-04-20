@@ -2,6 +2,7 @@
 /* eslint-disable node/no-process-exit */
 
 const { promises: fs, constants: fsConstants } = require('fs');
+const semver = require('semver');
 const yargs = require('yargs/yargs');
 const { hideBin } = require('yargs/helpers');
 
@@ -38,6 +39,12 @@ async function main() {
             description: 'The changelog file path',
             type: 'string',
           })
+          .option('currentVersion', {
+            default: npmPackageVersion,
+            description:
+              'The current version of the project that the changelog belongs to.',
+            type: 'string',
+          })
           .epilog(updateEpilog),
     )
     .strict()
@@ -47,18 +54,25 @@ async function main() {
       `Utilities for validating and updating "Keep a Changelog" formatted changelogs.\nUsage: $0 [command] [options]`,
     );
 
-  if (!npmPackageVersion) {
+  const {
+    currentVersion,
+    file: changelogFilename,
+    rc: isReleaseCandidate,
+  } = argv;
+
+  if (isReleaseCandidate && !currentVersion) {
     console.error(
-      `npm package version not found. Please run this as an npm script from a project with the 'version' field set.`,
+      `Version not found. Please set the --currentVersion flag, or run this as an npm script from a project with the 'version' field set.`,
     );
+    process.exit(1);
+  } else if (currentVersion && semver.valid(currentVersion) === null) {
+    console.error(`Current version is not valid SemVer: '${currentVersion}'`);
+    process.exit(1);
   } else if (!npmPackageRepositoryUrl) {
     console.error(
       `npm package repository URL not found. Please run this as an npm script from a project with the 'repository' field set.`,
     );
   }
-
-  const isReleaseCandidate = argv.rc;
-  const changelogFilename = argv.file;
 
   try {
     // eslint-disable-next-line no-bitwise
@@ -78,7 +92,7 @@ async function main() {
 
   const newChangelogContent = await updateChangelog({
     changelogContent,
-    currentVersion: npmPackageVersion,
+    currentVersion,
     repoUrl: npmPackageRepositoryUrl,
     isReleaseCandidate,
   });
