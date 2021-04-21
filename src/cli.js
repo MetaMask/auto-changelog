@@ -22,6 +22,16 @@ const npmPackageVersion = process.env.npm_package_version;
 // eslint-disable-next-line node/no-process-env
 const npmPackageRepositoryUrl = process.env.npm_package_repository_url;
 
+function isValidUrl(proposedUrl) {
+  try {
+    // eslint-disable-next-line no-new
+    new URL(proposedUrl);
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
 async function main() {
   const { argv } = yargs(hideBin(process.argv))
     .command(
@@ -45,6 +55,11 @@ async function main() {
               'The current version of the project that the changelog belongs to.',
             type: 'string',
           })
+          .option('repo', {
+            default: npmPackageRepositoryUrl,
+            description: `The GitHub repository URL`,
+            type: 'string',
+          })
           .epilog(updateEpilog),
     )
     .strict()
@@ -58,6 +73,7 @@ async function main() {
     currentVersion,
     file: changelogFilename,
     rc: isReleaseCandidate,
+    repo: repoUrl,
   } = argv;
 
   if (isReleaseCandidate && !currentVersion) {
@@ -68,10 +84,14 @@ async function main() {
   } else if (currentVersion && semver.valid(currentVersion) === null) {
     console.error(`Current version is not valid SemVer: '${currentVersion}'`);
     process.exit(1);
-  } else if (!npmPackageRepositoryUrl) {
+  } else if (!repoUrl) {
     console.error(
-      `npm package repository URL not found. Please run this as an npm script from a project with the 'repository' field set.`,
+      `npm package repository URL not found. Please set the '--repo' flag, or run this as an npm script from a project with the 'repository' field set.`,
     );
+    process.exit(1);
+  } else if (!isValidUrl(repoUrl)) {
+    console.error(`Invalid repo URL: '${repoUrl}'`);
+    process.exit(1);
   }
 
   try {
@@ -93,7 +113,7 @@ async function main() {
   const newChangelogContent = await updateChangelog({
     changelogContent,
     currentVersion,
-    repoUrl: npmPackageRepositoryUrl,
+    repoUrl,
     isReleaseCandidate,
   });
 
