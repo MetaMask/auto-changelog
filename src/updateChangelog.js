@@ -100,7 +100,8 @@ function getAllLoggedPrNumbers(changelog) {
  * PRs that are already included in the changelog are omitted.
  * @param {Object} options
  * @param {string} options.changelogContent - The current changelog
- * @param {Version} options.currentVersion - The current version
+ * @param {Version} [options.currentVersion] - The current version. Required if
+ *   `isReleaseCandidate` is set, but optional otherwise.
  * @param {string} options.repoUrl - The GitHub repository URL for the current
  *   project.
  * @param {boolean} options.isReleaseCandidate - Denotes whether the current
@@ -115,6 +116,11 @@ async function updateChangelog({
   repoUrl,
   isReleaseCandidate,
 }) {
+  if (isReleaseCandidate && !currentVersion) {
+    throw new Error(
+      `A version must be specified if 'isReleaseCandidate' is set.`,
+    );
+  }
   const changelog = parseChangelog({ changelogContent, repoUrl });
 
   // Ensure we have all tags on remote
