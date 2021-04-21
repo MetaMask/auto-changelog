@@ -9,8 +9,9 @@ const { hideBin } = require('yargs/helpers');
 const { updateChangelog } = require('./updateChangelog');
 const { generateDiff } = require('./generateDiff');
 const {
-  validateChangelog,
   ChangelogFormattingError,
+  InvalidChangelogError,
+  validateChangelog,
 } = require('./validateChangelog');
 const { unreleased } = require('./constants');
 
@@ -90,6 +91,9 @@ async function validate({
       const { validChangelog, invalidChangelog } = error.data;
       const diff = generateDiff(validChangelog, invalidChangelog);
       console.error(`Changelog not well-formatted.\nDiff:\n${diff}`);
+      process.exit(1);
+    } else if (error instanceof InvalidChangelogError) {
+      console.error(`Changelog is invalid: ${error.message}`);
       process.exit(1);
     }
     throw error;

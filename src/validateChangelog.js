@@ -5,9 +5,35 @@ const { parseChangelog } = require('./parseChangelog');
  */
 
 /**
+ * Indicates that the changelog is invalid.
+ */
+class InvalidChangelogError extends Error {}
+
+/**
+ * Indicates that unreleased changes are still present in the changelog.
+ */
+class UnreleasedChangesError extends InvalidChangelogError {
+  constructor() {
+    super('Unreleased changes present in the changelog');
+  }
+}
+
+/**
+ * Indicates that the release header for the current version is missing.
+ */
+class MissingCurrentVersionError extends InvalidChangelogError {
+  /**
+   * @param {Version} currentVersion - The current version
+   */
+  constructor(currentVersion) {
+    super(`Current version missing from changelog: '${currentVersion}'`);
+  }
+}
+
+/**
  * Represents a formatting error in a changelog.
  */
-class ChangelogFormattingError extends Error {
+class ChangelogFormattingError extends InvalidChangelogError {
   /**
    * @param {Object} options
    * @param {string} options.validChangelog - The string contents of the well-
@@ -36,6 +62,13 @@ class ChangelogFormattingError extends Error {
  *   command will also ensure the current version is represented in the
  *   changelog with a release header, and that there are no unreleased changes
  *   present.
+ * @throws {InvalidChangelogError} Will throw if the changelog is invalid
+ * @throws {MissingCurrentVersionError} Will throw if `isReleaseCandidate` is
+ *   `true` and the changelog is missing the release header for the current
+ *   version.
+ * @throws {UnreleasedChangesError} Will throw if `isReleaseCandidate` is
+ *   `true` and the changelog contains unreleased changes.
+ * @throws {ChangelogFormattingError} Will throw if there is a formatting error.
  */
 function validateChangelog({
   changelogContent,
@@ -52,14 +85,12 @@ function validateChangelog({
       .getReleases()
       .find((release) => release.version === currentVersion)
   ) {
-    throw new Error(
-      `Current version missing from changelog: '${currentVersion}'`,
-    );
+    throw new MissingCurrentVersionError(currentVersion);
   }
 
   const hasUnreleasedChanges = changelog.getUnreleasedChanges().length !== 0;
   if (isReleaseCandidate && hasUnreleasedChanges) {
-    throw new Error('Unreleased changes present in the changelog');
+    throw new UnreleasedChangesError();
   }
 
   const validChangelog = changelog.toString();
@@ -71,4 +102,10 @@ function validateChangelog({
   }
 }
 
-module.exports = { validateChangelog, ChangelogFormattingError };
+module.exports = {
+  ChangelogFormattingError,
+  InvalidChangelogError,
+  MissingCurrentVersionError,
+  UnreleasedChangesError,
+  validateChangelog,
+};
