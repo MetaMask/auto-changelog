@@ -12,7 +12,8 @@
     "node": ">=12.0.0"
   },
   "files": [
-    "src/"
+    "src/*.js",
+    "!src/*.test.js"
   ],
   "repository": {
     "type": "git",
@@ -45,6 +46,7 @@
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-prettier": "^3.3.1",
     "jest": "^26.4.2",
+    "outdent": "^0.8.0",
     "prettier": "^2.2.1"
   }
 }
