@@ -90,7 +90,7 @@ async function validate({
     if (error instanceof ChangelogFormattingError) {
       const { validChangelog, invalidChangelog } = error.data;
       const diff = generateDiff(validChangelog, invalidChangelog);
-      console.error(`Changelog not well-formatted.\nDiff:\n${diff}`);
+      console.error(`Changelog not well-formatted. Diff:\n\n${diff}`);
       process.exit(1);
     } else if (error instanceof InvalidChangelogError) {
       console.error(`Changelog is invalid: ${error.message}`);
