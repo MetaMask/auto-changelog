@@ -69,18 +69,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 `;
 
 describe('validateChangelog', () => {
-  it('should throw for an empty string', () => {
-    expect(() =>
-      validateChangelog({
-        changelogContent: '',
-        currentVersion: '1.0.0',
-        repoUrl:
-          'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
-        isReleaseCandidate: false,
-      }),
-    ).toThrow('Failed to find Unreleased header');
-  });
-
   it('should not throw for any empty valid changelog', () => {
     expect(() =>
       validateChangelog({
@@ -103,6 +91,30 @@ describe('validateChangelog', () => {
         isReleaseCandidate: false,
       }),
     ).not.toThrow();
+  });
+
+  it('should not throw for changelog with branching releases', () => {
+    expect(() =>
+      validateChangelog({
+        changelogContent: branchingChangelog,
+        currentVersion: '1.0.0',
+        repoUrl:
+          'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+        isReleaseCandidate: false,
+      }),
+    ).not.toThrow();
+  });
+
+  it('should throw for an empty string', () => {
+    expect(() =>
+      validateChangelog({
+        changelogContent: '',
+        currentVersion: '1.0.0',
+        repoUrl:
+          'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+        isReleaseCandidate: false,
+      }),
+    ).toThrow('Failed to find Unreleased header');
   });
 
   it('should throw when the title is different', () => {
@@ -277,18 +289,6 @@ describe('validateChangelog', () => {
     ).toThrow('Changelog is not well-formatted');
   });
 
-  it('should not throw for changelog with branching releases', () => {
-    expect(() =>
-      validateChangelog({
-        changelogContent: branchingChangelog,
-        currentVersion: '1.0.0',
-        repoUrl:
-          'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
-        isReleaseCandidate: false,
-      }),
-    ).not.toThrow();
-  });
-
   it(`should throw if the highest version isn't compared with the Unreleased changes`, () => {
     const changelogWithInvalidUnreleasedComparison = branchingChangelog.replace(
       '[Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD',
@@ -385,35 +385,37 @@ describe('validateChangelog', () => {
     ).toThrow(`Unrecognized line: 'Something else'`);
   });
 
-  it('should not throw if the current version release header is missing', () => {
-    expect(() =>
-      validateChangelog({
-        changelogContent: changelogWithReleases,
-        currentVersion: '1.0.1',
-        repoUrl:
-          'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
-        isReleaseCandidate: false,
-      }),
-    ).not.toThrow();
+  describe('is not a release candidate', () => {
+    it('should not throw if the current version release header is missing', () => {
+      expect(() =>
+        validateChangelog({
+          changelogContent: changelogWithReleases,
+          currentVersion: '1.0.1',
+          repoUrl:
+            'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+          isReleaseCandidate: false,
+        }),
+      ).not.toThrow();
+    });
+
+    it('should not throw if there are unreleased changes', () => {
+      const changelogWithUnreleasedChanges = changelogWithReleases.replace(
+        '## [Unreleased]',
+        '## [Unreleased]\n### Changed\n- More changes',
+      );
+      expect(() =>
+        validateChangelog({
+          changelogContent: changelogWithUnreleasedChanges,
+          currentVersion: '1.0.0',
+          repoUrl:
+            'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+          isReleaseCandidate: false,
+        }),
+      ).not.toThrow();
+    });
   });
 
-  it('should not throw if there are unreleased changes', () => {
-    const changelogWithUnreleasedChanges = changelogWithReleases.replace(
-      '## [Unreleased]',
-      '## [Unreleased]\n### Changed\n- More changes',
-    );
-    expect(() =>
-      validateChangelog({
-        changelogContent: changelogWithUnreleasedChanges,
-        currentVersion: '1.0.0',
-        repoUrl:
-          'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
-        isReleaseCandidate: false,
-      }),
-    ).not.toThrow();
-  });
-
-  describe('isReleaseCandidate', () => {
+  describe('is a release candidate', () => {
     it('should throw if the current version release header is missing', () => {
       expect(() =>
         validateChangelog({
