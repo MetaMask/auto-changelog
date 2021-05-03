@@ -2,6 +2,7 @@
 /* eslint-disable node/no-process-exit */
 
 const { promises: fs, constants: fsConstants } = require('fs');
+const path = require('path');
 const semver = require('semver');
 const yargs = require('yargs/yargs');
 const { hideBin } = require('yargs/helpers');
@@ -42,23 +43,23 @@ function isValidUrl(proposedUrl) {
   }
 }
 
-async function readChangelog(changelogFilename) {
-  return await fs.readFile(changelogFilename, {
+async function readChangelog(changelogPath) {
+  return await fs.readFile(changelogPath, {
     encoding: 'utf8',
   });
 }
 
-async function saveChangelog(changelogFilename, newChangelogContent) {
-  await fs.writeFile(changelogFilename, newChangelogContent);
+async function saveChangelog(changelogPath, newChangelogContent) {
+  await fs.writeFile(changelogPath, newChangelogContent);
 }
 
 async function update({
-  changelogFilename,
+  changelogPath,
   currentVersion,
   isReleaseCandidate,
   repoUrl,
 }) {
-  const changelogContent = await readChangelog(changelogFilename);
+  const changelogContent = await readChangelog(changelogPath);
 
   const newChangelogContent = await updateChangelog({
     changelogContent,
@@ -67,17 +68,17 @@ async function update({
     isReleaseCandidate,
   });
 
-  await saveChangelog(changelogFilename, newChangelogContent);
+  await saveChangelog(changelogPath, newChangelogContent);
   console.log('CHANGELOG updated');
 }
 
 async function validate({
-  changelogFilename,
+  changelogPath,
   currentVersion,
   isReleaseCandidate,
   repoUrl,
 }) {
-  const changelogContent = await readChangelog(changelogFilename);
+  const changelogContent = await readChangelog(changelogPath);
 
   try {
     validateChangelog({
@@ -100,6 +101,11 @@ async function validate({
   }
 }
 
+const rootDescription = `The root project directory. This determines where we \
+look for changes since the last release (defaults to the entire repository at \
+the current working directory), and where the changelog path is resolved from \
+(defaults to the current working directory).`;
+
 function configureCommonCommandOptions(_yargs) {
   return _yargs
     .option('file', {
@@ -116,6 +122,10 @@ function configureCommonCommandOptions(_yargs) {
     .option('repo', {
       default: npmPackageRepositoryUrl,
       description: `The GitHub repository URL`,
+      type: 'string',
+    })
+    .option('root', {
+      description: rootDescription,
       type: 'string',
     });
 }
@@ -158,6 +168,7 @@ async function main() {
     file: changelogFilename,
     rc: isReleaseCandidate,
     repo: repoUrl,
+    root: projectRootDirectory,
   } = argv;
 
   if (isReleaseCandidate && !currentVersion) {
@@ -178,28 +189,58 @@ async function main() {
     process.exit(1);
   }
 
+  if (projectRootDirectory) {
+    try {
+      const stat = await fs.stat(projectRootDirectory);
+      if (!stat.isDirectory()) {
+        console.error(
+          `Project root must be a directory: '${projectRootDirectory}'`,
+        );
+        process.exit(1);
+      }
+    } catch (error) {
+      if (error.code === 'ENOENT') {
+        console.error(
+          `Root directory specified does not exist: '${projectRootDirectory}'`,
+        );
+        process.exit(1);
+      } else if (error.code === 'EACCES') {
+        console.error(
+          `Access to root directory is forbidden by file access permissions: '${projectRootDirectory}'`,
+        );
+        process.exit(1);
+      }
+      throw error;
+    }
+  }
+
+  let changelogPath = changelogFilename;
+  if (!path.isAbsolute(changelogFilename) && projectRootDirectory) {
+    changelogPath = path.resolve(projectRootDirectory, changelogFilename);
+  }
+
   try {
     // eslint-disable-next-line no-bitwise
-    await fs.access(changelogFilename, fsConstants.F_OK | fsConstants.W_OK);
+    await fs.access(changelogPath, fsConstants.F_OK | fsConstants.W_OK);
   } catch (error) {
     if (error.code === 'ENOENT') {
-      console.error(`File does not exist: '${changelogFilename}'`);
+      console.error(`File does not exist: '${changelogPath}'`);
     } else {
-      console.error(`File is not writable: '${changelogFilename}'`);
+      console.error(`File is not writable: '${changelogPath}'`);
     }
     process.exit(1);
   }
 
   if (argv._ && argv._[0] === 'update') {
     await update({
-      changelogFilename,
+      changelogPath,
       currentVersion,
       isReleaseCandidate,
       repoUrl,
     });
   } else if (argv._ && argv._[0] === 'validate') {
     await validate({
-      changelogFilename,
+      changelogPath,
       currentVersion,
       isReleaseCandidate,
       repoUrl,
