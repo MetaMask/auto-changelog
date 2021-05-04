@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-/* eslint-disable node/no-process-exit */
 
 const { promises: fs, constants: fsConstants } = require('fs');
 const path = require('path');
@@ -41,6 +40,11 @@ function isValidUrl(proposedUrl) {
   } catch (error) {
     return false;
   }
+}
+
+function exitWithError(errorMessage) {
+  console.error(errorMessage);
+  process.exitCode = 1;
 }
 
 async function readChangelog(changelogPath) {
@@ -93,11 +97,11 @@ async function validate({
     if (error instanceof ChangelogFormattingError) {
       const { validChangelog, invalidChangelog } = error.data;
       const diff = generateDiff(validChangelog, invalidChangelog);
-      console.error(`Changelog not well-formatted. Diff:\n\n${diff}`);
-      process.exit(1);
+      exitWithError(`Changelog not well-formatted. Diff:\n\n${diff}`);
+      return;
     } else if (error instanceof InvalidChangelogError) {
-      console.error(`Changelog is invalid: ${error.message}`);
-      process.exit(1);
+      exitWithError(`Changelog is invalid: ${error.message}`);
+      return;
     }
     throw error;
   }
@@ -174,43 +178,43 @@ async function main() {
   } = argv;
 
   if (isReleaseCandidate && !currentVersion) {
-    console.error(
+    exitWithError(
       `Version not found. Please set the --currentVersion flag, or run this as an npm script from a project with the 'version' field set.`,
     );
-    process.exit(1);
+    return;
   } else if (currentVersion && semver.valid(currentVersion) === null) {
-    console.error(`Current version is not valid SemVer: '${currentVersion}'`);
-    process.exit(1);
+    exitWithError(`Current version is not valid SemVer: '${currentVersion}'`);
+    return;
   } else if (!repoUrl) {
-    console.error(
+    exitWithError(
       `npm package repository URL not found. Please set the '--repo' flag, or run this as an npm script from a project with the 'repository' field set.`,
     );
-    process.exit(1);
+    return;
   } else if (!isValidUrl(repoUrl)) {
-    console.error(`Invalid repo URL: '${repoUrl}'`);
-    process.exit(1);
+    exitWithError(`Invalid repo URL: '${repoUrl}'`);
+    return;
   }
 
   if (projectRootDirectory) {
     try {
       const stat = await fs.stat(projectRootDirectory);
       if (!stat.isDirectory()) {
-        console.error(
+        exitWithError(
           `Project root must be a directory: '${projectRootDirectory}'`,
         );
-        process.exit(1);
+        return;
       }
     } catch (error) {
       if (error.code === 'ENOENT') {
-        console.error(
+        exitWithError(
           `Root directory specified does not exist: '${projectRootDirectory}'`,
         );
-        process.exit(1);
+        return;
       } else if (error.code === 'EACCES') {
-        console.error(
+        exitWithError(
           `Access to root directory is forbidden by file access permissions: '${projectRootDirectory}'`,
         );
-        process.exit(1);
+        return;
       }
       throw error;
     }
@@ -226,11 +230,11 @@ async function main() {
     await fs.access(changelogPath, fsConstants.F_OK | fsConstants.W_OK);
   } catch (error) {
     if (error.code === 'ENOENT') {
-      console.error(`File does not exist: '${changelogPath}'`);
+      exitWithError(`File does not exist: '${changelogPath}'`);
     } else {
-      console.error(`File is not writable: '${changelogPath}'`);
+      exitWithError(`File is not writable: '${changelogPath}'`);
     }
-    process.exit(1);
+    return;
   }
 
   if (argv._ && argv._[0] === 'update') {
@@ -252,6 +256,5 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error(error);
-  process.exit(1);
+  exitWithError(error);
 });
