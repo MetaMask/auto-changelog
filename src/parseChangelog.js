@@ -7,7 +7,7 @@ function truncated(line) {
 
 /**
  * Constructs a Changelog instance that represents the given changelog, which
- * is parsed for release and change informatino.
+ * is parsed for release and change information.
  * @param {Object} options
  * @param {string} options.changelogContent - The changelog to parse
  * @param {string} options.repoUrl - The GitHub repository URL for the current
@@ -71,8 +71,6 @@ function parseChangelog({ changelogContent, repoUrl }) {
         description,
         version: mostRecentRelease,
       });
-    } else if (mostRecentRelease === null) {
-      continue;
     } else {
       throw new Error(`Unrecognized line: '${truncated(line)}'`);
     }
