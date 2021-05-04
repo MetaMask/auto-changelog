@@ -46,7 +46,7 @@ This command updates the changelog.
 const fs = require('fs').promises;
 const { updateChangelog } = require('@metamask/auto-changelog');
 
-const oldChangelog = await fs.readFile('CHANEGLOG.md', {
+const oldChangelog = await fs.readFile('CHANGELOG.md', {
   encoding: 'utf8',
 });
 const updatedChangelog = updateChangelog({
@@ -55,7 +55,7 @@ const updatedChangelog = updateChangelog({
   repoUrl: 'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
   isReleaseCandidate: false,
 });
-await fs.writeFile('CHANEGLOG.md', updatedChangelog);
+await fs.writeFile('CHANGELOG.md', updatedChangelog);
 ```
 
 ### `validateChangelog`
@@ -66,7 +66,7 @@ This command validates the changelog
 const fs = require('fs').promises;
 const { validateChangelog } = require('@metamask/auto-changelog');
 
-const oldChangelog = await fs.readFile('CHANEGLOG.md', {
+const oldChangelog = await fs.readFile('CHANGELOG.md', {
   encoding: 'utf8',
 });
 try {
