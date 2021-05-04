@@ -3,12 +3,12 @@ const runCommand = require('./runCommand');
 const { parseChangelog } = require('./parseChangelog');
 const { changeCategories } = require('./constants');
 
-async function getMostRecentTag() {
-  const results = await runCommand('git', [
-    'rev-list',
-    '--tags',
-    '--max-count=1',
-  ]);
+async function getMostRecentTag({ projectRootDirectory }) {
+  const revListArgs = ['rev-list', '--tags', '--max-count=1'];
+  if (projectRootDirectory) {
+    revListArgs.push(projectRootDirectory);
+  }
+  const results = await runCommand('git', revListArgs);
   if (results.length === 0) {
     return null;
   }
@@ -91,6 +91,14 @@ function getAllLoggedPrNumbers(changelog) {
   return prNumbersWithChangelogEntries;
 }
 
+async function getCommitHashesInRange(commitRange, rootDirectory) {
+  const revListArgs = ['rev-list', commitRange];
+  if (rootDirectory) {
+    revListArgs.push(rootDirectory);
+  }
+  return await runCommand('git', revListArgs);
+}
+
 /**
  * @typedef {import('./constants.js').Version} Version
  */
@@ -108,6 +116,10 @@ function getAllLoggedPrNumbers(changelog) {
  *   project is in the midst of release preparation or not. If this is set, any
  *   new changes are listed under the current release header. Otherwise, they
  *   are listed under the 'Unreleased' section.
+ * @param {string} [options.projectRootDirectory] - The root project directory,
+ *   used to filter results from various git commands. This path is assumed to
+ *   be either absolute, or relative to the current directory. Defaults to the
+ *   root of the current git repository.
  * @returns {string} The updated changelog text
  */
 async function updateChangelog({
@@ -115,6 +127,7 @@ async function updateChangelog({
   currentVersion,
   repoUrl,
   isReleaseCandidate,
+  projectRootDirectory,
 }) {
   if (isReleaseCandidate && !currentVersion) {
     throw new Error(
@@ -125,14 +138,14 @@ async function updateChangelog({
 
   // Ensure we have all tags on remote
   await runCommand('git', ['fetch', '--tags']);
-  const mostRecentTag = await getMostRecentTag();
+  const mostRecentTag = await getMostRecentTag({ projectRootDirectory });
 
   const commitRange =
     mostRecentTag === null ? 'HEAD' : `${mostRecentTag}..HEAD`;
-  const commitsHashesSinceLastRelease = await runCommand('git', [
-    'rev-list',
+  const commitsHashesSinceLastRelease = await getCommitHashesInRange(
     commitRange,
-  ]);
+    projectRootDirectory,
+  );
   const commits = await getCommits(commitsHashesSinceLastRelease);
 
   const loggedPrNumbers = getAllLoggedPrNumbers(changelog);
