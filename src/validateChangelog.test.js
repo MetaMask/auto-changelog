@@ -416,6 +416,18 @@ describe('validateChangelog', () => {
   });
 
   describe('is a release candidate', () => {
+    it('should not throw for a valid changelog with multiple releases', () => {
+      expect(() =>
+        validateChangelog({
+          changelogContent: changelogWithReleases,
+          currentVersion: '1.0.0',
+          repoUrl:
+            'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+          isReleaseCandidate: true,
+        }),
+      ).not.toThrow();
+    });
+
     it('should throw if the current version release header is missing', () => {
       expect(() =>
         validateChangelog({

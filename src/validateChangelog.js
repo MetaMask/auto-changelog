@@ -88,7 +88,8 @@ function validateChangelog({
     throw new MissingCurrentVersionError(currentVersion);
   }
 
-  const hasUnreleasedChanges = changelog.getUnreleasedChanges().length !== 0;
+  const hasUnreleasedChanges =
+    Object.keys(changelog.getUnreleasedChanges()).length !== 0;
   if (isReleaseCandidate && hasUnreleasedChanges) {
     throw new UnreleasedChangesError();
   }
