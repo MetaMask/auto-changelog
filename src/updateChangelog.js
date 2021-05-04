@@ -142,7 +142,7 @@ async function updateChangelog({
 
   const commitRange =
     mostRecentTag === null ? 'HEAD' : `${mostRecentTag}..HEAD`;
-  const commitsHashesSinceLastRelease = getCommitHashesInRange(
+  const commitsHashesSinceLastRelease = await getCommitHashesInRange(
     commitRange,
     projectRootDirectory,
   );
