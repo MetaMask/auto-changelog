@@ -58,6 +58,7 @@ async function update({
   currentVersion,
   isReleaseCandidate,
   repoUrl,
+  projectRootDirectory,
 }) {
   const changelogContent = await readChangelog(changelogPath);
 
@@ -66,6 +67,7 @@ async function update({
     currentVersion,
     repoUrl,
     isReleaseCandidate,
+    projectRootDirectory,
   });
 
   await saveChangelog(changelogPath, newChangelogContent);
@@ -237,6 +239,7 @@ async function main() {
       currentVersion,
       isReleaseCandidate,
       repoUrl,
+      projectRootDirectory,
     });
   } else if (argv._ && argv._[0] === 'validate') {
     await validate({
