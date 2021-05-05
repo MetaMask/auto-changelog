@@ -30,12 +30,44 @@ function parseChangelog({ changelogContent, repoUrl }) {
     throw new Error(`Failed to find ${unreleased} link reference definition`);
   }
 
-  const contentfulChangelogLines = changelogLines
-    .slice(unreleasedHeaderIndex + 1, unreleasedLinkReferenceDefinition)
-    .filter((line) => line !== '');
+  const contentfulChangelogLines = changelogLines.slice(
+    unreleasedHeaderIndex + 1,
+    unreleasedLinkReferenceDefinition,
+  );
 
   let mostRecentRelease;
   let mostRecentCategory;
+  let currentChangeEntry;
+
+  /**
+   * Finalize a change entry, adding it to the changelog.
+   *
+   * This is required because change entries can span multiple lines.
+   *
+   * @param {Object} [options]
+   * @param {boolean} [options.removeTrailingNewline] - Indicates that the
+   *   trailing newline is not a part of the change description, so should be
+   *   removed.
+   */
+  function finalizePreviousChange({ removeTrailingNewline = false } = {}) {
+    if (!currentChangeEntry) {
+      return;
+    }
+    if (removeTrailingNewline && currentChangeEntry.endsWith('\n')) {
+      currentChangeEntry = currentChangeEntry.slice(
+        0,
+        currentChangeEntry.length - 1,
+      );
+    }
+    changelog.addChange({
+      addToStart: false,
+      category: mostRecentCategory,
+      description: currentChangeEntry,
+      version: mostRecentRelease,
+    });
+    currentChangeEntry = undefined;
+  }
+
   for (const line of contentfulChangelogLines) {
     if (line.startsWith('## [')) {
       const results = line.match(
@@ -44,6 +76,9 @@ function parseChangelog({ changelogContent, repoUrl }) {
       if (results === null) {
         throw new Error(`Malformed release header: '${truncated(line)}'`);
       }
+      // Trailing newline removed because the release section is expected to
+      // be prefixed by a newline.
+      finalizePreviousChange({ removeTrailingNewline: true });
       mostRecentRelease = results[1];
       mostRecentCategory = undefined;
       const date = results[2];
@@ -59,22 +94,26 @@ function parseChangelog({ changelogContent, repoUrl }) {
       if (results === null) {
         throw new Error(`Malformed category header: '${truncated(line)}'`);
       }
+      finalizePreviousChange();
       mostRecentCategory = results[1];
     } else if (line.startsWith('- ')) {
       if (mostRecentCategory === undefined) {
         throw new Error(`Category missing for change: '${truncated(line)}'`);
       }
       const description = line.slice(2);
-      changelog.addChange({
-        addToStart: false,
-        category: mostRecentCategory,
-        description,
-        version: mostRecentRelease,
-      });
+      finalizePreviousChange();
+      currentChangeEntry = description;
+    } else if (currentChangeEntry) {
+      currentChangeEntry += `\n${line}`;
+    } else if (line === '') {
+      continue;
     } else {
       throw new Error(`Unrecognized line: '${truncated(line)}'`);
     }
   }
+  // Trailing newline removed because the reference link definition section is
+  // expected to be separated by a newline.
+  finalizePreviousChange({ removeTrailingNewline: true });
 
   return changelog;
 }

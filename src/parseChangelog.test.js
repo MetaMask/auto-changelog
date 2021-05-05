@@ -196,6 +196,119 @@ describe('parseChangelog', () => {
     ]);
   });
 
+  it('should parse changelog with multi-line change description', () => {
+    const changelog = parseChangelog({
+      changelogContent: outdent`
+        # Changelog
+        All notable changes to this project will be documented in this file.
+
+        The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+        and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+        ## [Unreleased]
+
+        ## [1.0.0] - 2020-01-01
+        ### Changed
+        - Something else
+        Further explanation of changes
+
+        [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
+        [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/v1.0.0
+        `,
+      repoUrl:
+        'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+    });
+
+    expect(changelog.getReleaseChanges('1.0.0')).toStrictEqual({
+      Changed: ['Something else\nFurther explanation of changes'],
+    });
+  });
+
+  it('should parse changelog with a change description that has a sub-bullet', () => {
+    const changelog = parseChangelog({
+      changelogContent: outdent`
+        # Changelog
+        All notable changes to this project will be documented in this file.
+
+        The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+        and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+        ## [Unreleased]
+
+        ## [1.0.0] - 2020-01-01
+        ### Changed
+        - Something else
+          - Further explanation of changes
+
+        [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
+        [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/v1.0.0
+        `,
+      repoUrl:
+        'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+    });
+
+    expect(changelog.getReleaseChanges('1.0.0')).toStrictEqual({
+      Changed: ['Something else\n  - Further explanation of changes'],
+    });
+  });
+
+  it('should parse changelog with a change description that includes a trailing newline', () => {
+    const changelog = parseChangelog({
+      changelogContent: outdent`
+        # Changelog
+        All notable changes to this project will be documented in this file.
+
+        The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+        and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+        ## [Unreleased]
+
+        ## [1.0.0] - 2020-01-01
+        ### Changed
+        - Something else
+          - Further explanation of changes
+
+
+        [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
+        [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/v1.0.0
+        `,
+      repoUrl:
+        'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+    });
+
+    expect(changelog.getReleaseChanges('1.0.0')).toStrictEqual({
+      Changed: ['Something else\n  - Further explanation of changes\n'],
+    });
+  });
+
+  it('should parse changelog missing newlines between sections', () => {
+    const changelog = parseChangelog({
+      changelogContent: outdent`
+        # Changelog
+        All notable changes to this project will be documented in this file.
+
+        The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+        and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+        ## [Unreleased]
+        ## [1.0.0] - 2020-01-01
+        ### Changed
+        - Something else
+        [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
+        [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/v1.0.0
+        `,
+      repoUrl:
+        'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+    });
+
+    expect(changelog.getReleases()).toStrictEqual([
+      { date: '2020-01-01', status: undefined, version: '1.0.0' },
+    ]);
+    expect(changelog.getReleaseChanges('1.0.0')).toStrictEqual({
+      Changed: ['Something else'],
+    });
+    expect(changelog.getUnreleasedChanges()).toStrictEqual({});
+  });
+
   it('should throw if Unreleased header is missing', () => {
     const brokenChangelog = outdent`
       # Changelog
@@ -441,61 +554,5 @@ describe('parseChangelog', () => {
     ).toThrow(
       `Unrecognized line: '* Very very very very very very very very very very very very very very very ver...'`,
     );
-  });
-
-  // TODO: Allow multi-line change descriptions
-  it('should throw if a change description spans multiple lines', () => {
-    const brokenChangelog = outdent`
-      # Changelog
-      All notable changes to this project will be documented in this file.
-
-      The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-      and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-      ## [Unreleased]
-
-      ## [1.0.0] - 2020-01-01
-      ### Changed
-      - Something else
-        Further explanation of changes
-
-      [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
-      [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/v1.0.0
-      `;
-    expect(() =>
-      parseChangelog({
-        changelogContent: brokenChangelog,
-        repoUrl:
-          'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
-      }),
-    ).toThrow(`Unrecognized line: '  Further explanation of changes'`);
-  });
-
-  // TODO: Allow sub-bullets in change descriptions
-  it('should throw if a change description has sub-bullets', () => {
-    const brokenChangelog = outdent`
-      # Changelog
-      All notable changes to this project will be documented in this file.
-
-      The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-      and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-      ## [Unreleased]
-
-      ## [1.0.0] - 2020-01-01
-      ### Changed
-      - Something else
-        - Further explanation of changes
-
-      [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
-      [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/v1.0.0
-      `;
-    expect(() =>
-      parseChangelog({
-        changelogContent: brokenChangelog,
-        repoUrl:
-          'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
-      }),
-    ).toThrow(`Unrecognized line: '  - Further explanation of changes'`);
   });
 });
