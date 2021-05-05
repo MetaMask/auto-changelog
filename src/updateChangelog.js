@@ -140,6 +140,12 @@ async function updateChangelog({
   await runCommand('git', ['fetch', '--tags']);
   const mostRecentTag = await getMostRecentTag({ projectRootDirectory });
 
+  if (isReleaseCandidate && mostRecentTag === currentVersion) {
+    throw new Error(
+      `Current version already has tag, which is unexpected for a release candidate.`,
+    );
+  }
+
   const commitRange =
     mostRecentTag === null ? 'HEAD' : `${mostRecentTag}..HEAD`;
   const commitsHashesSinceLastRelease = await getCommitHashesInRange(
