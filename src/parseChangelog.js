@@ -94,7 +94,8 @@ function parseChangelog({ changelogContent, repoUrl }) {
       if (results === null) {
         throw new Error(`Malformed category header: '${truncated(line)}'`);
       }
-      finalizePreviousChange();
+      const isFirstCategory = mostRecentCategory === null;
+      finalizePreviousChange({ removeTrailingNewline: !isFirstCategory });
       mostRecentCategory = results[1];
     } else if (line.startsWith('- ')) {
       if (mostRecentCategory === undefined) {

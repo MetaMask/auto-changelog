@@ -281,6 +281,72 @@ describe('parseChangelog', () => {
     });
   });
 
+  it('should not mistake newline between sections as part of change entry', () => {
+    const changelog = parseChangelog({
+      changelogContent: outdent`
+        # Changelog
+        All notable changes to this project will be documented in this file.
+
+        The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+        and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+        ## [Unreleased]
+
+        ## [1.0.0] - 2020-01-01
+        ### Changed
+        - Something else
+          - Further explanation of changes
+
+        ### Fixed
+        - Not including newline between change categories as part of change entry
+
+        [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
+        [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/v1.0.0
+        `,
+      repoUrl:
+        'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+    });
+
+    expect(changelog.getReleaseChanges('1.0.0')).toStrictEqual({
+      Changed: ['Something else\n  - Further explanation of changes'],
+      Fixed: [
+        'Not including newline between change categories as part of change entry',
+      ],
+    });
+  });
+
+  it('should not mistake newline between releases as part of change entry', () => {
+    const changelog = parseChangelog({
+      changelogContent: outdent`
+        # Changelog
+        All notable changes to this project will be documented in this file.
+
+        The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+        and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+        ## [Unreleased]
+
+        ## [1.0.0] - 2020-01-01
+        ### Changed
+        - Something else
+          - Further explanation of changes
+
+        ## [0.0.1] - 2020-01-01
+        ### Changed
+        - Initial release
+
+        [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
+        [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/v1.0.0
+        `,
+      repoUrl:
+        'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+    });
+
+    expect(changelog.getReleaseChanges('1.0.0')).toStrictEqual({
+      Changed: ['Something else\n  - Further explanation of changes'],
+    });
+  });
+
   it('should parse changelog missing newlines between sections', () => {
     const changelog = parseChangelog({
       changelogContent: outdent`
