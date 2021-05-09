@@ -140,7 +140,7 @@ async function updateChangelog({
   await runCommand('git', ['fetch', '--tags']);
   const mostRecentTag = await getMostRecentTag({ projectRootDirectory });
 
-  if (isReleaseCandidate && mostRecentTag === currentVersion) {
+  if (isReleaseCandidate && mostRecentTag === `v${currentVersion}`) {
     throw new Error(
       `Current version already has tag, which is unexpected for a release candidate.`,
     );
