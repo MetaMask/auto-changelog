@@ -1,4 +1,4 @@
-name: Build and Test
+name: Lint and Test
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
   pull_request:
 
 jobs:
-  build-test:
+  lint-test:
     name: Lint and Test
     runs-on: ubuntu-20.04
     strategy:
@@ -18,13 +18,13 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: ${{ matrix.node-version }}
-    - run: yarn --frozen-lockfile --ignore-scripts
+    - run: yarn --ignore-scripts
     - run: yarn lint
     - run: yarn test
   all-jobs-pass:
     name: All jobs pass
     runs-on: ubuntu-20.04
     needs:
-      - build-test
+      - lint-test
     steps:
-    - uses: actions/checkout@v2
+    - run: echo "Great success!"
