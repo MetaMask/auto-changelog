@@ -43,7 +43,7 @@ Each supported command is a separate named export.
 This command updates the changelog.
 
 ```javascript
-import fs from 'fs'.promises;
+import { promises as fs } from 'fs';
 import { updateChangelog } from '@metamask/auto-changelog';
 
 const oldChangelog = await fs.readFile('CHANGELOG.md', {
@@ -63,7 +63,7 @@ await fs.writeFile('CHANGELOG.md', updatedChangelog);
 This command validates the changelog
 
 ```javascript
-import fs from 'fs'.promises;
+import { promises as fs } from 'fs';
 import { validateChangelog } from '@metamask/auto-changelog';
 
 const oldChangelog = await fs.readFile('CHANGELOG.md', {
@@ -73,7 +73,8 @@ try {
   validateChangelog({
     changelogContent: oldChangelog,
     currentVersion: '1.0.0',
-    repoUrl: 'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+    repoUrl:
+      'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
     isReleaseCandidate: false,
   });
   // changelog is valid!
@@ -94,8 +95,8 @@ The project follows the same release process as the other libraries in the MetaM
 
 1. Create a release branch
 
-- For a typical release, this would be based on `main`
-- To update an older maintained major version, base the release branch on the major version branch (e.g. `1.x`)
+   - For a typical release, this would be based on `main`
+   - To update an older maintained major version, base the release branch on the major version branch (e.g. `1.x`)
 
 2. Update the changelog
 3. Update version in package.json file (e.g. `yarn version --minor --no-git-tag-version`)
