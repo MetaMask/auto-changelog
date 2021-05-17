@@ -1,18 +1,15 @@
-const { parseChangelog } = require('./parseChangelog');
-
-/**
- * @typedef {import('./constants.js').Version} Version
- */
+import { Version } from './constants';
+import { parseChangelog } from './parseChangelog';
 
 /**
  * Indicates that the changelog is invalid.
  */
-class InvalidChangelogError extends Error {}
+export class InvalidChangelogError extends Error {}
 
 /**
  * Indicates that unreleased changes are still present in the changelog.
  */
-class UnreleasedChangesError extends InvalidChangelogError {
+export class UnreleasedChangesError extends InvalidChangelogError {
   constructor() {
     super('Unreleased changes present in the changelog');
   }
@@ -21,11 +18,11 @@ class UnreleasedChangesError extends InvalidChangelogError {
 /**
  * Indicates that the release header for the current version is missing.
  */
-class MissingCurrentVersionError extends InvalidChangelogError {
+export class MissingCurrentVersionError extends InvalidChangelogError {
   /**
    * @param {Version} currentVersion - The current version
    */
-  constructor(currentVersion) {
+  constructor(currentVersion: Version) {
     super(`Current version missing from changelog: '${currentVersion}'`);
   }
 }
@@ -33,7 +30,9 @@ class MissingCurrentVersionError extends InvalidChangelogError {
 /**
  * Represents a formatting error in a changelog.
  */
-class ChangelogFormattingError extends InvalidChangelogError {
+export class ChangelogFormattingError extends InvalidChangelogError {
+  public data: Record<string, string>;
+
   /**
    * @param {Object} options
    * @param {string} options.validChangelog - The string contents of the well-
@@ -41,7 +40,13 @@ class ChangelogFormattingError extends InvalidChangelogError {
    * @param {string} options.invalidChangelog - The string contents of the
    *   malformed changelog.
    */
-  constructor({ validChangelog, invalidChangelog }) {
+  constructor({
+    validChangelog,
+    invalidChangelog,
+  }: {
+    validChangelog: string;
+    invalidChangelog: string;
+  }) {
     super('Changelog is not well-formatted');
     this.data = {
       validChangelog,
@@ -50,14 +55,21 @@ class ChangelogFormattingError extends InvalidChangelogError {
   }
 }
 
+interface ValidateChangelogOptions {
+  changelogContent: string;
+  currentVersion: Version;
+  repoUrl: string;
+  isReleaseCandidate: boolean;
+}
+
 /**
  * Validates that a changelog is well-formatted.
- * @param {Object} options
- * @param {string} options.changelogContent - The current changelog
- * @param {Version} options.currentVersion - The current version
- * @param {string} options.repoUrl - The GitHub repository URL for the current
+ * @param options
+ * @param options.changelogContent - The current changelog
+ * @param options.currentVersion - The current version
+ * @param options.repoUrl - The GitHub repository URL for the current
  *   project.
- * @param {boolean} options.isReleaseCandidate - Denotes whether the current
+ * @param options.isReleaseCandidate - Denotes whether the current
  *   project is in the midst of release preparation or not. If this is set, this
  *   command will also ensure the current version is represented in the
  *   changelog with a release header, and that there are no unreleased changes
@@ -70,12 +82,12 @@ class ChangelogFormattingError extends InvalidChangelogError {
  *   `true` and the changelog contains unreleased changes.
  * @throws {ChangelogFormattingError} Will throw if there is a formatting error.
  */
-function validateChangelog({
+export function validateChangelog({
   changelogContent,
   currentVersion,
   repoUrl,
   isReleaseCandidate,
-}) {
+}: ValidateChangelogOptions) {
   const changelog = parseChangelog({ changelogContent, repoUrl });
 
   // Ensure release header exists, if necessary
@@ -102,11 +114,3 @@ function validateChangelog({
     });
   }
 }
-
-module.exports = {
-  ChangelogFormattingError,
-  InvalidChangelogError,
-  MissingCurrentVersionError,
-  UnreleasedChangesError,
-  validateChangelog,
-};

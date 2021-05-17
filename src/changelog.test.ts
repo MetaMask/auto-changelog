@@ -1,4 +1,4 @@
-const Changelog = require('./changelog');
+import Changelog from './changelog';
 
 const emptyChangelog = `# Changelog
 All notable changes to this project will be documented in this file.

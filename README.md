@@ -43,8 +43,8 @@ Each supported command is a separate named export.
 This command updates the changelog.
 
 ```javascript
-const fs = require('fs').promises;
-const { updateChangelog } = require('@metamask/auto-changelog');
+import fs from 'fs'.promises;
+import { updateChangelog } from '@metamask/auto-changelog';
 
 const oldChangelog = await fs.readFile('CHANGELOG.md', {
   encoding: 'utf8',
@@ -63,8 +63,8 @@ await fs.writeFile('CHANGELOG.md', updatedChangelog);
 This command validates the changelog
 
 ```javascript
-const fs = require('fs').promises;
-const { validateChangelog } = require('@metamask/auto-changelog');
+import fs from 'fs'.promises;
+import { validateChangelog } from '@metamask/auto-changelog';
 
 const oldChangelog = await fs.readFile('CHANGELOG.md', {
   encoding: 'utf8',
@@ -93,8 +93,10 @@ To run tests on file changes, run `yarn test:watch`.
 The project follows the same release process as the other libraries in the MetaMask organization:
 
 1. Create a release branch
-  * For a typical release, this would be based on `main`
-  * To update an older maintained major version, base the release branch on the major version branch (e.g. `1.x`)
+
+- For a typical release, this would be based on `main`
+- To update an older maintained major version, base the release branch on the major version branch (e.g. `1.x`)
+
 2. Update the changelog
 3. Update version in package.json file (e.g. `yarn version --minor --no-git-tag-version`)
 4. Create a pull request targeting the base branch (e.g. master or 1.x)

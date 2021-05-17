@@ -1,5 +1,5 @@
-const _outdent = require('outdent');
-const { parseChangelog } = require('./parseChangelog');
+import _outdent from 'outdent';
+import { parseChangelog } from './parseChangelog';
 
 const outdent = _outdent({ trimTrailingNewline: false });
 

@@ -1,4 +1,5 @@
-const spawn = require('cross-spawn');
+import type { ChildProcess } from 'child_process';
+import spawn from 'cross-spawn';
 
 /**
  * Run a command to completion using the system shell.
@@ -15,15 +16,22 @@ const spawn = require('cross-spawn');
  * @param {Array<string>} [args] - The arguments to pass to the command
  * @returns {Array<string>} Lines of output received via STDOUT
  */
-async function runCommand(command, args) {
-  const output = [];
+export default async function runCommand(
+  command: string,
+  args: readonly string[],
+) {
+  const output: string[] = [];
   let mostRecentError;
   let errorSignal;
   let errorCode;
   const internalError = new Error('Internal');
   try {
-    await new Promise((resolve, reject) => {
-      const childProcess = spawn(command, args, { encoding: 'utf8' });
+    await new Promise<void>((resolve, reject) => {
+      const childProcess: ChildProcess = spawn(command, args);
+      if (!childProcess.stdout || !childProcess.stderr) {
+        throw new Error('Child process is missing stdout and stderr.');
+      }
+
       childProcess.stdout.setEncoding('utf8');
       childProcess.stderr.setEncoding('utf8');
 
@@ -32,7 +40,9 @@ async function runCommand(command, args) {
       });
 
       childProcess.stdout.on('data', (message) => {
-        const nonEmptyLines = message.split('\n').filter((line) => line !== '');
+        const nonEmptyLines = message
+          .split('\n')
+          .filter((line: string) => line !== '');
         output.push(...nonEmptyLines);
       });
 
@@ -66,7 +76,7 @@ async function runCommand(command, args) {
       } else {
         errorMessage = `Exited with code '${errorCode}'`;
       }
-      const improvedError = new Error(errorMessage);
+      const improvedError: Error & { cause?: string } = new Error(errorMessage);
       if (mostRecentError) {
         improvedError.cause = mostRecentError;
       }
@@ -75,5 +85,3 @@ async function runCommand(command, args) {
   }
   return output;
 }
-
-module.exports = runCommand;

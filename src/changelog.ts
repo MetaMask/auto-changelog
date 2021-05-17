@@ -1,6 +1,11 @@
-const semver = require('semver');
+import semver from 'semver';
 
-const { orderedChangeCategories, unreleased } = require('./constants');
+import {
+  changeCategories,
+  orderedChangeCategories,
+  unreleased,
+  Version,
+} from './constants';
 
 const changelogTitle = '# Changelog';
 const changelogDescription = `All notable changes to this project will be documented in this file.
@@ -8,9 +13,39 @@ const changelogDescription = `All notable changes to this project will be docume
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).`;
 
+interface ReleaseMetadata {
+  /**
+   * The version of the current release.
+   */
+  version: Version;
+
+  /**
+   *  An ISO-8601 formatted date, representing the
+   *   release date.
+   */
+  date?: string;
+
+  /**
+   * The status of the release (e.g. 'WITHDRAWN', 'DEPRECATED')
+   */
+  status?: string;
+}
+
+/**
+ * Release changes, organized by category.
+ */
+type ReleaseChanges = Record<changeCategories, string[]>;
+
+/**
+ * Changelog changes, organized by release and by category.
+ */
+type ChangelogChanges = Record<Version, ReleaseChanges> & {
+  [unreleased]: ReleaseChanges;
+};
+
 // Stringification helpers
 
-function stringifyCategory(category, changes) {
+function stringifyCategory(category: changeCategories, changes: string[]) {
   const categoryHeader = `### ${category}`;
   if (changes.length === 0) {
     return categoryHeader;
@@ -21,7 +56,11 @@ function stringifyCategory(category, changes) {
   return `${categoryHeader}\n${changeDescriptions}`;
 }
 
-function stringifyRelease(version, categories, { date, status } = {}) {
+function stringifyRelease(
+  version: string,
+  categories: ReleaseChanges,
+  { date, status }: Partial<ReleaseMetadata> = {},
+) {
   const releaseHeader = `## [${version}]${date ? ` - ${date}` : ''}${
     status ? ` [${status}]` : ''
   }`;
@@ -38,7 +77,10 @@ function stringifyRelease(version, categories, { date, status } = {}) {
   return `${releaseHeader}\n${categorizedChanges}`;
 }
 
-function stringifyReleases(releases, changes) {
+function stringifyReleases(
+  releases: ReleaseMetadata[],
+  changes: ChangelogChanges,
+) {
   const stringifiedUnreleased = stringifyRelease(
     unreleased,
     changes[unreleased],
@@ -51,22 +93,25 @@ function stringifyReleases(releases, changes) {
   return [stringifiedUnreleased, ...stringifiedReleases].join('\n\n');
 }
 
-function withTrailingSlash(url) {
+function withTrailingSlash(url: string) {
   return url.endsWith('/') ? url : `${url}/`;
 }
 
-function getCompareUrl(repoUrl, firstRef, secondRef) {
+function getCompareUrl(repoUrl: string, firstRef: string, secondRef: string) {
   return `${withTrailingSlash(repoUrl)}compare/${firstRef}...${secondRef}`;
 }
 
-function getTagUrl(repoUrl, tag) {
+function getTagUrl(repoUrl: string, tag: string) {
   return `${withTrailingSlash(repoUrl)}releases/tag/${tag}`;
 }
 
-function stringifyLinkReferenceDefinitions(repoUrl, releases) {
+function stringifyLinkReferenceDefinitions(
+  repoUrl: string,
+  releases: ReleaseMetadata[],
+) {
   const releasesOrderedByVersion = releases
     .map(({ version }) => version)
-    .sort((a, b) => {
+    .sort((a: string | semver.SemVer, b: string | semver.SemVer) => {
       return semver.gt(a, b) ? -1 : 1;
     });
   const orderedReleases = releases.map(({ version }) => version);
@@ -100,7 +145,7 @@ function stringifyLinkReferenceDefinitions(repoUrl, releases) {
       const versionIndex = orderedReleases.indexOf(version);
       const previousVersion = orderedReleases
         .slice(versionIndex)
-        .find((releaseVersion) => {
+        .find((releaseVersion: string | semver.SemVer) => {
           return semver.gt(version, releaseVersion);
         });
       return `[${version}]: ${getCompareUrl(
@@ -115,36 +160,19 @@ function stringifyLinkReferenceDefinitions(repoUrl, releases) {
   }`;
 }
 
-/**
- * @typedef {import('./constants.js').Unreleased} Unreleased
- * @typedef {import('./constants.js').ChangeCategories ChangeCategories}
- */
-/**
- * @typedef {import('./constants.js').Version} Version
- */
-/**
- * Release metadata.
- * @typedef {Object} ReleaseMetadata
- * @property {string} date - An ISO-8601 formatted date, representing the
- *   release date.
- * @property {string} status -The status of the release (e.g. 'WITHDRAWN', 'DEPRECATED')
- * @property {Version} version - The version of the current release.
- */
+interface AddReleaseOptions {
+  addToStart?: boolean;
+  date?: string;
+  status?: string;
+  version: Version;
+}
 
-/**
- * Category changes. A list of changes in a single category.
- * @typedef {Array<string>} CategoryChanges
- */
-
-/**
- * Release changes, organized by category
- * @typedef {Record<keyof ChangeCategories, CategoryChanges>} ReleaseChanges
- */
-
-/**
- * Changelog changes, organized by release and by category.
- * @typedef {Record<Version|Unreleased, ReleaseChanges>} ChangelogChanges
- */
+interface AddChangeOptions {
+  addToStart?: boolean;
+  category: changeCategories;
+  description: string;
+  version?: Version;
+}
 
 /**
  * A changelog that complies with the ["keep a changelog" v1.1.0 guidelines]{@link https://keepachangelog.com/en/1.0.0/}.
@@ -154,16 +182,22 @@ function stringifyLinkReferenceDefinitions(repoUrl, releases) {
  * This can be used to help validate the contents of a changelog, normalize
  * formatting, update a changelog, or build one from scratch.
  */
-class Changelog {
+export default class Changelog {
+  private _releases: ReleaseMetadata[];
+
+  private _changes: ChangelogChanges;
+
+  private _repoUrl: string;
+
   /**
    * Construct an empty changelog
    *
    * @param {Object} options
    * @param {string} options.repoUrl - The GitHub repository URL for the current project
    */
-  constructor({ repoUrl }) {
+  constructor({ repoUrl }: { repoUrl: string }) {
     this._releases = [];
-    this._changes = { [unreleased]: {} };
+    this._changes = { [unreleased]: {} as ReleaseChanges };
     this._repoUrl = repoUrl;
   }
 
@@ -183,7 +217,7 @@ class Changelog {
    *   which should be a [semver]{@link https://semver.org/spec/v2.0.0.html}-
    *   compatible version.
    */
-  addRelease({ addToStart = true, date, status, version }) {
+  addRelease({ addToStart = true, date, status, version }: AddReleaseOptions) {
     if (!version) {
       throw new Error('Version required');
     } else if (semver.valid(version) === null) {
@@ -192,7 +226,7 @@ class Changelog {
       throw new Error(`Release already exists: '${version}'`);
     }
 
-    this._changes[version] = {};
+    this._changes[version] = {} as ReleaseChanges;
     const newRelease = { version, date, status };
     if (addToStart) {
       this._releases.unshift(newRelease);
@@ -215,7 +249,12 @@ class Changelog {
    * @param {Version} [options.version] - The version this change was released
    *  in. If this is not given, the change is assumed to be unreleased.
    */
-  addChange({ addToStart = true, category, description, version }) {
+  addChange({
+    addToStart = true,
+    category,
+    description,
+    version,
+  }: AddChangeOptions) {
     if (!category) {
       throw new Error('Category required');
     } else if (!orderedChangeCategories.includes(category)) {
@@ -249,7 +288,7 @@ class Changelog {
    * @param {Version} version - The release version to migrate unreleased
    *   changes to.
    */
-  migrateUnreleasedChangesToRelease(version) {
+  migrateUnreleasedChangesToRelease(version: string) {
     const releaseChanges = this._changes[version];
     if (!releaseChanges) {
       throw new Error(`Specified release version does not exist: '${version}'`);
@@ -257,7 +296,9 @@ class Changelog {
 
     const unreleasedChanges = this._changes[unreleased];
 
-    for (const category of Object.keys(unreleasedChanges)) {
+    for (const category of Object.keys(
+      unreleasedChanges,
+    ) as changeCategories[]) {
       if (releaseChanges[category]) {
         releaseChanges[category] = [
           ...unreleasedChanges[category],
@@ -267,7 +308,7 @@ class Changelog {
         releaseChanges[category] = unreleasedChanges[category];
       }
     }
-    this._changes[unreleased] = {};
+    this._changes[unreleased] = {} as ReleaseChanges;
   }
 
   /**
@@ -283,7 +324,7 @@ class Changelog {
    * @param {Version} version - The version of the release being retrieved.
    * @returns {ReleaseChanges} The changes included in the given released.
    */
-  getReleaseChanges(version) {
+  getReleaseChanges(version: string) {
     return this._changes[version];
   }
 
@@ -308,5 +349,3 @@ ${stringifyReleases(this._releases, this._changes)}
 ${stringifyLinkReferenceDefinitions(this._repoUrl, this._releases)}`;
   }
 }
-
-module.exports = Changelog;

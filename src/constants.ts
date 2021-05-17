@@ -1,8 +1,8 @@
 /**
- * Version string
- * @typedef {string} Version - A [SemVer]{@link https://semver.org/spec/v2.0.0.html}-
- *   compatible version string.
+ * A [SemVer]{@link https://semver.org/spec/v2.0.0.html}-
+ * compatible version string.
  */
+export type Version = string;
 
 /**
  * Change categories.
@@ -11,7 +11,6 @@
  * The "Uncategorized" category was added because we have many changes from
  * older releases that would be difficult to categorize.
  *
- * @typedef {Record<string, string>} ChangeCategories
  * @property {'Added'} Added - for new features.
  * @property {'Changed'} Changed - for changes in existing functionality.
  * @property {'Deprecated'} Deprecated - for soon-to-be removed features.
@@ -21,19 +20,15 @@
  * @property {'Uncategorized'} Uncategorized - for any changes that have not
  *   yet been categorized.
  */
-
-/**
- * @type {ChangeCategories}
- */
-const changeCategories = {
-  Added: 'Added',
-  Changed: 'Changed',
-  Deprecated: 'Deprecated',
-  Fixed: 'Fixed',
-  Removed: 'Removed',
-  Security: 'Security',
-  Uncategorized: 'Uncategorized',
-};
+export enum changeCategories {
+  Added = 'Added',
+  Changed = 'Changed',
+  Deprecated = 'Deprecated',
+  Fixed = 'Fixed',
+  Removed = 'Removed',
+  Security = 'Security',
+  Uncategorized = 'Uncategorized',
+}
 
 /**
  * Change categories in the order in which they should be listed in the
@@ -41,14 +36,14 @@ const changeCategories = {
  *
  * @type {Array<keyof ChangeCategories>}
  */
-const orderedChangeCategories = [
-  'Uncategorized',
-  'Added',
-  'Changed',
-  'Deprecated',
-  'Removed',
-  'Fixed',
-  'Security',
+export const orderedChangeCategories: changeCategories[] = [
+  changeCategories.Uncategorized,
+  changeCategories.Added,
+  changeCategories.Changed,
+  changeCategories.Deprecated,
+  changeCategories.Removed,
+  changeCategories.Fixed,
+  changeCategories.Security,
 ];
 
 /**
@@ -59,10 +54,4 @@ const orderedChangeCategories = [
 /**
  * @type {Unreleased}
  */
-const unreleased = 'Unreleased';
-
-module.exports = {
-  changeCategories,
-  orderedChangeCategories,
-  unreleased,
-};
+export const unreleased = 'Unreleased';

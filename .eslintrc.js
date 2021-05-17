@@ -5,10 +5,19 @@ module.exports = {
 
   overrides: [
     {
-      files: ['*.test.js'],
+      files: ['*.ts'],
+      extends: ['@metamask/eslint-config-typescript'],
+      rules: {
+        'no-shadow': 'off',
+        '@typescript-eslint/no-shadow': 'error',
+        'node/prefer-global/url': 'off',
+      },
+    },
+    {
+      files: ['*.test.js', '*.test.ts'],
       extends: ['@metamask/eslint-config-jest'],
     },
   ],
 
-  ignorePatterns: ['!.eslintrc.js'],
+  ignorePatterns: ['!.eslintrc.js', 'dist'],
 };
