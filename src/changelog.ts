@@ -34,7 +34,7 @@ interface ReleaseMetadata {
 /**
  * Release changes, organized by category.
  */
-type ReleaseChanges = Record<ChangeCategory, string[]>;
+type ReleaseChanges = Partial<Record<ChangeCategory, string[]>>;
 
 /**
  * Changelog changes, organized by release and by category.
@@ -67,7 +67,7 @@ function stringifyRelease(
   const categorizedChanges = orderedChangeCategories
     .filter((category) => categories[category])
     .map((category) => {
-      const changes = categories[category];
+      const changes = categories[category] as string[];
       return stringifyCategory(category, changes);
     })
     .join('\n\n');
@@ -198,7 +198,7 @@ export default class Changelog {
    */
   constructor({ repoUrl }: { repoUrl: string }) {
     this._releases = [];
-    this._changes = { [unreleased]: {} as ReleaseChanges };
+    this._changes = { [unreleased]: {} };
     this._repoUrl = repoUrl;
   }
 
@@ -226,7 +226,7 @@ export default class Changelog {
       throw new Error(`Release already exists: '${version}'`);
     }
 
-    this._changes[version] = {} as ReleaseChanges;
+    this._changes[version] = {};
     const newRelease = { version, date, status };
     if (addToStart) {
       this._releases.unshift(newRelease);
@@ -272,9 +272,11 @@ export default class Changelog {
       release[category] = [];
     }
     if (addToStart) {
-      release[category].unshift(description);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      release[category]!.unshift(description);
     } else {
-      release[category].push(description);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      release[category]!.push(description);
     }
   }
 
@@ -296,16 +298,16 @@ export default class Changelog {
     const unreleasedChanges = this._changes[unreleased];
 
     for (const category of Object.keys(unreleasedChanges) as ChangeCategory[]) {
-      if (releaseChanges[category]) {
+      if (category in releaseChanges) {
         releaseChanges[category] = [
-          ...unreleasedChanges[category],
-          ...releaseChanges[category],
+          ...(unreleasedChanges[category] as string[]),
+          ...(releaseChanges[category] as string[]),
         ];
       } else {
         releaseChanges[category] = unreleasedChanges[category];
       }
     }
-    this._changes[unreleased] = {} as ReleaseChanges;
+    this._changes[unreleased] = {};
   }
 
   /**
