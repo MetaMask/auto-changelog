@@ -190,13 +190,15 @@ export async function updateChangelog({
       .getReleases()
       .find((release) => release.version === currentVersion)
   ) {
-    // TODO: Get rid of typecast?
-    changelog.addRelease({ version: currentVersion as string });
+    // Typecast: currentVersion will be defined here due to type guard at the
+    // top of this function.
+    changelog.addRelease({ version: currentVersion as Version });
   }
 
   if (isReleaseCandidate && hasUnreleasedChanges) {
-    // TODO: Get rid of typecast?
-    changelog.migrateUnreleasedChangesToRelease(currentVersion as string);
+    // Typecast: currentVersion will be defined here due to type guard at the
+    // top of this function.
+    changelog.migrateUnreleasedChangesToRelease(currentVersion as Version);
   }
 
   const newChangeEntries = newCommits.map(({ prNumber, description }) => {
