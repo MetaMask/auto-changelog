@@ -1,16 +1,12 @@
 import Changelog from './changelog';
-import {
-  ChangeCategory,
-  orderedChangeCategories,
-  unreleased,
-} from './constants';
+import { ChangeCategory, unreleased } from './constants';
 
 function truncated(line: string) {
   return line.length > 80 ? `${line.slice(0, 80)}...` : line;
 }
 
 function isValidChangeCategory(category: string): category is ChangeCategory {
-  return orderedChangeCategories.includes(category as ChangeCategory);
+  return ChangeCategory[category as ChangeCategory] !== undefined;
 }
 
 /**
