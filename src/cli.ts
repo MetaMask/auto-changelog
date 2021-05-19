@@ -203,10 +203,7 @@ async function main() {
     root: projectRootDirectory,
   } = argv;
 
-  if (
-    isReleaseCandidate &&
-    (!currentVersion || typeof currentVersion !== 'string')
-  ) {
+  if (isReleaseCandidate && !currentVersion) {
     exitWithError(
       `Version not found. Please set the --currentVersion flag, or run this as an npm script from a project with the 'version' field set.`,
     );
