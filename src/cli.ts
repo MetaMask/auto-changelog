@@ -1,19 +1,23 @@
 #!/usr/bin/env node
 
-const { promises: fs, constants: fsConstants } = require('fs');
-const path = require('path');
-const semver = require('semver');
-const yargs = require('yargs/yargs');
-const { hideBin } = require('yargs/helpers');
+import { promises as fs, constants as fsConstants } from 'fs';
+import path from 'path';
+import { URL } from 'url';
+import semver from 'semver';
+import yargs from 'yargs/yargs';
+import type { Argv } from 'yargs';
+import { hideBin } from 'yargs/helpers';
 
-const { updateChangelog } = require('./updateChangelog');
-const { generateDiff } = require('./generateDiff');
-const {
+import { updateChangelog } from './updateChangelog';
+import { generateDiff } from './generateDiff';
+
+import { unreleased, Version } from './constants';
+
+import {
   ChangelogFormattingError,
   InvalidChangelogError,
   validateChangelog,
-} = require('./validateChangelog');
-const { unreleased } = require('./constants');
+} from './validateChangelog';
 
 const updateEpilog = `New commits will be added to the "${unreleased}" section (or \
 to the section for the current release if the '--rc' flag is used) in reverse \
@@ -32,7 +36,7 @@ const npmPackageVersion = process.env.npm_package_version;
 // eslint-disable-next-line node/no-process-env
 const npmPackageRepositoryUrl = process.env.npm_package_repository_url;
 
-function isValidUrl(proposedUrl) {
+function isValidUrl(proposedUrl: string) {
   try {
     // eslint-disable-next-line no-new
     new URL(proposedUrl);
@@ -42,19 +46,30 @@ function isValidUrl(proposedUrl) {
   }
 }
 
-function exitWithError(errorMessage) {
+function exitWithError(errorMessage: string) {
   console.error(errorMessage);
   process.exitCode = 1;
 }
 
-async function readChangelog(changelogPath) {
+async function readChangelog(changelogPath: string) {
   return await fs.readFile(changelogPath, {
     encoding: 'utf8',
   });
 }
 
-async function saveChangelog(changelogPath, newChangelogContent) {
+async function saveChangelog(
+  changelogPath: string,
+  newChangelogContent: string,
+) {
   await fs.writeFile(changelogPath, newChangelogContent);
+}
+
+interface UpdateOptions {
+  changelogPath: string;
+  currentVersion?: Version;
+  repoUrl: string;
+  isReleaseCandidate: boolean;
+  projectRootDirectory?: string;
 }
 
 async function update({
@@ -63,7 +78,7 @@ async function update({
   isReleaseCandidate,
   repoUrl,
   projectRootDirectory,
-}) {
+}: UpdateOptions) {
   const changelogContent = await readChangelog(changelogPath);
 
   const newChangelogContent = await updateChangelog({
@@ -74,8 +89,19 @@ async function update({
     projectRootDirectory,
   });
 
-  await saveChangelog(changelogPath, newChangelogContent);
-  console.log('CHANGELOG updated');
+  if (newChangelogContent) {
+    await saveChangelog(changelogPath, newChangelogContent);
+    console.log('CHANGELOG.md updated.');
+  } else {
+    console.log('There are no new commits to add to the changelog.');
+  }
+}
+
+interface ValidateOptions {
+  changelogPath: string;
+  currentVersion?: Version;
+  isReleaseCandidate: boolean;
+  repoUrl: string;
 }
 
 async function validate({
@@ -83,7 +109,7 @@ async function validate({
   currentVersion,
   isReleaseCandidate,
   repoUrl,
-}) {
+}: ValidateOptions) {
   const changelogContent = await readChangelog(changelogPath);
 
   try {
@@ -112,7 +138,7 @@ look for changes since the last release (defaults to the entire repository at \
 the current working directory), and where the changelog path is resolved from \
 (defaults to the current working directory).`;
 
-function configureCommonCommandOptions(_yargs) {
+function configureCommonCommandOptions(_yargs: Argv) {
   return _yargs
     .option('file', {
       default: 'CHANGELOG.md',

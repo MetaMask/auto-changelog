@@ -1,21 +1,25 @@
-const Changelog = require('./changelog');
-const { unreleased } = require('./constants');
+import Changelog from './changelog';
+import { ChangeCategory, unreleased } from './constants';
 
-function truncated(line) {
+function truncated(line: string) {
   return line.length > 80 ? `${line.slice(0, 80)}...` : line;
 }
 
 /**
  * Constructs a Changelog instance that represents the given changelog, which
  * is parsed for release and change information.
- * @param {Object} options
- * @param {string} options.changelogContent - The changelog to parse
- * @param {string} options.repoUrl - The GitHub repository URL for the current
- *   project.
- * @returns {Changelog} A changelog instance that reflects the changelog text
- *   provided.
+ * @param options
+ * @param options.changelogContent - The changelog to parse
+ * @param options.repoUrl - The GitHub repository URL for the current project.
+ * @returns A changelog instance that reflects the changelog text provided.
  */
-function parseChangelog({ changelogContent, repoUrl }) {
+export function parseChangelog({
+  changelogContent,
+  repoUrl,
+}: {
+  changelogContent: string;
+  repoUrl: string;
+}) {
   const changelogLines = changelogContent.split('\n');
   const changelog = new Changelog({ repoUrl });
 
@@ -35,23 +39,31 @@ function parseChangelog({ changelogContent, repoUrl }) {
     unreleasedLinkReferenceDefinition,
   );
 
-  let mostRecentRelease;
-  let mostRecentCategory;
-  let currentChangeEntry;
+  let mostRecentRelease: string;
+  let mostRecentCategory: ChangeCategory | undefined | null;
+  let currentChangeEntry: string | undefined;
 
   /**
    * Finalize a change entry, adding it to the changelog.
    *
    * This is required because change entries can span multiple lines.
    *
-   * @param {Object} [options]
-   * @param {boolean} [options.removeTrailingNewline] - Indicates that the
-   *   trailing newline is not a part of the change description, so should be
-   *   removed.
+   * @param options
+   * @param options.removeTrailingNewline - Indicates that the trailing newline
+   * is not a part of the change description, and should therefore be removed.
    */
-  function finalizePreviousChange({ removeTrailingNewline = false } = {}) {
+  function finalizePreviousChange({
+    removeTrailingNewline = false,
+  }: {
+    removeTrailingNewline?: boolean;
+  } = {}) {
     if (!currentChangeEntry) {
       return;
+    }
+    // TODO: This could possibly happen two successive, empty change categories/releases.
+    /* istanbul ignore next: This doesn't happen in practice. */
+    if (!mostRecentCategory) {
+      throw new Error('Cannot finalize change without most recent category.');
     }
     if (removeTrailingNewline && currentChangeEntry.endsWith('\n')) {
       currentChangeEntry = currentChangeEntry.slice(
@@ -78,7 +90,9 @@ function parseChangelog({ changelogContent, repoUrl }) {
       }
       // Trailing newline removed because the release section is expected to
       // be prefixed by a newline.
-      finalizePreviousChange({ removeTrailingNewline: true });
+      finalizePreviousChange({
+        removeTrailingNewline: true,
+      });
       mostRecentRelease = results[1];
       mostRecentCategory = undefined;
       const date = results[2];
@@ -95,10 +109,13 @@ function parseChangelog({ changelogContent, repoUrl }) {
         throw new Error(`Malformed category header: '${truncated(line)}'`);
       }
       const isFirstCategory = mostRecentCategory === null;
-      finalizePreviousChange({ removeTrailingNewline: !isFirstCategory });
-      mostRecentCategory = results[1];
+      finalizePreviousChange({
+        removeTrailingNewline: !isFirstCategory,
+      });
+      // TODO: Throw an error if results[1] is not a valid ChangeCategory.
+      mostRecentCategory = results[1] as ChangeCategory;
     } else if (line.startsWith('- ')) {
-      if (mostRecentCategory === undefined) {
+      if (!mostRecentCategory) {
         throw new Error(`Category missing for change: '${truncated(line)}'`);
       }
       const description = line.slice(2);
@@ -118,5 +135,3 @@ function parseChangelog({ changelogContent, repoUrl }) {
 
   return changelog;
 }
-
-module.exports = { parseChangelog };

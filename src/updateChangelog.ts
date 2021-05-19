@@ -1,9 +1,14 @@
-const assert = require('assert').strict;
-const runCommand = require('./runCommand');
-const { parseChangelog } = require('./parseChangelog');
-const { changeCategories } = require('./constants');
+import { strict as assert } from 'assert';
+import runCommand from './runCommand';
+import { parseChangelog } from './parseChangelog';
+import { ChangeCategory, Version } from './constants';
+import type Changelog from './changelog';
 
-async function getMostRecentTag({ projectRootDirectory }) {
+async function getMostRecentTag({
+  projectRootDirectory,
+}: {
+  projectRootDirectory?: string;
+}) {
   const revListArgs = ['rev-list', '--tags', '--max-count=1'];
   if (projectRootDirectory) {
     revListArgs.push(projectRootDirectory);
@@ -22,8 +27,8 @@ async function getMostRecentTag({ projectRootDirectory }) {
   return mostRecentTag;
 }
 
-async function getCommits(commitHashes) {
-  const commits = [];
+async function getCommits(commitHashes: string[]) {
+  const commits: { prNumber?: string; description: string }[] = [];
   for (const commitHash of commitHashes) {
     const [subject] = await runCommand('git', [
       'show',
@@ -32,27 +37,29 @@ async function getCommits(commitHashes) {
       commitHash,
     ]);
 
-    let prNumber;
+    let matchResults = subject.match(/\(#\d+\)/u);
+    let prNumber: string | undefined;
     let description = subject;
 
     // Squash & Merge: the commit subject is parsed as `<description> (#<PR ID>)`
-    if (subject.match(/\(#\d+\)/u)) {
-      const matchResults = subject.match(/\(#(\d+)\)/u);
+    if (matchResults) {
       prNumber = matchResults[1];
-      description = subject.match(/^(.+)\s\(#\d+\)/u)[1];
+      description = subject.match(/^(.+)\s\(#\d+\)/u)?.[1] || '';
       // Merge: the PR ID is parsed from the git subject (which is of the form `Merge pull request
       // #<PR ID> from <branch>`, and the description is assumed to be the first line of the body.
       // If no body is found, the description is set to the commit subject
-    } else if (subject.match(/#\d+\sfrom/u)) {
-      const matchResults = subject.match(/#(\d+)\sfrom/u);
-      prNumber = matchResults[1];
-      const [firstLineOfBody] = await runCommand('git', [
-        'show',
-        '-s',
-        '--format=%b',
-        commitHash,
-      ]);
-      description = firstLineOfBody || subject;
+    } else {
+      matchResults = subject.match(/#(\d+)\sfrom/u);
+      if (matchResults) {
+        prNumber = matchResults[1];
+        const [firstLineOfBody] = await runCommand('git', [
+          'show',
+          '-s',
+          '--format=%b',
+          commitHash,
+        ]);
+        description = firstLineOfBody || subject;
+      }
     }
     // Otherwise:
     // Normal commits: The commit subject is the description, and the PR ID is omitted.
@@ -62,7 +69,7 @@ async function getCommits(commitHashes) {
   return commits;
 }
 
-function getAllChangeDescriptions(changelog) {
+function getAllChangeDescriptions(changelog: Changelog) {
   const releases = changelog.getReleases();
   const changeDescriptions = Object.values(
     changelog.getUnreleasedChanges(),
@@ -75,12 +82,13 @@ function getAllChangeDescriptions(changelog) {
   return changeDescriptions;
 }
 
-function getAllLoggedPrNumbers(changelog) {
+function getAllLoggedPrNumbers(changelog: Changelog) {
   const changeDescriptions = getAllChangeDescriptions(changelog);
 
   const prNumbersWithChangelogEntries = [];
   for (const description of changeDescriptions) {
-    const matchResults = description.match(/^\[#(\d+)\]/u);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const matchResults = description!.match(/^\[#(\d+)\]/u);
     if (matchResults === null) {
       continue;
     }
@@ -91,7 +99,10 @@ function getAllLoggedPrNumbers(changelog) {
   return prNumbersWithChangelogEntries;
 }
 
-async function getCommitHashesInRange(commitRange, rootDirectory) {
+async function getCommitHashesInRange(
+  commitRange: string,
+  rootDirectory?: string,
+) {
   const revListArgs = ['rev-list', commitRange];
   if (rootDirectory) {
     revListArgs.push(rootDirectory);
@@ -99,36 +110,39 @@ async function getCommitHashesInRange(commitRange, rootDirectory) {
   return await runCommand('git', revListArgs);
 }
 
-/**
- * @typedef {import('./constants.js').Version} Version
- */
+export interface UpdateChangelogOptions {
+  changelogContent: string;
+  currentVersion?: Version;
+  repoUrl: string;
+  isReleaseCandidate: boolean;
+  projectRootDirectory?: string;
+}
 
 /**
  * Update a changelog with any commits made since the last release. Commits for
  * PRs that are already included in the changelog are omitted.
- * @param {Object} options
- * @param {string} options.changelogContent - The current changelog
- * @param {Version} [options.currentVersion] - The current version. Required if
- *   `isReleaseCandidate` is set, but optional otherwise.
- * @param {string} options.repoUrl - The GitHub repository URL for the current
- *   project.
- * @param {boolean} options.isReleaseCandidate - Denotes whether the current
- *   project is in the midst of release preparation or not. If this is set, any
- *   new changes are listed under the current release header. Otherwise, they
- *   are listed under the 'Unreleased' section.
- * @param {string} [options.projectRootDirectory] - The root project directory,
- *   used to filter results from various git commands. This path is assumed to
- *   be either absolute, or relative to the current directory. Defaults to the
- *   root of the current git repository.
- * @returns {string} The updated changelog text
+ * @param options
+ * @param options.changelogContent - The current changelog
+ * @param options.currentVersion - The current version. Required if
+ * `isReleaseCandidate` is set, but optional otherwise.
+ * @param options.repoUrl - The GitHub repository URL for the current project.
+ * @param options.isReleaseCandidate - Denotes whether the current project.
+ * is in the midst of release preparation or not. If this is set, any new
+ * changes are listed under the current release header. Otherwise, they are
+ * listed under the 'Unreleased' section.
+ * @param options.projectRootDirectory - The root project directory, used to
+ * filter results from various git commands. This path is assumed to be either
+ * absolute, or relative to the current directory. Defaults to the root of the
+ * current git repository.
+ * @returns The updated changelog text
  */
-async function updateChangelog({
+export async function updateChangelog({
   changelogContent,
   currentVersion,
   repoUrl,
   isReleaseCandidate,
   projectRootDirectory,
-}) {
+}: UpdateChangelogOptions) {
   if (isReleaseCandidate && !currentVersion) {
     throw new Error(
       `A version must be specified if 'isReleaseCandidate' is set.`,
@@ -156,10 +170,12 @@ async function updateChangelog({
 
   const loggedPrNumbers = getAllLoggedPrNumbers(changelog);
   const newCommits = commits.filter(
-    ({ prNumber }) => !loggedPrNumbers.includes(prNumber),
+    ({ prNumber }) =>
+      prNumber === undefined || !loggedPrNumbers.includes(prNumber),
   );
 
-  const hasUnreleasedChanges = changelog.getUnreleasedChanges().length !== 0;
+  const hasUnreleasedChanges =
+    Object.keys(changelog.getUnreleasedChanges()).length !== 0;
   if (
     newCommits.length === 0 &&
     (!isReleaseCandidate || hasUnreleasedChanges)
@@ -174,11 +190,15 @@ async function updateChangelog({
       .getReleases()
       .find((release) => release.version === currentVersion)
   ) {
-    changelog.addRelease({ version: currentVersion });
+    // Typecast: currentVersion will be defined here due to type guard at the
+    // top of this function.
+    changelog.addRelease({ version: currentVersion as Version });
   }
 
   if (isReleaseCandidate && hasUnreleasedChanges) {
-    changelog.migrateUnreleasedChangesToRelease(currentVersion);
+    // Typecast: currentVersion will be defined here due to type guard at the
+    // top of this function.
+    changelog.migrateUnreleasedChangesToRelease(currentVersion as Version);
   }
 
   const newChangeEntries = newCommits.map(({ prNumber, description }) => {
@@ -192,12 +212,10 @@ async function updateChangelog({
   for (const description of newChangeEntries.reverse()) {
     changelog.addChange({
       version: isReleaseCandidate ? currentVersion : undefined,
-      category: changeCategories.Uncategorized,
+      category: ChangeCategory.Uncategorized,
       description,
     });
   }
 
   return changelog.toString();
 }
-
-module.exports = { updateChangelog };

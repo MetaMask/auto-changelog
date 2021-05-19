@@ -1,7 +1,7 @@
-const _outdent = require('outdent');
+import _outdent from 'outdent';
+import { generateDiff } from './generateDiff';
 
 const outdent = _outdent({ trimTrailingNewline: false });
-const { generateDiff } = require('./generateDiff');
 
 const testCases = [
   {

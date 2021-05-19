@@ -1,6 +1,11 @@
-const semver = require('semver');
+import semver from 'semver';
 
-const { orderedChangeCategories, unreleased } = require('./constants');
+import {
+  ChangeCategory,
+  orderedChangeCategories,
+  unreleased,
+  Version,
+} from './constants';
 
 const changelogTitle = '# Changelog';
 const changelogDescription = `All notable changes to this project will be documented in this file.
@@ -8,9 +13,39 @@ const changelogDescription = `All notable changes to this project will be docume
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).`;
 
+interface ReleaseMetadata {
+  /**
+   * The version of the current release.
+   */
+  version: Version;
+
+  /**
+   * An ISO-8601 formatted date, representing the
+   * release date.
+   */
+  date?: string;
+
+  /**
+   * The status of the release (e.g. 'WITHDRAWN', 'DEPRECATED')
+   */
+  status?: string;
+}
+
+/**
+ * Release changes, organized by category.
+ */
+type ReleaseChanges = Partial<Record<ChangeCategory, string[]>>;
+
+/**
+ * Changelog changes, organized by release and by category.
+ */
+type ChangelogChanges = Record<Version, ReleaseChanges> & {
+  [unreleased]: ReleaseChanges;
+};
+
 // Stringification helpers
 
-function stringifyCategory(category, changes) {
+function stringifyCategory(category: ChangeCategory, changes: string[]) {
   const categoryHeader = `### ${category}`;
   if (changes.length === 0) {
     return categoryHeader;
@@ -21,14 +56,18 @@ function stringifyCategory(category, changes) {
   return `${categoryHeader}\n${changeDescriptions}`;
 }
 
-function stringifyRelease(version, categories, { date, status } = {}) {
+function stringifyRelease(
+  version: Version | typeof unreleased,
+  categories: ReleaseChanges,
+  { date, status }: Partial<ReleaseMetadata> = {},
+) {
   const releaseHeader = `## [${version}]${date ? ` - ${date}` : ''}${
     status ? ` [${status}]` : ''
   }`;
   const categorizedChanges = orderedChangeCategories
     .filter((category) => categories[category])
     .map((category) => {
-      const changes = categories[category];
+      const changes = categories[category] as string[];
       return stringifyCategory(category, changes);
     })
     .join('\n\n');
@@ -38,7 +77,10 @@ function stringifyRelease(version, categories, { date, status } = {}) {
   return `${releaseHeader}\n${categorizedChanges}`;
 }
 
-function stringifyReleases(releases, changes) {
+function stringifyReleases(
+  releases: ReleaseMetadata[],
+  changes: ChangelogChanges,
+) {
   const stringifiedUnreleased = stringifyRelease(
     unreleased,
     changes[unreleased],
@@ -51,22 +93,25 @@ function stringifyReleases(releases, changes) {
   return [stringifiedUnreleased, ...stringifiedReleases].join('\n\n');
 }
 
-function withTrailingSlash(url) {
+function withTrailingSlash(url: string) {
   return url.endsWith('/') ? url : `${url}/`;
 }
 
-function getCompareUrl(repoUrl, firstRef, secondRef) {
+function getCompareUrl(repoUrl: string, firstRef: string, secondRef: string) {
   return `${withTrailingSlash(repoUrl)}compare/${firstRef}...${secondRef}`;
 }
 
-function getTagUrl(repoUrl, tag) {
+function getTagUrl(repoUrl: string, tag: string) {
   return `${withTrailingSlash(repoUrl)}releases/tag/${tag}`;
 }
 
-function stringifyLinkReferenceDefinitions(repoUrl, releases) {
+function stringifyLinkReferenceDefinitions(
+  repoUrl: string,
+  releases: ReleaseMetadata[],
+) {
   const releasesOrderedByVersion = releases
     .map(({ version }) => version)
-    .sort((a, b) => {
+    .sort((a: Version, b: Version) => {
       return semver.gt(a, b) ? -1 : 1;
     });
   const orderedReleases = releases.map(({ version }) => version);
@@ -100,7 +145,7 @@ function stringifyLinkReferenceDefinitions(repoUrl, releases) {
       const versionIndex = orderedReleases.indexOf(version);
       const previousVersion = orderedReleases
         .slice(versionIndex)
-        .find((releaseVersion) => {
+        .find((releaseVersion: Version) => {
           return semver.gt(version, releaseVersion);
         });
       return `[${version}]: ${getCompareUrl(
@@ -115,53 +160,43 @@ function stringifyLinkReferenceDefinitions(repoUrl, releases) {
   }`;
 }
 
-/**
- * @typedef {import('./constants.js').Unreleased} Unreleased
- * @typedef {import('./constants.js').ChangeCategories ChangeCategories}
- */
-/**
- * @typedef {import('./constants.js').Version} Version
- */
-/**
- * Release metadata.
- * @typedef {Object} ReleaseMetadata
- * @property {string} date - An ISO-8601 formatted date, representing the
- *   release date.
- * @property {string} status -The status of the release (e.g. 'WITHDRAWN', 'DEPRECATED')
- * @property {Version} version - The version of the current release.
- */
+interface AddReleaseOptions {
+  addToStart?: boolean;
+  date?: string;
+  status?: string;
+  version: Version;
+}
+
+interface AddChangeOptions {
+  addToStart?: boolean;
+  category: ChangeCategory;
+  description: string;
+  version?: Version;
+}
 
 /**
- * Category changes. A list of changes in a single category.
- * @typedef {Array<string>} CategoryChanges
- */
-
-/**
- * Release changes, organized by category
- * @typedef {Record<keyof ChangeCategories, CategoryChanges>} ReleaseChanges
- */
-
-/**
- * Changelog changes, organized by release and by category.
- * @typedef {Record<Version|Unreleased, ReleaseChanges>} ChangelogChanges
- */
-
-/**
- * A changelog that complies with the ["keep a changelog" v1.1.0 guidelines]{@link https://keepachangelog.com/en/1.0.0/}.
+ * A changelog that complies with the
+ * ["Keep a Changelog" v1.1.0 guidelines](https://keepachangelog.com/en/1.0.0/).
  *
  * This changelog starts out completely empty, and allows new releases and
  * changes to be added such that the changelog remains compliant at all times.
  * This can be used to help validate the contents of a changelog, normalize
  * formatting, update a changelog, or build one from scratch.
  */
-class Changelog {
+export default class Changelog {
+  private _releases: ReleaseMetadata[];
+
+  private _changes: ChangelogChanges;
+
+  private _repoUrl: string;
+
   /**
    * Construct an empty changelog
    *
-   * @param {Object} options
-   * @param {string} options.repoUrl - The GitHub repository URL for the current project
+   * @param options
+   * @param options.repoUrl - The GitHub repository URL for the current project
    */
-  constructor({ repoUrl }) {
+  constructor({ repoUrl }: { repoUrl: string }) {
     this._releases = [];
     this._changes = { [unreleased]: {} };
     this._repoUrl = repoUrl;
@@ -170,20 +205,19 @@ class Changelog {
   /**
    * Add a release to the changelog
    *
-   * @param {Object} options
-   * @param {boolean} [options.addToStart] - Determines whether the release is
-   *   added to the top or bottom of the changelog. This defaults to 'true'
-   *   because new releases should be added to the top of the changelog. This
-   *   should be set to 'false' when parsing a changelog top-to-bottom.
-   * @param {string} [options.date] - An ISO-8601 formatted date, representing the
-   *   release date.
-   * @param {string} [options.status] - The status of the release (e.g.
-   *   'WITHDRAWN', 'DEPRECATED')
-   * @param {Version} options.version - The version of the current release,
-   *   which should be a [semver]{@link https://semver.org/spec/v2.0.0.html}-
-   *   compatible version.
+   * @param options
+   * @param options.addToStart - Determines whether the change is added to the
+   * top or bottom of the list of changes in this category. This defaults to
+   * `true` because changes should be in reverse-chronological order. This
+   * should be set to `false` when parsing a changelog top-to-bottom.
+   * @param options.date - An ISO-8601 formatted date, representing the release
+   * date.
+   * @param options.status - The status of the release (e.g. 'WITHDRAWN',
+   * 'DEPRECATED')
+   * @param options.version - The version of the current release, which should
+   * be a [SemVer](https://semver.org/spec/v2.0.0.html)-compatible version.
    */
-  addRelease({ addToStart = true, date, status, version }) {
+  addRelease({ addToStart = true, date, status, version }: AddReleaseOptions) {
     if (!version) {
       throw new Error('Version required');
     } else if (semver.valid(version) === null) {
@@ -204,18 +238,22 @@ class Changelog {
   /**
    * Add a change to the changelog
    *
-   * @param {Object} options
-   * @param {boolean} [options.addToStart] - Determines whether the change is
-   *   added to the top or bottom of the list of changes in this category. This
-   *   defaults to 'true' because changes should be in reverse-chronological
-   *   order. This should be set to 'false' when parsing a changelog top-to-
-   *   bottom.
-   * @param {string} options.category - The category of the change.
-   * @param {string} options.description - The description of the change.
-   * @param {Version} [options.version] - The version this change was released
-   *  in. If this is not given, the change is assumed to be unreleased.
+   * @param options
+   * @param options.addToStart - Determines whether the change is added to the
+   * top or bottom of the list of changes in this category. This defaults to
+   * `true` because changes should be in reverse-chronological order. This
+   * should be set to `false` when parsing a changelog top-to-bottom.
+   * @param options.category - The category of the change.
+   * @param options.description - The description of the change.
+   * @param options.version - The version this change was released in. If this
+   * is not given, the change is assumed to be unreleased.
    */
-  addChange({ addToStart = true, category, description, version }) {
+  addChange({
+    addToStart = true,
+    category,
+    description,
+    version,
+  }: AddChangeOptions) {
     if (!category) {
       throw new Error('Category required');
     } else if (!orderedChangeCategories.includes(category)) {
@@ -234,9 +272,11 @@ class Changelog {
       release[category] = [];
     }
     if (addToStart) {
-      release[category].unshift(description);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      release[category]!.unshift(description);
     } else {
-      release[category].push(description);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      release[category]!.push(description);
     }
   }
 
@@ -246,10 +286,10 @@ class Changelog {
    * Changes are migrated in their existing categories, and placed above any
    * pre-existing changes in that category.
    *
-   * @param {Version} version - The release version to migrate unreleased
-   *   changes to.
+   * @param version - The release version to migrate unreleased
+   * changes to.
    */
-  migrateUnreleasedChangesToRelease(version) {
+  migrateUnreleasedChangesToRelease(version: Version) {
     const releaseChanges = this._changes[version];
     if (!releaseChanges) {
       throw new Error(`Specified release version does not exist: '${version}'`);
@@ -257,11 +297,11 @@ class Changelog {
 
     const unreleasedChanges = this._changes[unreleased];
 
-    for (const category of Object.keys(unreleasedChanges)) {
+    for (const category of Object.keys(unreleasedChanges) as ChangeCategory[]) {
       if (releaseChanges[category]) {
         releaseChanges[category] = [
-          ...unreleasedChanges[category],
-          ...releaseChanges[category],
+          ...(unreleasedChanges[category] as string[]),
+          ...(releaseChanges[category] as string[]),
         ];
       } else {
         releaseChanges[category] = unreleasedChanges[category];
@@ -272,7 +312,7 @@ class Changelog {
 
   /**
    * Gets the metadata for all releases.
-   * @returns {Array<ReleaseMetadata>} The metadata for each release.
+   * @returns The metadata for each release.
    */
   getReleases() {
     return this._releases;
@@ -280,16 +320,16 @@ class Changelog {
 
   /**
    * Gets the changes in the given release, organized by category.
-   * @param {Version} version - The version of the release being retrieved.
-   * @returns {ReleaseChanges} The changes included in the given released.
+   * @param version - The version of the release being retrieved.
+   * @returns The changes included in the given released.
    */
-  getReleaseChanges(version) {
+  getReleaseChanges(version: Version) {
     return this._changes[version];
   }
 
   /**
    * Gets all changes that have not yet been released
-   * @returns {ReleaseChanges} The changes that have not yet been released.
+   * @returns The changes that have not yet been released.
    */
   getUnreleasedChanges() {
     return this._changes[unreleased];
@@ -297,7 +337,7 @@ class Changelog {
 
   /**
    * The stringified changelog, formatted according to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
-   * @returns {string} The stringified changelog.
+   * @returns The stringified changelog.
    */
   toString() {
     return `${changelogTitle}
@@ -308,5 +348,3 @@ ${stringifyReleases(this._releases, this._changes)}
 ${stringifyLinkReferenceDefinitions(this._repoUrl, this._releases)}`;
   }
 }
-
-module.exports = Changelog;

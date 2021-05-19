@@ -1,12 +1,14 @@
-const diff = require('diff');
+import * as diff from 'diff';
+
+type Change = diff.Change & { noNewline?: boolean };
 
 /**
  * Splits string into lines, excluding the newline at the end of each
  * line. The trailing newline is optional.
- * @param {string} value - The string value to split into lines
- * @returns {Array<string>} The lines, without trailing newlines
+ * @param value - The string value to split into lines
+ * @returns The lines, without trailing newlines
  */
-function getTrimmedLines(value) {
+function getTrimmedLines(value: string): string[] {
   const trimmedValue = value.endsWith('\n')
     ? value.substring(0, value.length - 1)
     : value;
@@ -18,12 +20,12 @@ function getTrimmedLines(value) {
  * shows any changes using '-' and '+' to indicate the "old" and "new" version
  * respectively, and includes 2 lines of unchanged content around each changed
  * section where possible.
- * @param {string} before - The string representing the base for the comparison.
- * @param {string} after - The string representing the changes being compared.
- * @returns {string} The genereated text diff
+ * @param before - The string representing the base for the comparison.
+ * @param after - The string representing the changes being compared.
+ * @returns The genereated text diff
  */
-function generateDiff(before, after) {
-  const diffResult = diff.diffLines(before, after);
+export function generateDiff(before: string, after: string): string {
+  const diffResult: Change[] = diff.diffLines(before, after);
   const penultimateDiffResult = diffResult[diffResult.length - 2] || {};
   // `diffLines` will always return at least one change object
   const lastDiffResult = diffResult[diffResult.length - 1];
@@ -87,5 +89,3 @@ function generateDiff(before, after) {
   );
   return diffLines.join('\n');
 }
-
-module.exports = { generateDiff };

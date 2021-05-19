@@ -1,4 +1,4 @@
-const { validateChangelog } = require('./validateChangelog');
+import { validateChangelog } from './validateChangelog';
 
 const emptyChangelog = `# Changelog
 All notable changes to this project will be documented in this file.
