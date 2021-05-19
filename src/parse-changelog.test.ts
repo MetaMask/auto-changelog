@@ -1,5 +1,5 @@
 import _outdent from 'outdent';
-import { parseChangelog } from './parseChangelog';
+import { parseChangelog } from './parse-changelog';
 
 const outdent = _outdent({ trimTrailingNewline: false });
 

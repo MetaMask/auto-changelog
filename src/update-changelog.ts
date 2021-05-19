@@ -1,6 +1,6 @@
 import { strict as assert } from 'assert';
-import runCommand from './runCommand';
-import { parseChangelog } from './parseChangelog';
+import runCommand from './run-command';
+import { parseChangelog } from './parse-changelog';
 import { ChangeCategory, Version } from './constants';
 import type Changelog from './changelog';
 

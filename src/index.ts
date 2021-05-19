@@ -1,5 +1,5 @@
-export { updateChangelog } from './updateChangelog';
+export { updateChangelog } from './update-changelog';
 export {
   ChangelogFormattingError,
   validateChangelog,
-} from './validateChangelog';
+} from './validate-changelog';

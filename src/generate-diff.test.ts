@@ -1,5 +1,5 @@
 import _outdent from 'outdent';
-import { generateDiff } from './generateDiff';
+import { generateDiff } from './generate-diff';
 
 const outdent = _outdent({ trimTrailingNewline: false });
 

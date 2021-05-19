@@ -8,8 +8,8 @@ import yargs from 'yargs/yargs';
 import type { Argv } from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
-import { updateChangelog } from './updateChangelog';
-import { generateDiff } from './generateDiff';
+import { updateChangelog } from './update-changelog';
+import { generateDiff } from './generate-diff';
 
 import { unreleased, Version } from './constants';
 
@@ -17,7 +17,7 @@ import {
   ChangelogFormattingError,
   InvalidChangelogError,
   validateChangelog,
-} from './validateChangelog';
+} from './validate-changelog';
 
 const updateEpilog = `New commits will be added to the "${unreleased}" section (or \
 to the section for the current release if the '--rc' flag is used) in reverse \
