@@ -60,6 +60,7 @@ export function parseChangelog({
     if (!currentChangeEntry) {
       return;
     }
+    // TODO: This could possibly happen two successive, empty change categories/releases.
     /* istanbul ignore next: This doesn't happen in practice. */
     if (!mostRecentCategory) {
       throw new Error('Cannot finalize change without most recent category.');
@@ -111,7 +112,7 @@ export function parseChangelog({
       finalizePreviousChange({
         removeTrailingNewline: !isFirstCategory,
       });
-      // TODO: Get rid of typecast?
+      // TODO: Throw an error if results[1] is not a valid ChangeCategory.
       mostRecentCategory = results[1] as ChangeCategory;
     } else if (line.startsWith('- ')) {
       if (!mostRecentCategory) {
