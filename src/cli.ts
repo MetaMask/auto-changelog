@@ -55,7 +55,10 @@ async function readChangelog(changelogPath: string) {
   });
 }
 
-async function saveChangelog(changelogPath: string, newChangelogContent = '') {
+async function saveChangelog(
+  changelogPath: string,
+  newChangelogContent: string,
+) {
   await fs.writeFile(changelogPath, newChangelogContent);
 }
 
@@ -76,7 +79,6 @@ async function update({
 }: UpdateOptions) {
   const changelogContent = await readChangelog(changelogPath);
 
-  // TODO: This can be undefined. Is that OK?
   const newChangelogContent = await updateChangelog({
     changelogContent,
     currentVersion,
@@ -85,8 +87,12 @@ async function update({
     projectRootDirectory,
   });
 
-  await saveChangelog(changelogPath, newChangelogContent);
-  console.log('CHANGELOG updated');
+  if (newChangelogContent) {
+    await saveChangelog(changelogPath, newChangelogContent);
+    console.log('CHANGELOG.md updated.');
+  } else {
+    console.log('There are no new commits to add to the changelog.');
+  }
 }
 
 interface ValidateOptions {
