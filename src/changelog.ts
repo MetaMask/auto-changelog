@@ -111,7 +111,7 @@ function stringifyLinkReferenceDefinitions(
 ) {
   const releasesOrderedByVersion = releases
     .map(({ version }) => version)
-    .sort((a: string | semver.SemVer, b: string | semver.SemVer) => {
+    .sort((a: Version, b: Version) => {
       return semver.gt(a, b) ? -1 : 1;
     });
   const orderedReleases = releases.map(({ version }) => version);
