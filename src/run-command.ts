@@ -70,7 +70,7 @@ export default async function runCommand(
       if (errorCode !== null && errorSignal !== null) {
         errorMessage = `Terminated by signal '${errorSignal}'; exited with code '${errorCode}'`;
       } else if (errorSignal !== null) {
-        errorMessage = `Terminaled by signal '${errorSignal}'`;
+        errorMessage = `Terminated by signal '${errorSignal}'`;
       } else if (errorCode === null) {
         errorMessage = 'Exited with no code or signal';
       } else {
