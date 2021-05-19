@@ -76,7 +76,7 @@ export default async function runCommand(
       } else {
         errorMessage = `Exited with code '${errorCode}'`;
       }
-      const improvedError: Error & { cause?: string } = new Error(errorMessage);
+      const improvedError: Error & { cause?: Error } = new Error(errorMessage);
       if (mostRecentError) {
         improvedError.cause = mostRecentError;
       }

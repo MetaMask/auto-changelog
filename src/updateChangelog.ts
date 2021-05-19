@@ -126,11 +126,10 @@ export interface UpdateChangelogOptions {
  * @param options.currentVersion - The current version. Required if
  * `isReleaseCandidate` is set, but optional otherwise.
  * @param options.repoUrl - The GitHub repository URL for the current project.
- * project.
  * @param options.isReleaseCandidate - Denotes whether the current project.
  * is in the midst of release preparation or not. If this is set, any new
  * changes are listed under the current release header. Otherwise, they are
- * are listed under the 'Unreleased' section.
+ * listed under the 'Unreleased' section.
  * @param options.projectRootDirectory - The root project directory, used to
  * filter results from various git commands. This path is assumed to be either
  * absolute, or relative to the current directory. Defaults to the root of the
@@ -171,7 +170,8 @@ export async function updateChangelog({
 
   const loggedPrNumbers = getAllLoggedPrNumbers(changelog);
   const newCommits = commits.filter(
-    ({ prNumber }) => !loggedPrNumbers.includes(prNumber as any),
+    ({ prNumber }) =>
+      prNumber === undefined || !loggedPrNumbers.includes(prNumber),
   );
 
   const hasUnreleasedChanges =

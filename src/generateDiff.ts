@@ -1,6 +1,6 @@
 import * as diff from 'diff';
 
-export type Change = diff.Change & { noNewline?: boolean };
+type Change = diff.Change & { noNewline?: boolean };
 
 /**
  * Splits string into lines, excluding the newline at the end of each
