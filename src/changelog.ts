@@ -57,7 +57,7 @@ function stringifyCategory(category: ChangeCategory, changes: string[]) {
 }
 
 function stringifyRelease(
-  version: string,
+  version: Version | typeof unreleased,
   categories: ReleaseChanges,
   { date, status }: Partial<ReleaseMetadata> = {},
 ) {
