@@ -75,6 +75,13 @@ interface ValidateChangelogOptions {
  * the midst of release preparation or not. If this is set, this command will
  * also ensure the current version is represented in the changelog with a
  * header, and that there are no unreleased changes present.
+ * @throws `InvalidChangelogError` - Will throw if the changelog is invalid
+ * @throws `MissingCurrentVersionError` - Will throw if `isReleaseCandidate` is
+ * `true` and the changelog is missing the release header for the current
+ * version.
+ * @throws `UnreleasedChangesError` - Will throw if `isReleaseCandidate` is
+ * `true` and the changelog contains unreleased changes.
+ * @throws `ChangelogFormattingError` - Will throw if there is a formatting error.
  */
 export function validateChangelog({
   changelogContent,
