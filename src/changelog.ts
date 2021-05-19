@@ -298,7 +298,7 @@ export default class Changelog {
     const unreleasedChanges = this._changes[unreleased];
 
     for (const category of Object.keys(unreleasedChanges) as ChangeCategory[]) {
-      if (category in releaseChanges) {
+      if (releaseChanges[category]) {
         releaseChanges[category] = [
           ...(unreleasedChanges[category] as string[]),
           ...(releaseChanges[category] as string[]),
