@@ -57,7 +57,7 @@ export class ChangelogFormattingError extends InvalidChangelogError {
 
 interface ValidateChangelogOptions {
   changelogContent: string;
-  currentVersion: Version;
+  currentVersion?: Version;
   repoUrl: string;
   isReleaseCandidate: boolean;
 }
@@ -67,7 +67,8 @@ interface ValidateChangelogOptions {
  *
  * @param options
  * @param options.changelogContent - The current changelog
- * @param options.currentVersion - The current version
+ * @param options.currentVersion - The current version. Required if
+ * `isReleaseCandidate` is set, but optional otherwise.
  * @param options.repoUrl - The GitHub repository URL for the current
  * project.
  * @param options.isReleaseCandidate - Denotes whether the current project is in
@@ -83,14 +84,21 @@ export function validateChangelog({
 }: ValidateChangelogOptions) {
   const changelog = parseChangelog({ changelogContent, repoUrl });
 
-  // Ensure release header exists, if necessary
-  if (
-    isReleaseCandidate &&
-    !changelog
-      .getReleases()
-      .find((release) => release.version === currentVersion)
-  ) {
-    throw new MissingCurrentVersionError(currentVersion);
+  if (isReleaseCandidate) {
+    if (!currentVersion) {
+      throw new Error(
+        `A version must be specified if 'isReleaseCandidate' is set.`,
+      );
+    }
+
+    // Ensure release header exists, if necessary
+    if (
+      !changelog
+        .getReleases()
+        .find((release) => release.version === currentVersion)
+    ) {
+      throw new MissingCurrentVersionError(currentVersion);
+    }
   }
 
   const hasUnreleasedChanges =

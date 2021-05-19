@@ -99,7 +99,7 @@ async function update({
 
 interface ValidateOptions {
   changelogPath: string;
-  currentVersion: Version;
+  currentVersion?: Version;
   isReleaseCandidate: boolean;
   repoUrl: string;
 }
@@ -274,8 +274,7 @@ async function main() {
   } else if (argv._ && argv._[0] === 'validate') {
     await validate({
       changelogPath,
-      // TODO: Is it OK to assign an empty string here?
-      currentVersion: currentVersion || '',
+      currentVersion,
       isReleaseCandidate,
       repoUrl,
     });
