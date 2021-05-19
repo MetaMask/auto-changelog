@@ -18,6 +18,12 @@ module.exports = {
       files: ['*.test.js', '*.test.ts'],
       extends: ['@metamask/eslint-config-jest'],
     },
+    {
+      files: ['src/cli.ts'],
+      rules: {
+        'node/shebang': 'off',
+      },
+    },
   ],
 
   ignorePatterns: ['!.eslintrc.js', 'dist'],

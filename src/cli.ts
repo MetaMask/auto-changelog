@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import { promises as fs, constants as fsConstants } from 'fs';
 import path from 'path';
 import { URL } from 'url';
