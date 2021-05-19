@@ -1,8 +1,16 @@
 import Changelog from './changelog';
-import { ChangeCategory, unreleased } from './constants';
+import {
+  ChangeCategory,
+  orderedChangeCategories,
+  unreleased,
+} from './constants';
 
 function truncated(line: string) {
   return line.length > 80 ? `${line.slice(0, 80)}...` : line;
+}
+
+function isValidChangeCategory(category: string): category is ChangeCategory {
+  return orderedChangeCategories.includes(category as ChangeCategory);
 }
 
 /**
@@ -112,8 +120,10 @@ export function parseChangelog({
       finalizePreviousChange({
         removeTrailingNewline: !isFirstCategory,
       });
-      // TODO: Throw an error if results[1] is not a valid ChangeCategory.
-      mostRecentCategory = results[1] as ChangeCategory;
+      if (!isValidChangeCategory(results[1])) {
+        throw new Error(`Invalid change category: '${results[1]}'`);
+      }
+      mostRecentCategory = results[1];
     } else if (line.startsWith('- ')) {
       if (!mostRecentCategory) {
         throw new Error(`Category missing for change: '${truncated(line)}'`);

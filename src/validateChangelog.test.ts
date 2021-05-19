@@ -207,7 +207,7 @@ describe('validateChangelog', () => {
           'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
         isReleaseCandidate: false,
       }),
-    ).toThrow(`Unrecognized category: 'Updated'`);
+    ).toThrow(`Invalid change category: 'Updated'`);
   });
 
   it('should throw when the Unreleased section is missing', () => {
