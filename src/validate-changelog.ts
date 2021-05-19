@@ -1,5 +1,5 @@
 import { Version } from './constants';
-import { parseChangelog } from './parseChangelog';
+import { parseChangelog } from './parse-changelog';
 
 /**
  * Indicates that the changelog is invalid.
