@@ -542,7 +542,7 @@ describe('parseChangelog', () => {
     ).toThrow(`Unrecognized line: '#### Changed'`);
   });
 
-  it('should throw if a change category is unrecognized', () => {
+  it('should throw if a change category is malformed', () => {
     const brokenChangelog = outdent`
       # Changelog
       All notable changes to this project will be documented in this file.
@@ -566,6 +566,32 @@ describe('parseChangelog', () => {
           'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
       }),
     ).toThrow(`Malformed category header: '### Ch-Ch-Ch-Ch-Changes'`);
+  });
+
+  it('should throw if a change category is unrecognized', () => {
+    const brokenChangelog = outdent`
+      # Changelog
+      All notable changes to this project will be documented in this file.
+
+      The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+      and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+      ## [Unreleased]
+
+      ## [1.0.0] - 2020-01-01
+      ### Invalid
+      - Something else
+
+      [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
+      [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/v1.0.0
+      `;
+    expect(() =>
+      parseChangelog({
+        changelogContent: brokenChangelog,
+        repoUrl:
+          'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+      }),
+    ).toThrow(`Invalid change category: 'Invalid'`);
   });
 
   it('should throw if a change starts with the wrong prefix', () => {
