@@ -12,13 +12,13 @@ import spawn from 'cross-spawn';
  * Anything received on STDERR is assumed to indicate a problem, and is tracked
  * as an error.
  *
- * @param {string} command - The command to run
- * @param {Array<string>} [args] - The arguments to pass to the command
- * @returns {Array<string>} Lines of output received via STDOUT
+ * @param command - The command to run
+ * @param args - The arguments to pass to the command
+ * @returns Lines of output received via STDOUT
  */
 export default async function runCommand(
   command: string,
-  args: readonly string[],
+  args?: readonly string[],
 ) {
   const output: string[] = [];
   let mostRecentError;

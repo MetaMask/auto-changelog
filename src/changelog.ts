@@ -20,8 +20,8 @@ interface ReleaseMetadata {
   version: Version;
 
   /**
-   *  An ISO-8601 formatted date, representing the
-   *   release date.
+   * An ISO-8601 formatted date, representing the
+   * release date.
    */
   date?: string;
 
@@ -175,7 +175,8 @@ interface AddChangeOptions {
 }
 
 /**
- * A changelog that complies with the ["keep a changelog" v1.1.0 guidelines]{@link https://keepachangelog.com/en/1.0.0/}.
+ * A changelog that complies with the
+ * ["Keep a Changelog" v1.1.0 guidelines](https://keepachangelog.com/en/1.0.0/).
  *
  * This changelog starts out completely empty, and allows new releases and
  * changes to be added such that the changelog remains compliant at all times.
@@ -192,8 +193,8 @@ export default class Changelog {
   /**
    * Construct an empty changelog
    *
-   * @param {Object} options
-   * @param {string} options.repoUrl - The GitHub repository URL for the current project
+   * @param options
+   * @param options.repoUrl - The GitHub repository URL for the current project
    */
   constructor({ repoUrl }: { repoUrl: string }) {
     this._releases = [];
@@ -204,18 +205,17 @@ export default class Changelog {
   /**
    * Add a release to the changelog
    *
-   * @param {Object} options
-   * @param {boolean} [options.addToStart] - Determines whether the release is
-   *   added to the top or bottom of the changelog. This defaults to 'true'
-   *   because new releases should be added to the top of the changelog. This
-   *   should be set to 'false' when parsing a changelog top-to-bottom.
-   * @param {string} [options.date] - An ISO-8601 formatted date, representing the
-   *   release date.
-   * @param {string} [options.status] - The status of the release (e.g.
-   *   'WITHDRAWN', 'DEPRECATED')
-   * @param {Version} options.version - The version of the current release,
-   *   which should be a [semver]{@link https://semver.org/spec/v2.0.0.html}-
-   *   compatible version.
+   * @param options
+   * @param options.addToStart - Determines whether the change is added to the
+   * top or bottom of the list of changes in this category. This defaults to
+   * `true` because changes should be in reverse-chronological order. This
+   * should be set to `false` when parsing a changelog top-to-bottom.
+   * @param options.date - An ISO-8601 formatted date, representing the release
+   * date.
+   * @param options.status - The status of the release (e.g. 'WITHDRAWN',
+   * 'DEPRECATED')
+   * @param options.version - The version of the current release, which should
+   * be a [SemVer](https://semver.org/spec/v2.0.0.html)-compatible version.
    */
   addRelease({ addToStart = true, date, status, version }: AddReleaseOptions) {
     if (!version) {
@@ -238,16 +238,15 @@ export default class Changelog {
   /**
    * Add a change to the changelog
    *
-   * @param {Object} options
-   * @param {boolean} [options.addToStart] - Determines whether the change is
-   *   added to the top or bottom of the list of changes in this category. This
-   *   defaults to 'true' because changes should be in reverse-chronological
-   *   order. This should be set to 'false' when parsing a changelog top-to-
-   *   bottom.
-   * @param {string} options.category - The category of the change.
-   * @param {string} options.description - The description of the change.
-   * @param {Version} [options.version] - The version this change was released
-   *  in. If this is not given, the change is assumed to be unreleased.
+   * @param options
+   * @param options.addToStart - Determines whether the change is added to the
+   * top or bottom of the list of changes in this category. This defaults to
+   * `true` because changes should be in reverse-chronological order. This
+   * should be set to `false` when parsing a changelog top-to-bottom.
+   * @param options.category - The category of the change.
+   * @param options.description - The description of the change.
+   * @param options.version - The version this change was released in. If this
+   * is not given, the change is assumed to be unreleased.
    */
   addChange({
     addToStart = true,
@@ -285,8 +284,8 @@ export default class Changelog {
    * Changes are migrated in their existing categories, and placed above any
    * pre-existing changes in that category.
    *
-   * @param {Version} version - The release version to migrate unreleased
-   *   changes to.
+   * @param version - The release version to migrate unreleased
+   * changes to.
    */
   migrateUnreleasedChangesToRelease(version: string) {
     const releaseChanges = this._changes[version];
@@ -311,7 +310,7 @@ export default class Changelog {
 
   /**
    * Gets the metadata for all releases.
-   * @returns {Array<ReleaseMetadata>} The metadata for each release.
+   * @returns The metadata for each release.
    */
   getReleases() {
     return this._releases;
@@ -319,8 +318,8 @@ export default class Changelog {
 
   /**
    * Gets the changes in the given release, organized by category.
-   * @param {Version} version - The version of the release being retrieved.
-   * @returns {ReleaseChanges} The changes included in the given released.
+   * @param version - The version of the release being retrieved.
+   * @returns The changes included in the given released.
    */
   getReleaseChanges(version: string) {
     return this._changes[version];
@@ -328,7 +327,7 @@ export default class Changelog {
 
   /**
    * Gets all changes that have not yet been released
-   * @returns {ReleaseChanges} The changes that have not yet been released.
+   * @returns The changes that have not yet been released.
    */
   getUnreleasedChanges() {
     return this._changes[unreleased];
@@ -336,7 +335,7 @@ export default class Changelog {
 
   /**
    * The stringified changelog, formatted according to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
-   * @returns {string} The stringified changelog.
+   * @returns The stringified changelog.
    */
   toString() {
     return `${changelogTitle}

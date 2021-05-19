@@ -8,12 +8,10 @@ function truncated(line: string) {
 /**
  * Constructs a Changelog instance that represents the given changelog, which
  * is parsed for release and change information.
- * @param {Object} options
- * @param {string} options.changelogContent - The changelog to parse
- * @param {string} options.repoUrl - The GitHub repository URL for the current
- *   project.
- * @returns {Changelog} A changelog instance that reflects the changelog text
- *   provided.
+ * @param options
+ * @param options.changelogContent - The changelog to parse
+ * @param options.repoUrl - The GitHub repository URL for the current project.
+ * @returns A changelog instance that reflects the changelog text provided.
  */
 export function parseChangelog({
   changelogContent,
@@ -50,10 +48,9 @@ export function parseChangelog({
    *
    * This is required because change entries can span multiple lines.
    *
-   * @param {Object} [options]
-   * @param {boolean} [options.removeTrailingNewline] - Indicates that the
-   *   trailing newline is not a part of the change description, so should be
-   *   removed.
+   * @param options
+   * @param options.removeTrailingNewline - Indicates that the trailing newline
+   * is not a part of the change description, and should therefore be removed.
    */
   function finalizePreviousChange({
     removeTrailingNewline = false,

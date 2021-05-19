@@ -20,7 +20,7 @@ export class UnreleasedChangesError extends InvalidChangelogError {
  */
 export class MissingCurrentVersionError extends InvalidChangelogError {
   /**
-   * @param {Version} currentVersion - The current version
+   * @param currentVersion - The current version
    */
   constructor(currentVersion: Version) {
     super(`Current version missing from changelog: '${currentVersion}'`);
@@ -34,11 +34,11 @@ export class ChangelogFormattingError extends InvalidChangelogError {
   public data: Record<string, string>;
 
   /**
-   * @param {Object} options
-   * @param {string} options.validChangelog - The string contents of the well-
-   *   formatted changelog.
-   * @param {string} options.invalidChangelog - The string contents of the
-   *   malformed changelog.
+   * @param options
+   * @param options.validChangelog - The string contents of the well-formatted
+   * changelog.
+   * @param options.invalidChangelog - The string contents of the malformed
+   * changelog.
    */
   constructor({
     validChangelog,
@@ -64,23 +64,16 @@ interface ValidateChangelogOptions {
 
 /**
  * Validates that a changelog is well-formatted.
+ *
  * @param options
  * @param options.changelogContent - The current changelog
  * @param options.currentVersion - The current version
  * @param options.repoUrl - The GitHub repository URL for the current
- *   project.
- * @param options.isReleaseCandidate - Denotes whether the current
- *   project is in the midst of release preparation or not. If this is set, this
- *   command will also ensure the current version is represented in the
- *   changelog with a release header, and that there are no unreleased changes
- *   present.
- * @throws {InvalidChangelogError} Will throw if the changelog is invalid
- * @throws {MissingCurrentVersionError} Will throw if `isReleaseCandidate` is
- *   `true` and the changelog is missing the release header for the current
- *   version.
- * @throws {UnreleasedChangesError} Will throw if `isReleaseCandidate` is
- *   `true` and the changelog contains unreleased changes.
- * @throws {ChangelogFormattingError} Will throw if there is a formatting error.
+ * project.
+ * @param options.isReleaseCandidate - Denotes whether the current project is in
+ * the midst of release preparation or not. If this is set, this command will
+ * also ensure the current version is represented in the changelog with a
+ * header, and that there are no unreleased changes present.
  */
 export function validateChangelog({
   changelogContent,
