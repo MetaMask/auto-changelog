@@ -7,7 +7,10 @@
     "access": "public"
   },
   "main": "dist/index.js",
-  "bin": "dist/cli.js",
+  "bin": {
+    "@metamask/auto-changelog": "dist/cli.js",
+    "auto-changelog": "dist/cli.js"
+  },
   "engines": {
     "node": ">=12.0.0"
   },
@@ -26,8 +29,8 @@
     "lint:misc": "prettier '**/*.json' '**/*.md' '!CHANGELOG.md' '**/*.yml' --ignore-path .gitignore",
     "lint": "yarn lint:eslint && yarn lint:misc --check",
     "lint:fix": "yarn lint:eslint --fix && yarn lint:misc --write",
-    "build": "tsc --project .",
-    "changelog": "node ./src/cli.js"
+    "build": "tsc --project . && chmod +x 'dist/cli.js'",
+    "changelog": "./dist/cli.js"
   },
   "dependencies": {
     "cross-spawn": "^7.0.3",
