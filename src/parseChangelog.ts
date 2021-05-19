@@ -1,5 +1,5 @@
 import Changelog from './changelog';
-import { changeCategories, unreleased } from './constants';
+import { ChangeCategory, unreleased } from './constants';
 
 function truncated(line: string) {
   return line.length > 80 ? `${line.slice(0, 80)}...` : line;
@@ -42,7 +42,7 @@ export function parseChangelog({
   );
 
   let mostRecentRelease: string;
-  let mostRecentCategory: changeCategories | undefined | null;
+  let mostRecentCategory: ChangeCategory | undefined | null;
   let currentChangeEntry: string | undefined;
 
   /**
@@ -115,7 +115,7 @@ export function parseChangelog({
         removeTrailingNewline: !isFirstCategory,
       });
       // TODO: Get rid of typecast?
-      mostRecentCategory = results[1] as changeCategories;
+      mostRecentCategory = results[1] as ChangeCategory;
     } else if (line.startsWith('- ')) {
       if (!mostRecentCategory) {
         throw new Error(`Category missing for change: '${truncated(line)}'`);

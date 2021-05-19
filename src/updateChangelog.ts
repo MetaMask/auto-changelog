@@ -1,7 +1,7 @@
 import { strict as assert } from 'assert';
 import runCommand from './runCommand';
 import { parseChangelog } from './parseChangelog';
-import { changeCategories, Version } from './constants';
+import { ChangeCategory, Version } from './constants';
 import type Changelog from './changelog';
 
 async function getMostRecentTag({
@@ -209,7 +209,7 @@ export async function updateChangelog({
   for (const description of newChangeEntries.reverse()) {
     changelog.addChange({
       version: isReleaseCandidate ? currentVersion : undefined,
-      category: changeCategories.Uncategorized,
+      category: ChangeCategory.Uncategorized,
       description,
     });
   }

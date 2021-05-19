@@ -1,7 +1,7 @@
 import semver from 'semver';
 
 import {
-  changeCategories,
+  ChangeCategory,
   orderedChangeCategories,
   unreleased,
   Version,
@@ -34,7 +34,7 @@ interface ReleaseMetadata {
 /**
  * Release changes, organized by category.
  */
-type ReleaseChanges = Record<changeCategories, string[]>;
+type ReleaseChanges = Record<ChangeCategory, string[]>;
 
 /**
  * Changelog changes, organized by release and by category.
@@ -45,7 +45,7 @@ type ChangelogChanges = Record<Version, ReleaseChanges> & {
 
 // Stringification helpers
 
-function stringifyCategory(category: changeCategories, changes: string[]) {
+function stringifyCategory(category: ChangeCategory, changes: string[]) {
   const categoryHeader = `### ${category}`;
   if (changes.length === 0) {
     return categoryHeader;
@@ -169,7 +169,7 @@ interface AddReleaseOptions {
 
 interface AddChangeOptions {
   addToStart?: boolean;
-  category: changeCategories;
+  category: ChangeCategory;
   description: string;
   version?: Version;
 }
@@ -296,9 +296,7 @@ export default class Changelog {
 
     const unreleasedChanges = this._changes[unreleased];
 
-    for (const category of Object.keys(
-      unreleasedChanges,
-    ) as changeCategories[]) {
+    for (const category of Object.keys(unreleasedChanges) as ChangeCategory[]) {
       if (releaseChanges[category]) {
         releaseChanges[category] = [
           ...unreleasedChanges[category],

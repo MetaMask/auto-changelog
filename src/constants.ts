@@ -20,7 +20,7 @@ export type Version = string;
  * @property {'Uncategorized'} Uncategorized - for any changes that have not
  *   yet been categorized.
  */
-export enum changeCategories {
+export enum ChangeCategory {
   Added = 'Added',
   Changed = 'Changed',
   Deprecated = 'Deprecated',
@@ -36,14 +36,14 @@ export enum changeCategories {
  *
  * @type {Array<keyof ChangeCategories>}
  */
-export const orderedChangeCategories: changeCategories[] = [
-  changeCategories.Uncategorized,
-  changeCategories.Added,
-  changeCategories.Changed,
-  changeCategories.Deprecated,
-  changeCategories.Removed,
-  changeCategories.Fixed,
-  changeCategories.Security,
+export const orderedChangeCategories: ChangeCategory[] = [
+  ChangeCategory.Uncategorized,
+  ChangeCategory.Added,
+  ChangeCategory.Changed,
+  ChangeCategory.Deprecated,
+  ChangeCategory.Removed,
+  ChangeCategory.Fixed,
+  ChangeCategory.Security,
 ];
 
 /**
