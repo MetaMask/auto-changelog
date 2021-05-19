@@ -321,7 +321,7 @@ export default class Changelog {
    * @param version - The version of the release being retrieved.
    * @returns The changes included in the given released.
    */
-  getReleaseChanges(version: string) {
+  getReleaseChanges(version: Version) {
     return this._changes[version];
   }
 
