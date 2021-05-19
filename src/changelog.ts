@@ -287,7 +287,7 @@ export default class Changelog {
    * @param version - The release version to migrate unreleased
    * changes to.
    */
-  migrateUnreleasedChangesToRelease(version: string) {
+  migrateUnreleasedChangesToRelease(version: Version) {
     const releaseChanges = this._changes[version];
     if (!releaseChanges) {
       throw new Error(`Specified release version does not exist: '${version}'`);
