@@ -203,8 +203,8 @@ export async function updateChangelog({
 
   const newChangeEntries = newCommits.map(({ prNumber, description }) => {
     if (prNumber) {
-      const prefix = `[#${prNumber}](${repoUrl}/pull/${prNumber})`;
-      return `${prefix}: ${description}`;
+      const suffix = `([#${prNumber}](${repoUrl}/pull/${prNumber}))`;
+      return `${description} ${suffix}`;
     }
     return description;
   });
