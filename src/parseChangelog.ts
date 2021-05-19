@@ -64,8 +64,9 @@ export function parseChangelog({
     if (!currentChangeEntry) {
       return;
     }
-    // TODO: This could possibly happen two successive, empty change categories/releases.
-    /* istanbul ignore next: This doesn't happen in practice. */
+    // This should never happen in practice, because `mostRecentCategory` is
+    // guaranteed to be set if `currentChangeEntry` is set.
+    /* istanbul ignore next */
     if (!mostRecentCategory) {
       throw new Error('Cannot finalize change without most recent category.');
     }
