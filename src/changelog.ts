@@ -145,7 +145,7 @@ function stringifyLinkReferenceDefinitions(
       const versionIndex = orderedReleases.indexOf(version);
       const previousVersion = orderedReleases
         .slice(versionIndex)
-        .find((releaseVersion: string | semver.SemVer) => {
+        .find((releaseVersion: Version) => {
           return semver.gt(version, releaseVersion);
         });
       return `[${version}]: ${getCompareUrl(
