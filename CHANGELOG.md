@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.1]
+### Fixed
+- Prevent old build files from being published ([#71](https://github.com/MetaMask/auto-changelog/pull/71))
+
 ## [2.0.0]
 ### Added
 - TypeScript types ([#59](https://github.com/MetaMask/auto-changelog/pull/59))
@@ -31,6 +35,7 @@ Includes the following features:
   - Monorepo support ([#41](https://github.com/MetaMask/auto-changelog/pull/41))
   - Configurable repository URL, version, and changelog file path ([#33](https://github.com/MetaMask/auto-changelog/pull/33), [#31](https://github.com/MetaMask/auto-changelog/pull/31), [#30](https://github.com/MetaMask/auto-changelog/pull/30))
 
-[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v2.0.0...HEAD
+[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v2.0.1...HEAD
+[2.0.1]: https://github.com/MetaMask/auto-changelog/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/MetaMask/auto-changelog/compare/v1.0.0...v2.0.0
 [1.0.0]: https://github.com/MetaMask/auto-changelog/releases/tag/v1.0.0
