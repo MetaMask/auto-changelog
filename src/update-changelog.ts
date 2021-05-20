@@ -37,18 +37,18 @@ async function getCommits(commitHashes: string[]) {
       commitHash,
     ]);
 
-    let matchResults = subject.match(/\(#\d+\)/u);
+    let matchResults = subject.match(/\(#(\d+)\)/u);
     let prNumber: string | undefined;
     let description = subject;
 
-    // Squash & Merge: the commit subject is parsed as `<description> (#<PR ID>)`
     if (matchResults) {
+      // Squash & Merge: the commit subject is parsed as `<description> (#<PR ID>)`
       prNumber = matchResults[1];
       description = subject.match(/^(.+)\s\(#\d+\)/u)?.[1] || '';
+    } else {
       // Merge: the PR ID is parsed from the git subject (which is of the form `Merge pull request
       // #<PR ID> from <branch>`, and the description is assumed to be the first line of the body.
       // If no body is found, the description is set to the commit subject
-    } else {
       matchResults = subject.match(/#(\d+)\sfrom/u);
       if (matchResults) {
         prNumber = matchResults[1];
