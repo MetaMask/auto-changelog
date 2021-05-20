@@ -108,6 +108,19 @@ describe('parseChangelog', () => {
     expect(changelog.getReleaseChanges('0.0.1')).toStrictEqual({
       Changed: ['Something'],
     });
+    expect(changelog.getRelease('1.0.0')).toStrictEqual({
+      date: '2020-01-01',
+      status: undefined,
+      version: '1.0.0',
+    });
+    expect(changelog.getStringifiedRelease('1.0.0')).toStrictEqual(outdent`
+    ## [1.0.0] - 2020-01-01
+    ### Changed
+    - Something else`);
+    expect(changelog.getRelease('2.0.0')).toBeUndefined();
+    expect(() => changelog.getStringifiedRelease('2.0.0')).toThrow(
+      "Specified release version does not exist: '2.0.0'",
+    );
     expect(changelog.getUnreleasedChanges()).toStrictEqual({});
   });
 
