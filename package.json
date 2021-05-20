@@ -21,7 +21,7 @@
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watch",
-    "prepublishOnly": "yarn build && chmod +x dist/cli.js && yarn lint && yarn test",
+    "prepublishOnly": "yarn build && chmod +x dist/cli.js && yarn lint && yarn changelog validate --rc && yarn test",
     "lint:eslint": "eslint . --cache --ext js,ts",
     "lint:misc": "prettier '**/*.json' '**/*.md' '!CHANGELOG.md' '**/*.yml' --ignore-path .gitignore",
     "lint": "yarn lint:eslint && yarn lint:misc --check",
