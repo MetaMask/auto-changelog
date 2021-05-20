@@ -21,13 +21,13 @@
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watch",
-    "prepublishOnly": "yarn lint && yarn test",
+    "prepublishOnly": "yarn build && chmod +x dist/cli.js && yarn lint && yarn test",
     "lint:eslint": "eslint . --cache --ext js,ts",
     "lint:misc": "prettier '**/*.json' '**/*.md' '!CHANGELOG.md' '**/*.yml' --ignore-path .gitignore",
     "lint": "yarn lint:eslint && yarn lint:misc --check",
     "lint:fix": "yarn lint:eslint --fix && yarn lint:misc --write",
     "build": "tsc --project .",
-    "changelog": "node ./src/cli.js"
+    "changelog": "node dist/cli.js"
   },
   "dependencies": {
     "cross-spawn": "^7.0.3",
