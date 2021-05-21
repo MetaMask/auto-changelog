@@ -36,6 +36,10 @@ const npmPackageVersion = process.env.npm_package_version;
 // eslint-disable-next-line node/no-process-env
 const npmPackageRepositoryUrl = process.env.npm_package_repository_url;
 
+const githubRepositoryUrl = npmPackageRepositoryUrl
+  ? npmPackageRepositoryUrl.replace(/\.git$/u, '')
+  : null;
+
 function isValidUrl(proposedUrl: string) {
   try {
     // eslint-disable-next-line no-new
@@ -152,7 +156,7 @@ function configureCommonCommandOptions(_yargs: Argv) {
       type: 'string',
     })
     .option('repo', {
-      default: npmPackageRepositoryUrl,
+      default: githubRepositoryUrl,
       description: `The GitHub repository URL`,
       type: 'string',
     })
