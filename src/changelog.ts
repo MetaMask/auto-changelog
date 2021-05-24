@@ -139,20 +139,21 @@ function stringifyLinkReferenceDefinitions(
   // patch releases on older releases can be accomodated.
   const releaseLinkReferenceDefinitions = releases
     .map(({ version }) => {
+      let diffUrl;
       if (version === orderedReleases[orderedReleases.length - 1]) {
-        return `[${version}]: ${getTagUrl(repoUrl, `v${version}`)}`;
+        diffUrl = getTagUrl(repoUrl, `v${version}`);
+      } else {
+        const versionIndex = orderedReleases.indexOf(version);
+        const previousVersion = orderedReleases
+          .slice(versionIndex)
+          .find((releaseVersion: Version) => {
+            return semver.gt(version, releaseVersion);
+          });
+        diffUrl = previousVersion
+          ? getCompareUrl(repoUrl, `v${previousVersion}`, `v${version}`)
+          : getTagUrl(repoUrl, `v${version}`);
       }
-      const versionIndex = orderedReleases.indexOf(version);
-      const previousVersion = orderedReleases
-        .slice(versionIndex)
-        .find((releaseVersion: Version) => {
-          return semver.gt(version, releaseVersion);
-        });
-      return `[${version}]: ${getCompareUrl(
-        repoUrl,
-        `v${previousVersion}`,
-        `v${version}`,
-      )}`;
+      return `[${version}]: ${diffUrl}`;
     })
     .join('\n');
   return `${unreleasedLinkReferenceDefinition}\n${releaseLinkReferenceDefinitions}${
