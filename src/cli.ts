@@ -10,6 +10,7 @@ import { hideBin } from 'yargs/helpers';
 
 import { updateChangelog } from './update-changelog';
 import { generateDiff } from './generate-diff';
+import { createEmptyChangelog } from './init';
 
 import { unreleased, Version } from './constants';
 
@@ -137,6 +138,16 @@ async function validate({
   }
 }
 
+interface InitOptions {
+  changelogPath: string;
+  repoUrl: string;
+}
+
+async function init({ changelogPath, repoUrl }: InitOptions) {
+  const changelogContent = await createEmptyChangelog({ repoUrl });
+  await saveChangelog(changelogPath, changelogContent);
+}
+
 const rootDescription = `The root project directory. This determines where we \
 look for changes since the last release (defaults to the entire repository at \
 the current working directory), and where the changelog path is resolved from \
@@ -147,12 +158,6 @@ function configureCommonCommandOptions(_yargs: Argv) {
     .option('file', {
       default: 'CHANGELOG.md',
       description: 'The changelog file path',
-      type: 'string',
-    })
-    .option('currentVersion', {
-      default: npmPackageVersion,
-      description:
-        'The current version of the project that the changelog belongs to.',
       type: 'string',
     })
     .option('repo', {
@@ -178,6 +183,12 @@ async function main() {
             description: `Add new changes to the current release header, rather than to the '${unreleased}' section.`,
             type: 'boolean',
           })
+          .option('currentVersion', {
+            default: npmPackageVersion,
+            description:
+              'The current version of the project that the changelog belongs to.',
+            type: 'string',
+          })
           .epilog(updateEpilog),
     )
     .command(
@@ -190,8 +201,17 @@ async function main() {
             description: `Verify that the current version has a release header in the changelog`,
             type: 'boolean',
           })
+          .option('currentVersion', {
+            default: npmPackageVersion,
+            description:
+              'The current version of the project that the changelog belongs to.',
+            type: 'string',
+          })
           .epilog(validateEpilog),
     )
+    .command('init', 'Initialize a new empty changelog', (_yargs) => {
+      configureCommonCommandOptions(_yargs);
+    })
     .strict()
     .demandCommand()
     .help('help')
@@ -255,19 +275,26 @@ async function main() {
     changelogPath = path.resolve(projectRootDirectory, changelogFilename);
   }
 
-  try {
-    // eslint-disable-next-line no-bitwise
-    await fs.access(changelogPath, fsConstants.F_OK | fsConstants.W_OK);
-  } catch (error) {
-    if (error.code === 'ENOENT') {
-      exitWithError(`File does not exist: '${changelogPath}'`);
-    } else {
-      exitWithError(`File is not writable: '${changelogPath}'`);
+  if (!argv._) {
+    throw new Error('No command provided');
+  }
+  const command = argv._[0];
+
+  if (command !== 'init') {
+    try {
+      // eslint-disable-next-line no-bitwise
+      await fs.access(changelogPath, fsConstants.F_OK | fsConstants.W_OK);
+    } catch (error) {
+      if (error.code === 'ENOENT') {
+        exitWithError(`File does not exist: '${changelogPath}'`);
+      } else {
+        exitWithError(`File is not writable: '${changelogPath}'`);
+      }
+      return;
     }
-    return;
   }
 
-  if (argv._ && argv._[0] === 'update') {
+  if (command === 'update') {
     await update({
       changelogPath,
       currentVersion,
@@ -275,11 +302,16 @@ async function main() {
       repoUrl,
       projectRootDirectory,
     });
-  } else if (argv._ && argv._[0] === 'validate') {
+  } else if (command === 'validate') {
     await validate({
       changelogPath,
       currentVersion,
       isReleaseCandidate,
+      repoUrl,
+    });
+  } else if (command === 'init') {
+    await init({
+      changelogPath,
       repoUrl,
     });
   }
