@@ -93,11 +93,11 @@ try {
 - Run `yarn setup` to install dependencies and run any requried post-install scripts
   - **Warning**: Do not use the `yarn` / `yarn install` command directly. Use `yarn setup` instead. The normal install command will skip required post-install scripts, leaving your development environment in an invalid state.
 
-### Testing
+### Testing and Linting
 
-Run `yarn test` to run the tests once.
+Run `yarn test` to run the tests once. To run tests on file changes, run `yarn test:watch`.
 
-To run tests on file changes, run `yarn test:watch`.
+Run `yarn lint` to run the linter, or run `yarn lint:fix` to run the linter and fix any automatically fixable issues.
 
 ### Release & Publishing
 
