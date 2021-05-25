@@ -22,7 +22,7 @@ jobs:
       - run: yarn setup:postinstall
       - run: yarn build
       - run: yarn lint
-      - run: yarn
+      - run: yarn test
   validate-changelog:
     name: Validate changelog
     runs-on: ubuntu-20.04
