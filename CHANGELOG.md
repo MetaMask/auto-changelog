@@ -11,13 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `init` command ([#77](https://github.com/MetaMask/auto-changelog/pull/77))
 
 ### Changed
-- Validate changelog during CI ([#79](https://github.com/MetaMask/auto-changelog/pull/79))
-- Cache npm dependencies ([#80](https://github.com/MetaMask/auto-changelog/pull/80))
 - Add `@lavamoat/allow-scripts` and `setup` command ([#78](https://github.com/MetaMask/auto-changelog/pull/78))
-- Use `actions/setup-node@v2` instead of `actions/setup-node@v1` ([#81](https://github.com/MetaMask/auto-changelog/pull/81))
 
 ### Fixed
-- Fix changelog where first release isn't first ([#76](https://github.com/MetaMask/auto-changelog/pull/76))
+- Fix broken validation and updating when the lowest SemVer release isn't the first chronological release ([#76](https://github.com/MetaMask/auto-changelog/pull/76))
 
 ## [2.1.0]
 ### Added
