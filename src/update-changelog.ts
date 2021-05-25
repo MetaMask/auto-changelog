@@ -88,7 +88,7 @@ function getAllLoggedPrNumbers(changelog: Changelog) {
   const prNumbersWithChangelogEntries = [];
   for (const description of changeDescriptions) {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const matchResults = description!.match(/^\[#(\d+)\]/u);
+    const matchResults = description!.match(/\[#(\d+)\]/u);
     if (matchResults === null) {
       continue;
     }
