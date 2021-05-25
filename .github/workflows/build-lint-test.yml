@@ -34,10 +34,28 @@ jobs:
       - run: yarn build
       - run: yarn lint
       - run: yarn test
+  validate-changelog:
+    name: Validate changelog
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js v12
+        uses: actions/setup-node@v1
+        with:
+          node-version: 12
+      - run: yarn --frozen-lockfile
+      - run: yarn build
+      - name: Validate RC changelog
+        if: ${{ startsWith(github.ref, 'release-v') }}
+        run: yarn changelog validate --rc
+      - name: Validate changelog
+        if: ${{ !startsWith(github.ref, 'release-v') }}
+        run: yarn changelog validate
   all-jobs-pass:
     name: All jobs pass
     runs-on: ubuntu-20.04
     needs:
       - build-lint-test
+      - validate-changelog
     steps:
       - run: echo "Great success!"
