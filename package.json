@@ -19,6 +19,8 @@
     "url": "https://github.com/MetaMask/auto-changelog.git"
   },
   "scripts": {
+    "setup": "yarn install && yarn setup:postinstall",
+    "setup:postinstall": "yarn allow-scripts",
     "test": "jest",
     "test:watch": "jest --watch",
     "prepublishOnly": "yarn build:clean && chmod +x dist/cli.js && yarn lint && yarn test",
@@ -37,6 +39,7 @@
     "yargs": "^17.0.1"
   },
   "devDependencies": {
+    "@lavamoat/allow-scripts": "^1.0.6",
     "@metamask/eslint-config": "^6.0.0",
     "@metamask/eslint-config-jest": "^6.0.0",
     "@metamask/eslint-config-nodejs": "^6.0.0",
@@ -60,5 +63,10 @@
     "rimraf": "^3.0.2",
     "ts-jest": "^26.5.6",
     "typescript": "^4.2.4"
+  },
+  "lavamoat": {
+    "allowScripts": {
+      "@lavamoat/preinstall-always-fail": false
+    }
   }
 }
