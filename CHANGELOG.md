@@ -6,6 +6,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.0]
+### Added
+- Add `init` command ([#77](https://github.com/MetaMask/auto-changelog/pull/77))
+
+### Changed
+- Validate changelog during CI ([#79](https://github.com/MetaMask/auto-changelog/pull/79))
+- Cache npm dependencies ([#80](https://github.com/MetaMask/auto-changelog/pull/80))
+- Add `@lavamoat/allow-scripts` and `setup` command ([#78](https://github.com/MetaMask/auto-changelog/pull/78))
+- Use `actions/setup-node@v2` instead of `actions/setup-node@v1` ([#81](https://github.com/MetaMask/auto-changelog/pull/81))
+
+### Fixed
+- Fix changelog where first release isn't first ([#76](https://github.com/MetaMask/auto-changelog/pull/76))
+
 ## [2.1.0]
 ### Added
 - Add Changelog.getStringifiedRelease ([#73](https://github.com/MetaMask/auto-changelog/pull/73))
@@ -42,7 +55,8 @@ Includes the following features:
   - Monorepo support ([#41](https://github.com/MetaMask/auto-changelog/pull/41))
   - Configurable repository URL, version, and changelog file path ([#33](https://github.com/MetaMask/auto-changelog/pull/33), [#31](https://github.com/MetaMask/auto-changelog/pull/31), [#30](https://github.com/MetaMask/auto-changelog/pull/30))
 
-[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v2.1.0...HEAD
+[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v2.2.0...HEAD
+[2.2.0]: https://github.com/MetaMask/auto-changelog/compare/v2.1.0...v2.2.0
 [2.1.0]: https://github.com/MetaMask/auto-changelog/compare/v2.0.1...v2.1.0
 [2.0.1]: https://github.com/MetaMask/auto-changelog/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/MetaMask/auto-changelog/compare/v1.0.0...v2.0.0
