@@ -12,9 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Add `@lavamoat/allow-scripts` and `setup` command ([#78](https://github.com/MetaMask/auto-changelog/pull/78))
+- Detect all PRs referenced in each change description, rather than just the first ([#84](https://github.com/MetaMask/auto-changelog/pull/84))
 
 ### Fixed
 - Fix broken validation and updating when the lowest SemVer release isn't the first chronological release ([#76](https://github.com/MetaMask/auto-changelog/pull/76))
+- Fix PR number detection in existing change entries ([#83](https://github.com/MetaMask/auto-changelog/pull/83))
 
 ## [2.1.0]
 ### Added
