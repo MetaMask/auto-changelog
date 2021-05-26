@@ -6,6 +6,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.0]
+### Added
+- Add `init` command ([#77](https://github.com/MetaMask/auto-changelog/pull/77))
+
+### Changed
+- Add `@lavamoat/allow-scripts` and `setup` command ([#78](https://github.com/MetaMask/auto-changelog/pull/78))
+- Detect all PRs referenced in each change description, rather than just the first ([#84](https://github.com/MetaMask/auto-changelog/pull/84))
+
+### Fixed
+- Fix broken validation and updating when the lowest SemVer release isn't the first chronological release ([#76](https://github.com/MetaMask/auto-changelog/pull/76))
+- Fix PR number detection in existing change entries ([#83](https://github.com/MetaMask/auto-changelog/pull/83))
+
 ## [2.1.0]
 ### Added
 - Add Changelog.getStringifiedRelease ([#73](https://github.com/MetaMask/auto-changelog/pull/73))
@@ -42,7 +54,8 @@ Includes the following features:
   - Monorepo support ([#41](https://github.com/MetaMask/auto-changelog/pull/41))
   - Configurable repository URL, version, and changelog file path ([#33](https://github.com/MetaMask/auto-changelog/pull/33), [#31](https://github.com/MetaMask/auto-changelog/pull/31), [#30](https://github.com/MetaMask/auto-changelog/pull/30))
 
-[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v2.1.0...HEAD
+[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v2.2.0...HEAD
+[2.2.0]: https://github.com/MetaMask/auto-changelog/compare/v2.1.0...v2.2.0
 [2.1.0]: https://github.com/MetaMask/auto-changelog/compare/v2.0.1...v2.1.0
 [2.0.1]: https://github.com/MetaMask/auto-changelog/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/MetaMask/auto-changelog/compare/v1.0.0...v2.0.0
