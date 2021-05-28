@@ -1,6 +1,9 @@
 module.exports = {
   collectCoverage: true,
   collectCoverageFrom: ['./src/**.ts'],
+  // Jest (i.e. istanbul) identifies every export in index.ts as a distinct
+  // function, which tanks our function coverage.
+  coveragePathIgnorePatterns: ['index.ts'],
   coverageReporters: ['text', 'html'],
   coverageThreshold: {
     global: {
