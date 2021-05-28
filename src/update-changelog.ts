@@ -4,15 +4,8 @@ import { parseChangelog } from './parse-changelog';
 import { ChangeCategory, Version } from './constants';
 import type Changelog from './changelog';
 
-async function getMostRecentTag({
-  projectRootDirectory,
-}: {
-  projectRootDirectory?: string;
-}) {
+async function getMostRecentTag() {
   const revListArgs = ['rev-list', '--tags', '--max-count=1'];
-  if (projectRootDirectory) {
-    revListArgs.push(projectRootDirectory);
-  }
   const results = await runCommand('git', revListArgs);
   if (results.length === 0) {
     return null;
@@ -149,7 +142,7 @@ export async function updateChangelog({
 
   // Ensure we have all tags on remote
   await runCommand('git', ['fetch', '--tags']);
-  const mostRecentTag = await getMostRecentTag({ projectRootDirectory });
+  const mostRecentTag = await getMostRecentTag();
 
   if (isReleaseCandidate && mostRecentTag === `v${currentVersion}`) {
     throw new Error(
