@@ -1,6 +1,7 @@
 module.exports = {
   collectCoverage: true,
   collectCoverageFrom: ['./src/**.ts'],
+  coveragePathIgnorePatterns: ['/node_modules/', 'index.ts'],
   coverageReporters: ['text', 'html'],
   coverageThreshold: {
     global: {
