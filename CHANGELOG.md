@@ -12,8 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Specifically, the `Changelog` class, `createEmptyChangelog`, and `parseChangelog`.
 
 ### Fixed
-- Ensure tags are retrieved for merge commits ([#87](https://github.com/MetaMask/auto-changelog/pull/87))
-  - Previously, we passed the path to the project root directory as a param to an invocation of `git rev-list`, which excluded any merge commits and therefore also their tags.
+- Correctly calculate the most recent git tag ([#87](https://github.com/MetaMask/auto-changelog/pull/87)) ([#87](https://github.com/MetaMask/auto-changelog/pull/87))
+  - Previously, we passed the path to the project root directory as a parameter to an invocation of `git rev-list`. For all repositories, this caused most tags belonging to merge commits to be excluded. For monorepos, this also caused tags belonging to commits that didn't change any files belonging to the changelog's package / workspace to be excluded.
 
 ## [2.2.0]
 ### Added
