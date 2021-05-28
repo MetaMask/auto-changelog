@@ -6,6 +6,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.0]
+### Added
+- More exports to index.ts ([#86](https://github.com/MetaMask/auto-changelog/pull/86))
+  - Specifically, the `Changelog` class, `createEmptyChangelog`, and `parseChangelog`.
+
+### Fixed
+- Ensure tags are retrieved for merge commits ([#87](https://github.com/MetaMask/auto-changelog/pull/87))
+  - Previously, we passed the path to the project root directory as a param to an invocation of `git rev-list`, which excluded any merge commits and therefore also their tags.
+
 ## [2.2.0]
 ### Added
 - Add `init` command ([#77](https://github.com/MetaMask/auto-changelog/pull/77))
@@ -54,7 +63,8 @@ Includes the following features:
   - Monorepo support ([#41](https://github.com/MetaMask/auto-changelog/pull/41))
   - Configurable repository URL, version, and changelog file path ([#33](https://github.com/MetaMask/auto-changelog/pull/33), [#31](https://github.com/MetaMask/auto-changelog/pull/31), [#30](https://github.com/MetaMask/auto-changelog/pull/30))
 
-[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v2.2.0...HEAD
+[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v2.3.0...HEAD
+[2.3.0]: https://github.com/MetaMask/auto-changelog/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/MetaMask/auto-changelog/compare/v2.1.0...v2.2.0
 [2.1.0]: https://github.com/MetaMask/auto-changelog/compare/v2.0.1...v2.1.0
 [2.0.1]: https://github.com/MetaMask/auto-changelog/compare/v2.0.0...v2.0.1
