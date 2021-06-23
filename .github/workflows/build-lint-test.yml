@@ -46,10 +46,10 @@ jobs:
       - run: yarn --frozen-lockfile
       - run: yarn build
       - name: Validate RC changelog
-        if: ${{ startsWith(github.ref, 'release-v') }}
+        if: ${{ startsWith(github.ref, 'release/') }}
         run: yarn changelog validate --rc
       - name: Validate changelog
-        if: ${{ !startsWith(github.ref, 'release-v') }}
+        if: ${{ !startsWith(github.ref, 'release/') }}
         run: yarn changelog validate
   all-jobs-pass:
     name: All jobs pass
