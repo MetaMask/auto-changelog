@@ -32,7 +32,7 @@ export function parseChangelog({
     throw new Error(`Failed to find ${unreleased} header`);
   }
   const unreleasedLinkReferenceDefinition = changelogLines.findIndex((line) => {
-    return line.startsWith(`[${unreleased}]: `);
+    return line.startsWith(`[${unreleased}]:`);
   });
   if (unreleasedLinkReferenceDefinition === -1) {
     throw new Error(`Failed to find ${unreleased} link reference definition`);

@@ -25,6 +25,27 @@ describe('parseChangelog', () => {
     expect(changelog.getUnreleasedChanges()).toStrictEqual({});
   });
 
+  it('should parse changelog with poorly formatted link reference', () => {
+    const changelog = parseChangelog({
+      changelogContent: outdent`
+        # Changelog
+        All notable changes to this project will be documented in this file.
+
+        The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+        and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+        ## [Unreleased]
+
+        [Unreleased]:https://github.com/ExampleUsernameOrOrganization/ExampleRepository/
+        `,
+      repoUrl:
+        'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+    });
+
+    expect(changelog.getReleases()).toStrictEqual([]);
+    expect(changelog.getUnreleasedChanges()).toStrictEqual({});
+  });
+
   it('should parse changelog missing title', () => {
     const changelog = parseChangelog({
       changelogContent: outdent`
