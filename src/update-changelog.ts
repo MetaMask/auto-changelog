@@ -29,7 +29,10 @@ async function getCommits(commitHashes: string[]) {
       '--format=%s',
       commitHash,
     ]);
-    assert.ok(Boolean(subject), `"git show" returned empty subject for commit "{commitHash}".`);
+    assert.ok(
+      Boolean(subject),
+      `"git show" returned empty subject for commit "{commitHash}".`,
+    );
 
     let matchResults = subject.match(/\(#(\d+)\)/u);
     let prNumber: string | undefined;
