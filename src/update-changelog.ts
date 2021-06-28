@@ -1,5 +1,5 @@
 import { strict as assert } from 'assert';
-import runCommand from './run-command';
+import execa from 'execa';
 import { parseChangelog } from './parse-changelog';
 import { ChangeCategory, Version } from './constants';
 import type Changelog from './changelog';
@@ -208,4 +208,11 @@ export async function updateChangelog({
   }
 
   return changelog.toString();
+}
+
+async function runCommand(command: string, args: string[]): Promise<string[]> {
+  return (await execa(command, [...args])).stdout
+    .trim()
+    .split('\n')
+    .filter((line) => line !== '');
 }
