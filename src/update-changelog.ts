@@ -31,7 +31,7 @@ async function getCommits(commitHashes: string[]) {
     ]);
     assert.ok(
       Boolean(subject),
-      `"git show" returned empty subject for commit "{commitHash}".`,
+      `"git show" returned empty subject for commit "${commitHash}".`,
     );
 
     let matchResults = subject.match(/\(#(\d+)\)/u);
