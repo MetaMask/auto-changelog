@@ -7,12 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [2.4.0]
-### Uncategorized
-- Add release automation GitHub Action workflows ([#93](https://github.com/MetaMask/auto-changelog/pull/93))
-- Replace runCommand with execa ([#94](https://github.com/MetaMask/auto-changelog/pull/94))
+### Changed
 - Permit missing separating space in "Unreleased" link reference definition ([#92](https://github.com/MetaMask/auto-changelog/pull/92))
-- Bump ws from 7.4.4 to 7.5.0 ([#91](https://github.com/MetaMask/auto-changelog/pull/91))
-- 2.3.0 ([#88](https://github.com/MetaMask/auto-changelog/pull/88))
+- Use `execa` to execute git commands ([#94](https://github.com/MetaMask/auto-changelog/pull/94))
+  - This may fix subtle bugs related to git command execution, especially in CI.
 
 ## [2.3.0]
 ### Added
