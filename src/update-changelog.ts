@@ -16,7 +16,7 @@ async function getMostRecentTag() {
     '--tags',
     mostRecentTagCommitHash,
   ]);
-  assert.equal(mostRecentTag[0], 'v', 'Most recent tag should start with v');
+  assert.equal(mostRecentTag?.[0], 'v', 'Most recent tag should start with v');
   return mostRecentTag;
 }
 
@@ -29,6 +29,7 @@ async function getCommits(commitHashes: string[]) {
       '--format=%s',
       commitHash,
     ]);
+    assert.notEqual(subject, '', `Subject of commit "${commitHash}" is empty.`);
 
     let matchResults = subject.match(/\(#(\d+)\)/u);
     let prNumber: string | undefined;
@@ -210,6 +211,14 @@ export async function updateChangelog({
   return changelog.toString();
 }
 
+/**
+ * Executes a shell command in a child process and returns what it wrote to
+ * stdout, or rejects if the process exited with an error.
+ *
+ * @param command - The command to run, e.g. "git".
+ * @param args - The arguments to the command.
+ * @returns An array of the non-empty lines returned by the command.
+ */
 async function runCommand(command: string, args: string[]): Promise<string[]> {
   return (await execa(command, [...args])).stdout
     .trim()
