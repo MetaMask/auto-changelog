@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.0]
+### Changed
+- Permit missing separating space in "Unreleased" link reference definition ([#92](https://github.com/MetaMask/auto-changelog/pull/92))
+- Use `execa` to execute git commands ([#94](https://github.com/MetaMask/auto-changelog/pull/94))
+  - This may fix subtle bugs related to git command execution, especially in CI.
+
 ## [2.3.0]
 ### Added
 - More exports to index.ts ([#86](https://github.com/MetaMask/auto-changelog/pull/86))
@@ -63,7 +69,8 @@ Includes the following features:
   - Monorepo support ([#41](https://github.com/MetaMask/auto-changelog/pull/41))
   - Configurable repository URL, version, and changelog file path ([#33](https://github.com/MetaMask/auto-changelog/pull/33), [#31](https://github.com/MetaMask/auto-changelog/pull/31), [#30](https://github.com/MetaMask/auto-changelog/pull/30))
 
-[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v2.3.0...HEAD
+[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v2.4.0...HEAD
+[2.4.0]: https://github.com/MetaMask/auto-changelog/compare/v2.3.0...v2.4.0
 [2.3.0]: https://github.com/MetaMask/auto-changelog/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/MetaMask/auto-changelog/compare/v2.1.0...v2.2.0
 [2.1.0]: https://github.com/MetaMask/auto-changelog/compare/v2.0.1...v2.1.0
