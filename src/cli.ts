@@ -2,6 +2,10 @@
 
 import { promises as fs, constants as fsConstants } from 'fs';
 import path from 'path';
+// Intentionally shadowing 'URL' global, which is equivalent
+// Can't use global directly because of missing type, see:
+// https://github.com/DefinitelyTyped/DefinitelyTyped/issues/34960
+// eslint-disable-next-line @typescript-eslint/no-shadow
 import { URL } from 'url';
 import semver from 'semver';
 import yargs from 'yargs/yargs';
