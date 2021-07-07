@@ -436,10 +436,86 @@ describe('validateChangelog', () => {
       ).not.toThrow();
     });
 
+    it('should not throw if the changelog is empty', () => {
+      expect(() =>
+        validateChangelog({
+          changelogContent: emptyChangelog,
+          currentVersion: '1.0.1',
+          repoUrl:
+            'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+          isReleaseCandidate: false,
+        }),
+      ).not.toThrow();
+    });
+
+    it('should not throw if the changelog has an empty release', () => {
+      const changelogWithEmptyRelease = changelogWithReleases.replace(
+        '## [1.0.0] - 2020-01-01\n### Changed\n- Something else\n',
+        '## [1.0.0] - 2020-01-01\n',
+      );
+      expect(() =>
+        validateChangelog({
+          changelogContent: changelogWithEmptyRelease,
+          currentVersion: '1.0.1',
+          repoUrl:
+            'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+          isReleaseCandidate: false,
+        }),
+      ).not.toThrow();
+    });
+
+    it('should throw if the changelog has an empty change category', () => {
+      const changelogWithEmptyChangeCategory = changelogWithReleases.replace(
+        '## [1.0.0] - 2020-01-01\n### Changed\n- Something else\n',
+        '## [1.0.0] - 2020-01-01\n### Changed\n',
+      );
+      expect(() =>
+        validateChangelog({
+          changelogContent: changelogWithEmptyChangeCategory,
+          currentVersion: '1.0.1',
+          repoUrl:
+            'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+          isReleaseCandidate: false,
+        }),
+      ).toThrow('Changelog is not well-formatted');
+    });
+
     it('should not throw if there are unreleased changes', () => {
       const changelogWithUnreleasedChanges = changelogWithReleases.replace(
         '## [Unreleased]',
         '## [Unreleased]\n### Changed\n- More changes',
+      );
+      expect(() =>
+        validateChangelog({
+          changelogContent: changelogWithUnreleasedChanges,
+          currentVersion: '1.0.0',
+          repoUrl:
+            'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+          isReleaseCandidate: false,
+        }),
+      ).not.toThrow();
+    });
+
+    it('should not throw if there are uncategorized changes in the current release', () => {
+      const changelogWithUnreleasedChanges = changelogWithReleases.replace(
+        '## [1.0.0] - 2020-01-01',
+        '## [1.0.0] - 2020-01-01\n### Uncategorized\n- More changes\n',
+      );
+      expect(() =>
+        validateChangelog({
+          changelogContent: changelogWithUnreleasedChanges,
+          currentVersion: '1.0.0',
+          repoUrl:
+            'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+          isReleaseCandidate: false,
+        }),
+      ).not.toThrow();
+    });
+
+    it('should not throw if there are uncategorized changes in an older release', () => {
+      const changelogWithUnreleasedChanges = changelogWithReleases.replace(
+        '## [0.0.2] - 2020-01-01',
+        '## [0.0.2] - 2020-01-01\n### Uncategorized\n- More changes\n',
       );
       expect(() =>
         validateChangelog({
@@ -464,6 +540,38 @@ describe('validateChangelog', () => {
           isReleaseCandidate: true,
         }),
       ).not.toThrow();
+    });
+
+    it('should not throw if the changelog has an empty release', () => {
+      const changelogWithEmptyRelease = changelogWithReleases.replace(
+        '## [1.0.0] - 2020-01-01\n### Changed\n- Something else\n',
+        '## [1.0.0] - 2020-01-01\n',
+      );
+      expect(() =>
+        validateChangelog({
+          changelogContent: changelogWithEmptyRelease,
+          currentVersion: '1.0.0',
+          repoUrl:
+            'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+          isReleaseCandidate: true,
+        }),
+      ).not.toThrow();
+    });
+
+    it('should throw if the changelog has an empty change category', () => {
+      const changelogWithEmptyChangeCategory = changelogWithReleases.replace(
+        '## [1.0.0] - 2020-01-01\n### Changed\n- Something else\n',
+        '## [1.0.0] - 2020-01-01\n### Changed\n',
+      );
+      expect(() =>
+        validateChangelog({
+          changelogContent: changelogWithEmptyChangeCategory,
+          currentVersion: '1.0.1',
+          repoUrl:
+            'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+          isReleaseCandidate: false,
+        }),
+      ).toThrow('Changelog is not well-formatted');
     });
 
     it('should throw if the current version release header is missing', () => {
@@ -492,6 +600,38 @@ describe('validateChangelog', () => {
           isReleaseCandidate: true,
         }),
       ).toThrow('Unreleased changes present in the changelog');
+    });
+
+    it('should throw if there are uncategorized changes in the current release', () => {
+      const changelogWithUnreleasedChanges = changelogWithReleases.replace(
+        '## [1.0.0] - 2020-01-01',
+        '## [1.0.0] - 2020-01-01\n### Uncategorized\n- More changes\n',
+      );
+      expect(() =>
+        validateChangelog({
+          changelogContent: changelogWithUnreleasedChanges,
+          currentVersion: '1.0.0',
+          repoUrl:
+            'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+          isReleaseCandidate: true,
+        }),
+      ).toThrow('Uncategorized changes present in the changelog');
+    });
+
+    it('should throw if there are uncategorized changes in an older release', () => {
+      const changelogWithUnreleasedChanges = changelogWithReleases.replace(
+        '## [0.0.2] - 2020-01-01',
+        '## [0.0.2] - 2020-01-01\n### Uncategorized\n- More changes\n',
+      );
+      expect(() =>
+        validateChangelog({
+          changelogContent: changelogWithUnreleasedChanges,
+          currentVersion: '1.0.0',
+          repoUrl:
+            'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+          isReleaseCandidate: true,
+        }),
+      ).toThrow('Uncategorized changes present in the changelog');
     });
   });
 });
