@@ -503,22 +503,22 @@
   resolved "https://registry.yarnpkg.com/@lavamoat/preinstall-always-fail/-/preinstall-always-fail-1.0.0.tgz#e78a6e3d9e212a4fef869ec37d4f5fb498dea373"
   integrity sha512-vD2DcC0ffJj1w2y1Lu0OU39wHmlPEd2tCDW04Bm6Kf4LyRnCHCezTsS8yzeSJ+4so7XP+TITuR5FGJRWxPb+GA==
 
-"@metamask/eslint-config-jest@^6.0.0":
-  version "6.0.0"
-  resolved "https://registry.yarnpkg.com/@metamask/eslint-config-jest/-/eslint-config-jest-6.0.0.tgz#9e10cfbca31236afd7be2058be70365084e540d6"
-  integrity sha512-C0sXmyp5Hnp5IHVYXaW2TJAo/E9UiS192CwyUcw2qU1Ck7lj4z/wHdgROaH5F6rInqBO3afkDaqnArqvoxvO5Q==
+"@metamask/eslint-config-jest@^7.0.0":
+  version "7.0.0"
+  resolved "https://registry.yarnpkg.com/@metamask/eslint-config-jest/-/eslint-config-jest-7.0.0.tgz#81612aaf5307c3d65bb43366000233cd0b6e9db4"
+  integrity sha512-3IBJ985sC7Xfo8NlaUzNbfFDvt0+8YDvbC0yxDoRjPvi/o+bu7O/0SRIq0TDTOTfBZ8aMsxopq5uxVmU6ed21g==
 
 "@metamask/eslint-config-nodejs@^7.0.1":
   version "7.0.1"
   resolved "https://registry.yarnpkg.com/@metamask/eslint-config-nodejs/-/eslint-config-nodejs-7.0.1.tgz#7d3214b2c8eccfe2dbc9156b484456dce2dca91c"
   integrity sha512-V9C1jYuLnhZOhW9dAKB7zMDmDKS1r907rYirUMcoU4mi8ggPTP6JqT87EAEX9bsA2ZpeTYXUXf5bkfLM+BTGyA==
 
-"@metamask/eslint-config-typescript@^6.0.0":
-  version "6.0.0"
-  resolved "https://registry.yarnpkg.com/@metamask/eslint-config-typescript/-/eslint-config-typescript-6.0.0.tgz#c7bee90a48ed3c49f9f786c53dcdfea4cfd2a6db"
-  integrity sha512-pfchVgPz03jHvBMu+/wRNVVf4gIIgjZ+CtfsoZF6PkxzD3h0T5e+7aGcgDET7SlkOVnAySMQxr39lSnYXHQPvQ==
+"@metamask/eslint-config-typescript@^7.0.1":
+  version "7.0.1"
+  resolved "https://registry.yarnpkg.com/@metamask/eslint-config-typescript/-/eslint-config-typescript-7.0.1.tgz#e013f7f0505741b9321cab21351136f651abbba6"
+  integrity sha512-nqWivz9XHjiHAE2Aqf/y+p8R3xDoN9ScX2i97vtTxNKjAqkzmUwAd8lEHEibRfPOYaRBQJ0x85wrof++PpLfZg==
 
-"@metamask/eslint-config@^7.0.0":
+"@metamask/eslint-config@^7.0.1":
   version "7.0.1"
   resolved "https://registry.yarnpkg.com/@metamask/eslint-config/-/eslint-config-7.0.1.tgz#eeb87baa902965ca7931c26911d7027373706f34"
   integrity sha512-dMZ+iyZrHdZK0D1uStTx8UN6Q6IK9YGbqPUwxgTj63M0mZOsuqs8qpGf+9Dn7uqS+8Oe9jNqejKxozjTiJvsEw==
