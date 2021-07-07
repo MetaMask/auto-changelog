@@ -1,4 +1,4 @@
-import { Version } from './constants';
+import { Version, ChangeCategory } from './constants';
 import { parseChangelog } from './parse-changelog';
 
 /**
@@ -12,6 +12,12 @@ export class InvalidChangelogError extends Error {}
 export class UnreleasedChangesError extends InvalidChangelogError {
   constructor() {
     super('Unreleased changes present in the changelog');
+  }
+}
+
+export class UncategorizedChangesError extends InvalidChangelogError {
+  constructor() {
+    super('Uncategorized changes present in the changelog');
   }
 }
 
@@ -81,6 +87,8 @@ interface ValidateChangelogOptions {
  * version.
  * @throws `UnreleasedChangesError` - Will throw if `isReleaseCandidate` is
  * `true` and the changelog contains unreleased changes.
+ * @throws `UnreleasedChangesError` - Will throw if `isReleaseCandidate` is
+ * `true` and the changelog contains uncategorized changes.
  * @throws `ChangelogFormattingError` - Will throw if there is a formatting error.
  */
 export function validateChangelog({
@@ -90,28 +98,37 @@ export function validateChangelog({
   isReleaseCandidate,
 }: ValidateChangelogOptions) {
   const changelog = parseChangelog({ changelogContent, repoUrl });
+  const hasUnreleasedChanges =
+    Object.keys(changelog.getUnreleasedChanges()).length !== 0;
 
   if (isReleaseCandidate) {
     if (!currentVersion) {
       throw new Error(
         `A version must be specified if 'isReleaseCandidate' is set.`,
       );
-    }
-
-    // Ensure release header exists, if necessary
-    if (
+    } else if (
       !changelog
         .getReleases()
         .find((release) => release.version === currentVersion)
     ) {
       throw new MissingCurrentVersionError(currentVersion);
+    } else if (hasUnreleasedChanges) {
+      throw new UnreleasedChangesError();
+    } else if (
+      changelog
+        .getReleases()
+        .map((releaseMetadata) => releaseMetadata.version)
+        .map((version) => changelog.getReleaseChanges(version))
+        .filter((releaseChanges) => releaseChanges !== undefined)
+        .map((releasechanges) => releasechanges[ChangeCategory.Uncategorized])
+        .some(
+          (uncategorizedChanges) =>
+            uncategorizedChanges !== undefined &&
+            uncategorizedChanges.length > 0,
+        )
+    ) {
+      throw new UncategorizedChangesError();
     }
-  }
-
-  const hasUnreleasedChanges =
-    Object.keys(changelog.getUnreleasedChanges()).length !== 0;
-  if (isReleaseCandidate && hasUnreleasedChanges) {
-    throw new UnreleasedChangesError();
   }
 
   const validChangelog = changelog.toString();
