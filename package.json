@@ -1,6 +1,6 @@
 {
   "name": "@metamask/auto-changelog",
-  "version": "2.4.0",
+  "version": "3.0.0",
   "description": "Utilities for validating and updating \"Keep a Changelog\" formatted changelogs",
   "publishConfig": {
     "registry": "https://registry.npmjs.org/",

@@ -6,6 +6,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.0]
+### Uncategorized
+- Update README release instructions ([#103](https://github.com/MetaMask/auto-changelog/pull/103))
+- Update ESLint config for TypeScript and Jest to v7 ([#101](https://github.com/MetaMask/auto-changelog/pull/101))
+- Validate no uncategorized changes in RC ([#102](https://github.com/MetaMask/auto-changelog/pull/102))
+- Bump @metamask/eslint-config-nodejs from 6.0.0 to 7.0.1 ([#97](https://github.com/MetaMask/auto-changelog/pull/97))
+- Bump @metamask/eslint-config from 7.0.0 to 7.0.1 ([#98](https://github.com/MetaMask/auto-changelog/pull/98))
+- Bump @metamask/eslint-config from 6.0.0 to 7.0.0 ([#96](https://github.com/MetaMask/auto-changelog/pull/96))
+
 ## [2.4.0]
 ### Changed
 - Permit missing separating space in "Unreleased" link reference definition ([#92](https://github.com/MetaMask/auto-changelog/pull/92))
@@ -69,7 +78,8 @@ Includes the following features:
   - Monorepo support ([#41](https://github.com/MetaMask/auto-changelog/pull/41))
   - Configurable repository URL, version, and changelog file path ([#33](https://github.com/MetaMask/auto-changelog/pull/33), [#31](https://github.com/MetaMask/auto-changelog/pull/31), [#30](https://github.com/MetaMask/auto-changelog/pull/30))
 
-[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v2.4.0...HEAD
+[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v3.0.0...HEAD
+[3.0.0]: https://github.com/MetaMask/auto-changelog/compare/v2.4.0...v3.0.0
 [2.4.0]: https://github.com/MetaMask/auto-changelog/compare/v2.3.0...v2.4.0
 [2.3.0]: https://github.com/MetaMask/auto-changelog/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/MetaMask/auto-changelog/compare/v2.1.0...v2.2.0
