@@ -7,13 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [2.5.0]
-### Uncategorized
-- Update README release instructions ([#103](https://github.com/MetaMask/auto-changelog/pull/103))
-- Update ESLint config for TypeScript and Jest to v7 ([#101](https://github.com/MetaMask/auto-changelog/pull/101))
-- Validate no uncategorized changes in RC ([#102](https://github.com/MetaMask/auto-changelog/pull/102))
-- Bump @metamask/eslint-config-nodejs from 6.0.0 to 7.0.1 ([#97](https://github.com/MetaMask/auto-changelog/pull/97))
-- Bump @metamask/eslint-config from 7.0.0 to 7.0.1 ([#98](https://github.com/MetaMask/auto-changelog/pull/98))
-- Bump @metamask/eslint-config from 6.0.0 to 7.0.0 ([#96](https://github.com/MetaMask/auto-changelog/pull/96))
+### Added
+- Validate that there are no uncategorized changes in RCs ([#102](https://github.com/MetaMask/auto-changelog/pull/102))
 
 ## [2.4.0]
 ### Changed
