@@ -100,6 +100,9 @@ export function validateChangelog({
   const changelog = parseChangelog({ changelogContent, repoUrl });
   const hasUnreleasedChanges =
     Object.keys(changelog.getUnreleasedChanges()).length !== 0;
+  const releaseChanges = currentVersion
+    ? changelog.getReleaseChanges(currentVersion)
+    : undefined;
 
   if (isReleaseCandidate) {
     if (!currentVersion) {
@@ -115,17 +118,8 @@ export function validateChangelog({
     } else if (hasUnreleasedChanges) {
       throw new UnreleasedChangesError();
     } else if (
-      changelog
-        .getReleases()
-        .map((releaseMetadata) => releaseMetadata.version)
-        .map((version) => changelog.getReleaseChanges(version))
-        .filter((releaseChanges) => releaseChanges !== undefined)
-        .map((releasechanges) => releasechanges[ChangeCategory.Uncategorized])
-        .some(
-          (uncategorizedChanges) =>
-            uncategorizedChanges !== undefined &&
-            uncategorizedChanges.length > 0,
-        )
+      releaseChanges?.[ChangeCategory.Uncategorized]?.length &&
+      releaseChanges?.[ChangeCategory.Uncategorized]?.length !== 0
     ) {
       throw new UncategorizedChangesError();
     }
