@@ -7,14 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [2.5.0]
-### Uncategorized
-- Skip validation of "Uncategorized" header for older releases ([#106](https://github.com/MetaMask/auto-changelog/pull/106))
-- Update README release instructions ([#103](https://github.com/MetaMask/auto-changelog/pull/103))
-- Update ESLint config for TypeScript and Jest to v7 ([#101](https://github.com/MetaMask/auto-changelog/pull/101))
-- Validate no uncategorized changes in RC ([#102](https://github.com/MetaMask/auto-changelog/pull/102))
-- Bump @metamask/eslint-config-nodejs from 6.0.0 to 7.0.1 ([#97](https://github.com/MetaMask/auto-changelog/pull/97))
-- Bump @metamask/eslint-config from 7.0.0 to 7.0.1 ([#98](https://github.com/MetaMask/auto-changelog/pull/98))
-- Bump @metamask/eslint-config from 6.0.0 to 7.0.0 ([#96](https://github.com/MetaMask/auto-changelog/pull/96))
+### Added
+- The `validate --rc` command now ensures there are no uncategorized changes in the current release entry ([#102](https://github.com/MetaMask/auto-changelog/pull/102), [#106](https://github.com/MetaMask/auto-changelog/pull/106))
 
 ## [2.4.0]
 ### Changed
