@@ -618,7 +618,7 @@ describe('validateChangelog', () => {
       ).toThrow('Uncategorized changes present in the changelog');
     });
 
-    it('should throw if there are uncategorized changes in an older release', () => {
+    it('should not throw if there are uncategorized changes in an older release', () => {
       const changelogWithUnreleasedChanges = changelogWithReleases.replace(
         '## [0.0.2] - 2020-01-01',
         '## [0.0.2] - 2020-01-01\n### Uncategorized\n- More changes\n',
@@ -631,7 +631,7 @@ describe('validateChangelog', () => {
             'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
           isReleaseCandidate: true,
         }),
-      ).toThrow('Uncategorized changes present in the changelog');
+      ).not.toThrow();
     });
   });
 });
