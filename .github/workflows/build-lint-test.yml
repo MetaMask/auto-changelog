@@ -45,11 +45,12 @@ jobs:
           node-version: 12
       - run: yarn --frozen-lockfile
       - run: yarn build
+      - run: yarn setup:postinstall
       - name: Validate RC changelog
-        if: ${{ startsWith(github.ref, 'release/') }}
+        if: ${{ startsWith(github.head_ref, 'release/') }}
         run: yarn changelog validate --rc
       - name: Validate changelog
-        if: ${{ !startsWith(github.ref, 'release/') }}
+        if: ${{ !startsWith(github.head_ref, 'release/') }}
         run: yarn changelog validate
   all-jobs-pass:
     name: All jobs pass
