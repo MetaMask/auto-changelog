@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.5.0]
+### Added
+- The `validate --rc` command now ensures there are no uncategorized changes in the current release entry ([#102](https://github.com/MetaMask/auto-changelog/pull/102), [#106](https://github.com/MetaMask/auto-changelog/pull/106))
+
 ## [2.4.0]
 ### Changed
 - Permit missing separating space in "Unreleased" link reference definition ([#92](https://github.com/MetaMask/auto-changelog/pull/92))
@@ -69,7 +73,8 @@ Includes the following features:
   - Monorepo support ([#41](https://github.com/MetaMask/auto-changelog/pull/41))
   - Configurable repository URL, version, and changelog file path ([#33](https://github.com/MetaMask/auto-changelog/pull/33), [#31](https://github.com/MetaMask/auto-changelog/pull/31), [#30](https://github.com/MetaMask/auto-changelog/pull/30))
 
-[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v2.4.0...HEAD
+[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v2.5.0...HEAD
+[2.5.0]: https://github.com/MetaMask/auto-changelog/compare/v2.4.0...v2.5.0
 [2.4.0]: https://github.com/MetaMask/auto-changelog/compare/v2.3.0...v2.4.0
 [2.3.0]: https://github.com/MetaMask/auto-changelog/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/MetaMask/auto-changelog/compare/v2.1.0...v2.2.0
