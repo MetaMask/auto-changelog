@@ -20,9 +20,6 @@ export function getRepositoryUrl(): string | null {
 
   // Set automatically by Yarn 3.x
   const projectCwd = process.env.PROJECT_CWD;
-
-  console.log(projectCwd);
-
   if (projectCwd) {
     const packageJson = path.resolve(projectCwd, 'package.json');
     const packageJsonContent = JSON.parse(
