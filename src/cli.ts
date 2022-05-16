@@ -23,6 +23,7 @@ import {
   InvalidChangelogError,
   validateChangelog,
 } from './validate-changelog';
+import { getRepositoryUrl } from './repo';
 
 const updateEpilog = `New commits will be added to the "${unreleased}" section (or \
 to the section for the current release if the '--rc' flag is used) in reverse \
@@ -38,12 +39,6 @@ formatting is correct. Verification of the contents is left for manual review.`;
 
 // eslint-disable-next-line node/no-process-env
 const npmPackageVersion = process.env.npm_package_version;
-// eslint-disable-next-line node/no-process-env
-const npmPackageRepositoryUrl = process.env.npm_package_repository_url;
-
-const githubRepositoryUrl = npmPackageRepositoryUrl
-  ? npmPackageRepositoryUrl.replace(/\.git$/u, '')
-  : null;
 
 function isValidUrl(proposedUrl: string) {
   try {
@@ -165,7 +160,7 @@ function configureCommonCommandOptions(_yargs: Argv) {
       type: 'string',
     })
     .option('repo', {
-      default: githubRepositoryUrl,
+      default: getRepositoryUrl(),
       description: `The GitHub repository URL`,
       type: 'string',
     })
