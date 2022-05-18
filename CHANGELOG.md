@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.6.0]
+### Changed
+- Read repository URL from package.json if `npm_package_repository_url` is not set ([#111](https://github.com/MetaMask/auto-changelog/pull/111))
+  - This makes this package compatible with Yarn >1.
+
 ## [2.5.0]
 ### Added
 - The `validate --rc` command now ensures there are no uncategorized changes in the current release entry ([#102](https://github.com/MetaMask/auto-changelog/pull/102), [#106](https://github.com/MetaMask/auto-changelog/pull/106))
@@ -73,7 +78,8 @@ Includes the following features:
   - Monorepo support ([#41](https://github.com/MetaMask/auto-changelog/pull/41))
   - Configurable repository URL, version, and changelog file path ([#33](https://github.com/MetaMask/auto-changelog/pull/33), [#31](https://github.com/MetaMask/auto-changelog/pull/31), [#30](https://github.com/MetaMask/auto-changelog/pull/30))
 
-[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v2.5.0...HEAD
+[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v2.6.0...HEAD
+[2.6.0]: https://github.com/MetaMask/auto-changelog/compare/v2.5.0...v2.6.0
 [2.5.0]: https://github.com/MetaMask/auto-changelog/compare/v2.4.0...v2.5.0
 [2.4.0]: https://github.com/MetaMask/auto-changelog/compare/v2.3.0...v2.4.0
 [2.3.0]: https://github.com/MetaMask/auto-changelog/compare/v2.2.0...v2.3.0
