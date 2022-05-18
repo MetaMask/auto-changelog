@@ -7,9 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [2.6.0]
-### Uncategorized
-- Read repository from package.json if `npm_package_repository_url` is not set ([#111](https://github.com/MetaMask/auto-changelog/pull/111))
-- Fix CI changelog validation step ([#108](https://github.com/MetaMask/auto-changelog/pull/108))
+### Changed
+- Read repository URL from package.json if `npm_package_repository_url` is not set ([#111](https://github.com/MetaMask/auto-changelog/pull/111))
+  - This makes this package compatible with Yarn >1.
 
 ## [2.5.0]
 ### Added
