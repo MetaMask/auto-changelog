@@ -5,7 +5,7 @@ import { ChangeCategory, Version } from './constants';
 import type Changelog from './changelog';
 
 async function getMostRecentTag() {
-  const revListArgs = ['rev-list', '--tags', '--max-count=1'];
+  const revListArgs = ['rev-list', '--tags', '--max-count=1', '--date-order'];
   const results = await runCommand('git', revListArgs);
   if (results.length === 0) {
     return null;
