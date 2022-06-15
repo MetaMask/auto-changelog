@@ -7,8 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [2.6.1]
-### Uncategorized
-- Account for tiny time differences between commits ([#113](https://github.com/MetaMask/auto-changelog/pull/113))
+### Fixed
+- When fetching remote tags, order by date to account for miniscule time differences between tags created within automated tests ([#113](https://github.com/MetaMask/auto-changelog/pull/113))
 
 ## [2.6.0]
 ### Changed
