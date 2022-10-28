@@ -70,7 +70,7 @@ function stringifyCategory(category: ChangeCategory, changes: string[]) {
  * @param categories - The categories of changes included in this release.
  * @param options - Additional release options.
  * @param options.date - The date of the release.
- * @param options.status - The status of the release (e.g. "DEPRECATED").
+ * @param options.status - The status of the release (e.g., "DEPRECATED").
  * @returns The stringified release section.
  */
 function stringifyRelease(
@@ -132,8 +132,8 @@ function withTrailingSlash(url: string) {
  * Get the GitHub URL for comparing two git commits.
  *
  * @param repoUrl - The URL for the GitHub repository.
- * @param firstRef - A reference (e.g. commit hash, tag, etc.) to the first commit to compare.
- * @param secondRef - A reference (e.g. commit hash, tag, etc.) to the second commit to compare.
+ * @param firstRef - A reference (e.g., commit hash, tag, etc.) to the first commit to compare.
+ * @param secondRef - A reference (e.g., commit hash, tag, etc.) to the second commit to compare.
  * @returns The comparison URL for the two given commits.
  */
 function getCompareUrl(repoUrl: string, firstRef: string, secondRef: string) {
@@ -271,7 +271,7 @@ export default class Changelog {
    * should be set to `false` when parsing a changelog top-to-bottom.
    * @param options.date - An ISO-8601 formatted date, representing the release
    * date.
-   * @param options.status - The status of the release (e.g. 'WITHDRAWN',
+   * @param options.status - The status of the release (e.g., 'WITHDRAWN',
    * 'DEPRECATED').
    * @param options.version - The version of the current release, which should
    * be a [SemVer](https://semver.org/spec/v2.0.0.html)-compatible version.
