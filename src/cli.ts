@@ -205,7 +205,7 @@ the current working directory), and where the changelog path is resolved from \
  * Configure options that are common to all commands.
  *
  * @param _yargs - The yargs instance to configure.
- * @returns A yarn instance configured with all common commands.
+ * @returns A Yargs instance configured with all common commands.
  */
 function configureCommonCommandOptions(_yargs: Argv) {
   return _yargs
