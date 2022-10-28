@@ -1,10 +1,22 @@
 import Changelog from './changelog';
 import { ChangeCategory, unreleased } from './constants';
 
+/**
+ * Truncate the given string at 80 characters.
+ *
+ * @param line - The string to truncate.
+ * @returns The truncated string.
+ */
 function truncated(line: string) {
   return line.length > 80 ? `${line.slice(0, 80)}...` : line;
 }
 
+/**
+ * Returns whether the given string is recognized as a valid change category.
+ *
+ * @param category - The string to validate.
+ * @returns Whether the given string is a valid change category.
+ */
 function isValidChangeCategory(category: string): category is ChangeCategory {
   return ChangeCategory[category as ChangeCategory] !== undefined;
 }
@@ -12,8 +24,9 @@ function isValidChangeCategory(category: string): category is ChangeCategory {
 /**
  * Constructs a Changelog instance that represents the given changelog, which
  * is parsed for release and change information.
- * @param options
- * @param options.changelogContent - The changelog to parse
+ *
+ * @param options - Options.
+ * @param options.changelogContent - The changelog to parse.
  * @param options.repoUrl - The GitHub repository URL for the current project.
  * @returns A changelog instance that reflects the changelog text provided.
  */
@@ -52,7 +65,7 @@ export function parseChangelog({
    *
    * This is required because change entries can span multiple lines.
    *
-   * @param options
+   * @param options - Options.
    * @param options.removeTrailingNewline - Indicates that the trailing newline
    * is not a part of the change description, and should therefore be removed.
    */
@@ -64,18 +77,21 @@ export function parseChangelog({
     if (!currentChangeEntry) {
       return;
     }
+
     // This should never happen in practice, because `mostRecentCategory` is
     // guaranteed to be set if `currentChangeEntry` is set.
     /* istanbul ignore next */
     if (!mostRecentCategory) {
       throw new Error('Cannot finalize change without most recent category.');
     }
+
     if (removeTrailingNewline && currentChangeEntry.endsWith('\n')) {
       currentChangeEntry = currentChangeEntry.slice(
         0,
         currentChangeEntry.length - 1,
       );
     }
+
     changelog.addChange({
       addToStart: false,
       category: mostRecentCategory,
@@ -93,6 +109,7 @@ export function parseChangelog({
       if (results === null) {
         throw new Error(`Malformed release header: '${truncated(line)}'`);
       }
+
       // Trailing newline removed because the release section is expected to
       // be prefixed by a newline.
       finalizePreviousChange({
@@ -117,6 +134,7 @@ export function parseChangelog({
       finalizePreviousChange({
         removeTrailingNewline: !isFirstCategory,
       });
+
       if (!isValidChangeCategory(results[1])) {
         throw new Error(`Invalid change category: '${results[1]}'`);
       }

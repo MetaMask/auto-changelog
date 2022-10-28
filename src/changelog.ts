@@ -13,7 +13,7 @@ const changelogDescription = `All notable changes to this project will be docume
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).`;
 
-interface ReleaseMetadata {
+type ReleaseMetadata = {
   /**
    * The version of the current release.
    */
@@ -29,7 +29,7 @@ interface ReleaseMetadata {
    * The status of the release (e.g. 'WITHDRAWN', 'DEPRECATED')
    */
   status?: string;
-}
+};
 
 /**
  * Release changes, organized by category.
@@ -45,6 +45,13 @@ type ChangelogChanges = Record<Version, ReleaseChanges> & {
 
 // Stringification helpers
 
+/**
+ * Stringify a changelog category section.
+ *
+ * @param category - The title of the changelog category.
+ * @param changes - The changes included in this category.
+ * @returns The stringified category section.
+ */
 function stringifyCategory(category: ChangeCategory, changes: string[]) {
   const categoryHeader = `### ${category}`;
   if (changes.length === 0) {
@@ -56,6 +63,16 @@ function stringifyCategory(category: ChangeCategory, changes: string[]) {
   return `${categoryHeader}\n${changeDescriptions}`;
 }
 
+/**
+ * Stringify a changelog release section.
+ *
+ * @param version - The release version.
+ * @param categories - The categories of changes included in this release.
+ * @param options - Additional release options.
+ * @param options.date - The date of the release.
+ * @param options.status - The status of the release (e.g., "DEPRECATED").
+ * @returns The stringified release section.
+ */
 function stringifyRelease(
   version: Version | typeof unreleased,
   categories: ReleaseChanges,
@@ -77,6 +94,13 @@ function stringifyRelease(
   return `${releaseHeader}\n${categorizedChanges}`;
 }
 
+/**
+ * Stringify a set of changelog release sections.
+ *
+ * @param releases - The releases to stringify.
+ * @param changes - The set of changes to include, organized by release.
+ * @returns The stringified set of release sections.
+ */
 function stringifyReleases(
   releases: ReleaseMetadata[],
   changes: ChangelogChanges,
@@ -93,18 +117,49 @@ function stringifyReleases(
   return [stringifiedUnreleased, ...stringifiedReleases].join('\n\n');
 }
 
+/**
+ * Return the given URL with a trailing slash. It is returned unaltered if it
+ * already has a trailing slash.
+ *
+ * @param url - The URL string.
+ * @returns The URL string with a trailing slash.
+ */
 function withTrailingSlash(url: string) {
   return url.endsWith('/') ? url : `${url}/`;
 }
 
+/**
+ * Get the GitHub URL for comparing two git commits.
+ *
+ * @param repoUrl - The URL for the GitHub repository.
+ * @param firstRef - A reference (e.g., commit hash, tag, etc.) to the first commit to compare.
+ * @param secondRef - A reference (e.g., commit hash, tag, etc.) to the second commit to compare.
+ * @returns The comparison URL for the two given commits.
+ */
 function getCompareUrl(repoUrl: string, firstRef: string, secondRef: string) {
   return `${withTrailingSlash(repoUrl)}compare/${firstRef}...${secondRef}`;
 }
 
+/**
+ * Get a GitHub tag URL.
+ *
+ * @param repoUrl - The URL for the GitHub repository.
+ * @param tag - The tag name.
+ * @returns The URL for the given tag.
+ */
 function getTagUrl(repoUrl: string, tag: string) {
   return `${withTrailingSlash(repoUrl)}releases/tag/${tag}`;
 }
 
+/**
+ * Get a stringified list of link definitions for the given set of releases. The first release is
+ * linked to the corresponding tag, and each subsequent release is linked to a comparison with the
+ * previous release.
+ *
+ * @param repoUrl - The URL for the GitHub repository.
+ * @param releases - The releases to generate link definitions for.
+ * @returns The stringified release link definitions.
+ */
 function stringifyLinkReferenceDefinitions(
   repoUrl: string,
   releases: ReleaseMetadata[],
@@ -164,19 +219,19 @@ function stringifyLinkReferenceDefinitions(
   }`;
 }
 
-interface AddReleaseOptions {
+type AddReleaseOptions = {
   addToStart?: boolean;
   date?: string;
   status?: string;
   version: Version;
-}
+};
 
-interface AddChangeOptions {
+type AddChangeOptions = {
   addToStart?: boolean;
   category: ChangeCategory;
   description: string;
   version?: Version;
-}
+};
 
 /**
  * A changelog that complies with the
@@ -195,10 +250,10 @@ export default class Changelog {
   private _repoUrl: string;
 
   /**
-   * Construct an empty changelog
+   * Construct an empty changelog.
    *
-   * @param options
-   * @param options.repoUrl - The GitHub repository URL for the current project
+   * @param options - Changelog options.
+   * @param options.repoUrl - The GitHub repository URL for the current project.
    */
   constructor({ repoUrl }: { repoUrl: string }) {
     this._releases = [];
@@ -209,15 +264,15 @@ export default class Changelog {
   /**
    * Add a release to the changelog.
    *
-   * @param options
+   * @param options - Release options.
    * @param options.addToStart - Determines whether the change is added to the
    * top or bottom of the list of changes in this category. This defaults to
    * `true` because changes should be in reverse-chronological order. This
    * should be set to `false` when parsing a changelog top-to-bottom.
    * @param options.date - An ISO-8601 formatted date, representing the release
    * date.
-   * @param options.status - The status of the release (e.g. 'WITHDRAWN',
-   * 'DEPRECATED')
+   * @param options.status - The status of the release (e.g., 'WITHDRAWN',
+   * 'DEPRECATED').
    * @param options.version - The version of the current release, which should
    * be a [SemVer](https://semver.org/spec/v2.0.0.html)-compatible version.
    */
@@ -242,7 +297,7 @@ export default class Changelog {
   /**
    * Add a change to the changelog.
    *
-   * @param options
+   * @param options - Change options.
    * @param options.addToStart - Determines whether the change is added to the
    * top or bottom of the list of changes in this category. This defaults to
    * `true` because changes should be in reverse-chronological order. This
@@ -275,6 +330,7 @@ export default class Changelog {
     if (!release[category]) {
       release[category] = [];
     }
+
     if (addToStart) {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       release[category]!.unshift(description);
@@ -361,7 +417,7 @@ export default class Changelog {
   }
 
   /**
-   * Gets all changes that have not yet been released
+   * Gets all changes that have not yet been released.
    *
    * @returns The changes that have not yet been released.
    */

@@ -4,6 +4,11 @@ import { parseChangelog } from './parse-changelog';
 import { ChangeCategory, Version } from './constants';
 import type Changelog from './changelog';
 
+/**
+ * Get the most recent tag.
+ *
+ * @returns The most recent tag.
+ */
 async function getMostRecentTag() {
   const revListArgs = ['rev-list', '--tags', '--max-count=1', '--date-order'];
   const results = await runCommand('git', revListArgs);
@@ -20,6 +25,12 @@ async function getMostRecentTag() {
   return mostRecentTag;
 }
 
+/**
+ * Get commit details for each given commit hash.
+ *
+ * @param commitHashes - The list of commit hashes.
+ * @returns Commit details for each commit, including description and PR number (if present).
+ */
 async function getCommits(commitHashes: string[]) {
   const commits: { prNumber?: string; description: string }[] = [];
   for (const commitHash of commitHashes) {
@@ -66,6 +77,12 @@ async function getCommits(commitHashes: string[]) {
   return commits;
 }
 
+/**
+ * Get all change descriptions from a changelog.
+ *
+ * @param changelog - The changelog.
+ * @returns All commit descriptions included in the given changelog.
+ */
 function getAllChangeDescriptions(changelog: Changelog) {
   const releases = changelog.getReleases();
   const changeDescriptions = Object.values(
@@ -79,6 +96,12 @@ function getAllChangeDescriptions(changelog: Changelog) {
   return changeDescriptions;
 }
 
+/**
+ * Get all pull request numbers included in the given changelog.
+ *
+ * @param changelog - The changelog.
+ * @returns All pull request numbers included in the given changelog.
+ */
 function getAllLoggedPrNumbers(changelog: Changelog) {
   const changeDescriptions = getAllChangeDescriptions(changelog);
 
@@ -93,6 +116,13 @@ function getAllLoggedPrNumbers(changelog: Changelog) {
   return prNumbersWithChangelogEntries;
 }
 
+/**
+ * Get all commit hashes included in the given commit range.
+ *
+ * @param commitRange - The commit range.
+ * @param rootDirectory - The project root directory.
+ * @returns A list of commit hashes for the given range.
+ */
 async function getCommitHashesInRange(
   commitRange: string,
   rootDirectory?: string,
@@ -104,19 +134,20 @@ async function getCommitHashesInRange(
   return await runCommand('git', revListArgs);
 }
 
-export interface UpdateChangelogOptions {
+export type UpdateChangelogOptions = {
   changelogContent: string;
   currentVersion?: Version;
   repoUrl: string;
   isReleaseCandidate: boolean;
   projectRootDirectory?: string;
-}
+};
 
 /**
  * Update a changelog with any commits made since the last release. Commits for
  * PRs that are already included in the changelog are omitted.
- * @param options
- * @param options.changelogContent - The current changelog
+ *
+ * @param options - Update options.
+ * @param options.changelogContent - The current changelog.
  * @param options.currentVersion - The current version. Required if
  * `isReleaseCandidate` is set, but optional otherwise.
  * @param options.repoUrl - The GitHub repository URL for the current project.
@@ -128,7 +159,7 @@ export interface UpdateChangelogOptions {
  * filter results from various git commands. This path is assumed to be either
  * absolute, or relative to the current directory. Defaults to the root of the
  * current git repository.
- * @returns The updated changelog text
+ * @returns The updated changelog text.
  */
 export async function updateChangelog({
   changelogContent,
