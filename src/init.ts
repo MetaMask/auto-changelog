@@ -3,7 +3,7 @@ import Changelog from './changelog';
 /**
  * Creates a new empty changelog.
  *
- * @param options
+ * @param options - Changelog options.
  * @param options.repoUrl - The GitHub repository URL for the current project.
  * @returns The initial changelog text.
  */

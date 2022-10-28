@@ -120,20 +120,25 @@ describe('parseChangelog', () => {
       { date: '2020-01-01', status: undefined, version: '0.0.2' },
       { date: '2020-01-01', status: undefined, version: '0.0.1' },
     ]);
+
     expect(changelog.getReleaseChanges('1.0.0')).toStrictEqual({
       Changed: ['Something else'],
     });
+
     expect(changelog.getReleaseChanges('0.0.2')).toStrictEqual({
       Fixed: ['Something'],
     });
+
     expect(changelog.getReleaseChanges('0.0.1')).toStrictEqual({
       Changed: ['Something'],
     });
+
     expect(changelog.getRelease('1.0.0')).toStrictEqual({
       date: '2020-01-01',
       status: undefined,
       version: '1.0.0',
     });
+
     expect(changelog.getStringifiedRelease('1.0.0')).toStrictEqual(outdent`
     ## [1.0.0] - 2020-01-01
     ### Changed
@@ -179,12 +184,15 @@ describe('parseChangelog', () => {
       { date: '2020-01-01', status: undefined, version: '0.0.2' },
       { date: '2020-01-01', status: undefined, version: '0.0.1' },
     ]);
+
     expect(changelog.getReleaseChanges('1.0.0')).toStrictEqual({
       Changed: ['Something else'],
     });
+
     expect(changelog.getReleaseChanges('0.0.2')).toStrictEqual({
       Fixed: ['Something'],
     });
+
     expect(changelog.getReleaseChanges('0.0.1')).toStrictEqual({
       Changed: ['Something'],
     });
@@ -403,6 +411,7 @@ describe('parseChangelog', () => {
     expect(changelog.getReleases()).toStrictEqual([
       { date: '2020-01-01', status: undefined, version: '1.0.0' },
     ]);
+
     expect(changelog.getReleaseChanges('1.0.0')).toStrictEqual({
       Changed: ['Something else'],
     });

@@ -8,8 +8,6 @@ module.exports = {
       files: ['*.ts'],
       extends: ['@metamask/eslint-config-typescript'],
       rules: {
-        'no-shadow': 'off',
-        '@typescript-eslint/no-shadow': 'error',
         // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/34960
         'node/prefer-global/url': 'off',
       },

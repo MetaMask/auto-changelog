@@ -26,7 +26,9 @@ export class UncategorizedChangesError extends InvalidChangelogError {
  */
 export class MissingCurrentVersionError extends InvalidChangelogError {
   /**
-   * @param currentVersion - The current version
+   * Construct a changelog missing version error.
+   *
+   * @param currentVersion - The current version.
    */
   constructor(currentVersion: Version) {
     super(`Current version missing from changelog: '${currentVersion}'`);
@@ -40,7 +42,9 @@ export class ChangelogFormattingError extends InvalidChangelogError {
   public data: Record<string, string>;
 
   /**
-   * @param options
+   * Construct a changelog formatting error.
+   *
+   * @param options - Error options.
    * @param options.validChangelog - The string contents of the well-formatted
    * changelog.
    * @param options.invalidChangelog - The string contents of the malformed
@@ -61,18 +65,18 @@ export class ChangelogFormattingError extends InvalidChangelogError {
   }
 }
 
-interface ValidateChangelogOptions {
+type ValidateChangelogOptions = {
   changelogContent: string;
   currentVersion?: Version;
   repoUrl: string;
   isReleaseCandidate: boolean;
-}
+};
 
 /**
  * Validates that a changelog is well-formatted.
  *
- * @param options
- * @param options.changelogContent - The current changelog
+ * @param options - Validation options.
+ * @param options.changelogContent - The current changelog.
  * @param options.currentVersion - The current version. Required if
  * `isReleaseCandidate` is set, but optional otherwise.
  * @param options.repoUrl - The GitHub repository URL for the current

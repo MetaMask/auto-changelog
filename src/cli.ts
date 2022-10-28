@@ -40,6 +40,12 @@ formatting is correct. Verification of the contents is left for manual review.`;
 // eslint-disable-next-line node/no-process-env
 const npmPackageVersion = process.env.npm_package_version;
 
+/**
+ * Determine whether the given URL is valid.
+ *
+ * @param proposedUrl - The URL to validate.
+ * @returns True if the URl is valid, false otherwise.
+ */
 function isValidUrl(proposedUrl: string) {
   try {
     // eslint-disable-next-line no-new
@@ -50,17 +56,34 @@ function isValidUrl(proposedUrl: string) {
   }
 }
 
+/**
+ * Exit the process with the given error.
+ *
+ * @param errorMessage - The error message to exit with.
+ */
 function exitWithError(errorMessage: string) {
   console.error(errorMessage);
   process.exitCode = 1;
 }
 
+/**
+ * Read the changelog contents from the filesystem.
+ *
+ * @param changelogPath - The path to the changelog file.
+ * @returns The changelog contents.
+ */
 async function readChangelog(changelogPath: string) {
   return await fs.readFile(changelogPath, {
     encoding: 'utf8',
   });
 }
 
+/**
+ * Save the changelog to the filesystem.
+ *
+ * @param changelogPath - The path to the changelog file.
+ * @param newChangelogContent - The new changelog contents to save.
+ */
 async function saveChangelog(
   changelogPath: string,
   newChangelogContent: string,
@@ -68,14 +91,24 @@ async function saveChangelog(
   await fs.writeFile(changelogPath, newChangelogContent);
 }
 
-interface UpdateOptions {
+type UpdateOptions = {
   changelogPath: string;
   currentVersion?: Version;
   repoUrl: string;
   isReleaseCandidate: boolean;
   projectRootDirectory?: string;
-}
+};
 
+/**
+ * Update the changelog.
+ *
+ * @param options - Update options.
+ * @param options.changelogPath - The path to the changelog file.
+ * @param options.currentVersion - The current project version.
+ * @param options.isReleaseCandidate - Whether the current branch is a release candidate or not.
+ * @param options.repoUrl - The GitHub repository URL for the current project.
+ * @param options.projectRootDirectory - The root project directory.
+ */
 async function update({
   changelogPath,
   currentVersion,
@@ -101,13 +134,22 @@ async function update({
   }
 }
 
-interface ValidateOptions {
+type ValidateOptions = {
   changelogPath: string;
   currentVersion?: Version;
   isReleaseCandidate: boolean;
   repoUrl: string;
-}
+};
 
+/**
+ * Validate the changelog.
+ *
+ * @param options - Validation options.
+ * @param options.changelogPath - The path to the changelog file.
+ * @param options.currentVersion - The current project version.
+ * @param options.isReleaseCandidate - Whether the current branch is a release candidate or not.
+ * @param options.repoUrl - The GitHub repository URL for the current project.
+ */
 async function validate({
   changelogPath,
   currentVersion,
@@ -137,11 +179,18 @@ async function validate({
   }
 }
 
-interface InitOptions {
+type InitOptions = {
   changelogPath: string;
   repoUrl: string;
-}
+};
 
+/**
+ * Create a new empty changelog.
+ *
+ * @param options - Initialization options.
+ * @param options.changelogPath - The path to the changelog file.
+ * @param options.repoUrl - The GitHub repository URL for the current project.
+ */
 async function init({ changelogPath, repoUrl }: InitOptions) {
   const changelogContent = await createEmptyChangelog({ repoUrl });
   await saveChangelog(changelogPath, changelogContent);
@@ -152,6 +201,12 @@ look for changes since the last release (defaults to the entire repository at \
 the current working directory), and where the changelog path is resolved from \
 (defaults to the current working directory).`;
 
+/**
+ * Configure options that are common to all commands.
+ *
+ * @param _yargs - The yargs instance to configure.
+ * @returns A yarn instance configured with all common commands.
+ */
 function configureCommonCommandOptions(_yargs: Argv) {
   return _yargs
     .option('file', {
@@ -170,6 +225,9 @@ function configureCommonCommandOptions(_yargs: Argv) {
     });
 }
 
+/**
+ * The entrypoint for the auto-changelog CLI.
+ */
 async function main() {
   const { argv } = yargs(hideBin(process.argv))
     .command(
