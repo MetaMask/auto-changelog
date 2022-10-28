@@ -44,7 +44,7 @@ const npmPackageVersion = process.env.npm_package_version;
  * Determine whether the given URL is valid.
  *
  * @param proposedUrl - The URL to validate.
- * @returns True if the URl is valid, false otherwise.
+ * @returns True if the URL is valid, false otherwise.
  */
 function isValidUrl(proposedUrl: string) {
   try {
