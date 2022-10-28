@@ -28,17 +28,20 @@ function isValidChangeCategory(category: string): category is ChangeCategory {
  * @param options - Options.
  * @param options.changelogContent - The changelog to parse.
  * @param options.repoUrl - The GitHub repository URL for the current project.
+ * @param options.tagPrefix - The prefix used in tags before the version number.
  * @returns A changelog instance that reflects the changelog text provided.
  */
 export function parseChangelog({
   changelogContent,
   repoUrl,
+  tagPrefix = 'v',
 }: {
   changelogContent: string;
   repoUrl: string;
+  tagPrefix?: string;
 }) {
   const changelogLines = changelogContent.split('\n');
-  const changelog = new Changelog({ repoUrl });
+  const changelog = new Changelog({ repoUrl, tagPrefix });
 
   const unreleasedHeaderIndex = changelogLines.indexOf(`## [${unreleased}]`);
   if (unreleasedHeaderIndex === -1) {

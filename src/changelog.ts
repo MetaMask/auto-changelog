@@ -157,11 +157,13 @@ function getTagUrl(repoUrl: string, tag: string) {
  * previous release.
  *
  * @param repoUrl - The URL for the GitHub repository.
+ * @param tagPrefix - The prefix used in tags before the version number.
  * @param releases - The releases to generate link definitions for.
  * @returns The stringified release link definitions.
  */
 function stringifyLinkReferenceDefinitions(
   repoUrl: string,
+  tagPrefix: string,
   releases: ReleaseMetadata[],
 ) {
   // A list of release versions in descending SemVer order
@@ -187,7 +189,7 @@ function stringifyLinkReferenceDefinitions(
   // the link definition.
   const unreleasedLinkReferenceDefinition = `[${unreleased}]: ${
     hasReleases
-      ? getCompareUrl(repoUrl, `v${latestSemverVersion}`, 'HEAD')
+      ? getCompareUrl(repoUrl, `${tagPrefix}${latestSemverVersion}`, 'HEAD')
       : withTrailingSlash(repoUrl)
   }`;
 
@@ -199,7 +201,7 @@ function stringifyLinkReferenceDefinitions(
     .map(({ version }) => {
       let diffUrl;
       if (version === chronologicalVersions[chronologicalVersions.length - 1]) {
-        diffUrl = getTagUrl(repoUrl, `v${version}`);
+        diffUrl = getTagUrl(repoUrl, `${tagPrefix}${version}`);
       } else {
         const versionIndex = chronologicalVersions.indexOf(version);
         const previousVersion = chronologicalVersions
@@ -208,8 +210,12 @@ function stringifyLinkReferenceDefinitions(
             return semver.gt(version, releaseVersion);
           });
         diffUrl = previousVersion
-          ? getCompareUrl(repoUrl, `v${previousVersion}`, `v${version}`)
-          : getTagUrl(repoUrl, `v${version}`);
+          ? getCompareUrl(
+              repoUrl,
+              `${tagPrefix}${previousVersion}`,
+              `${tagPrefix}${version}`,
+            )
+          : getTagUrl(repoUrl, `${tagPrefix}${version}`);
       }
       return `[${version}]: ${diffUrl}`;
     })
@@ -249,16 +255,26 @@ export default class Changelog {
 
   private _repoUrl: string;
 
+  private _tagPrefix: string;
+
   /**
    * Construct an empty changelog.
    *
    * @param options - Changelog options.
    * @param options.repoUrl - The GitHub repository URL for the current project.
+   * @param options.tagPrefix - The prefix used in tags before the version number.
    */
-  constructor({ repoUrl }: { repoUrl: string }) {
+  constructor({
+    repoUrl,
+    tagPrefix = 'v',
+  }: {
+    repoUrl: string;
+    tagPrefix?: string;
+  }) {
     this._releases = [];
     this._changes = { [unreleased]: {} };
     this._repoUrl = repoUrl;
+    this._tagPrefix = tagPrefix;
   }
 
   /**
@@ -436,6 +452,10 @@ ${changelogDescription}
 
 ${stringifyReleases(this._releases, this._changes)}
 
-${stringifyLinkReferenceDefinitions(this._repoUrl, this._releases)}`;
+${stringifyLinkReferenceDefinitions(
+  this._repoUrl,
+  this._tagPrefix,
+  this._releases,
+)}`;
   }
 }
