@@ -37,9 +37,6 @@ const validateEpilog = `This does not ensure that the changelog is complete, \
 or that each change is in the correct section. It just ensures that the \
 formatting is correct. Verification of the contents is left for manual review.`;
 
-// eslint-disable-next-line node/no-process-env
-const npmPackageVersion = process.env.npm_package_version;
-
 /**
  * Determine whether the given URL is valid.
  *
@@ -256,7 +253,6 @@ async function main() {
             type: 'boolean',
           })
           .option('currentVersion', {
-            default: npmPackageVersion,
             description:
               'The current version of the project that the changelog belongs to.',
             type: 'string',
@@ -274,7 +270,6 @@ async function main() {
             type: 'boolean',
           })
           .option('currentVersion', {
-            default: npmPackageVersion,
             description:
               'The current version of the project that the changelog belongs to.',
             type: 'string',
@@ -292,31 +287,13 @@ async function main() {
     );
 
   const {
-    currentVersion,
     file: changelogFilename,
     rc: isReleaseCandidate,
     repo: repoUrl,
     root: projectRootDirectory,
     tagPrefix,
   } = argv;
-
-  if (isReleaseCandidate && !currentVersion) {
-    exitWithError(
-      `Version not found. Please set the --currentVersion flag, or run this as an npm script from a project with the 'version' field set.`,
-    );
-    return;
-  } else if (currentVersion && semver.valid(currentVersion) === null) {
-    exitWithError(`Current version is not valid SemVer: '${currentVersion}'`);
-    return;
-  } else if (!repoUrl) {
-    exitWithError(
-      `npm package repository URL not found. Please set the '--repo' flag, or run this as an npm script from a project with the 'repository' field set.`,
-    );
-    return;
-  } else if (!isValidUrl(repoUrl)) {
-    exitWithError(`Invalid repo URL: '${repoUrl}'`);
-    return;
-  }
+  let { currentVersion } = argv;
 
   if (projectRootDirectory) {
     try {
@@ -341,6 +318,55 @@ async function main() {
       }
       throw error;
     }
+  }
+
+  if (!currentVersion) {
+    const manifestPath = projectRootDirectory
+      ? path.join(projectRootDirectory, 'package.json')
+      : path.resolve('package.json');
+
+    try {
+      const manifestText = await fs.readFile(manifestPath, {
+        encoding: 'utf-8',
+      });
+      const manifest = JSON.parse(manifestText);
+      currentVersion = manifest.version;
+    } catch (error) {
+      if (error.code === 'ENOENT') {
+        exitWithError(
+          `Package manifest not found at path: '${manifestPath}'\nRun this script from the project root directory, or set the project directory using the '--root' flag.`,
+        );
+        return;
+      } else if (error.code === 'EACCES') {
+        exitWithError(
+          `Access to package manifest is forbidden by file access permissions: '${manifestPath}'`,
+        );
+        return;
+      } else if (error.name === 'SyntaxError') {
+        exitWithError(
+          `Package manifest cannot be parsed as JSON: '${manifestPath}'`,
+        );
+        return;
+      }
+    }
+  }
+
+  if (!currentVersion) {
+    exitWithError(
+      `Version not found. Please set the --currentVersion flag, or run this as an npm script from a project with the 'version' field set.`,
+    );
+    return;
+  } else if (currentVersion && semver.valid(currentVersion) === null) {
+    exitWithError(`Current version is not valid SemVer: '${currentVersion}'`);
+    return;
+  } else if (!repoUrl) {
+    exitWithError(
+      `npm package repository URL not found. Please set the '--repo' flag, or run this as an npm script from a project with the 'repository' field set.`,
+    );
+    return;
+  } else if (!isValidUrl(repoUrl)) {
+    exitWithError(`Invalid repo URL: '${repoUrl}'`);
+    return;
   }
 
   let changelogPath = changelogFilename;
