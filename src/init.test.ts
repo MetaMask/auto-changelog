@@ -19,4 +19,10 @@ describe('createEmptyChangelog', () => {
       emptyChangelog,
     );
   });
+
+  it('creates an empty changelog with a custom tag prefix', () => {
+    expect(
+      createEmptyChangelog({ repoUrl: exampleRepoUrl, tagPrefix: 'foo' }),
+    ).toStrictEqual(emptyChangelog);
+  });
 });

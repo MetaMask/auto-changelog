@@ -5,23 +5,41 @@ import { ChangeCategory, Version } from './constants';
 import type Changelog from './changelog';
 
 /**
- * Get the most recent tag.
+ * Get the most recent tag for a project.
  *
+ * @param options - Options.
+ * @param options.tagPrefixes - A list of tag prefixes to look for, where the first is the intended
+ * prefix and each subsequent prefix is a fallback in case the previous tag prefixes are not found.
  * @returns The most recent tag.
  */
-async function getMostRecentTag() {
-  const revListArgs = ['rev-list', '--tags', '--max-count=1', '--date-order'];
-  const results = await runCommand('git', revListArgs);
-  if (results.length === 0) {
+async function getMostRecentTag({
+  tagPrefixes,
+}: {
+  tagPrefixes: [string, ...string[]];
+}) {
+  let mostRecentTagCommitHash: string | null = null;
+  for (const tagPrefix of tagPrefixes) {
+    const revListArgs = [
+      'rev-list',
+      `--tags=${tagPrefix}*`,
+      '--max-count=1',
+      '--date-order',
+    ];
+    const results = await runCommand('git', revListArgs);
+    if (results.length) {
+      mostRecentTagCommitHash = results[0];
+      break;
+    }
+  }
+
+  if (mostRecentTagCommitHash === null) {
     return null;
   }
-  const [mostRecentTagCommitHash] = results;
   const [mostRecentTag] = await runCommand('git', [
     'describe',
     '--tags',
     mostRecentTagCommitHash,
   ]);
-  assert.equal(mostRecentTag?.[0], 'v', 'Most recent tag should start with v');
   return mostRecentTag;
 }
 
@@ -140,6 +158,7 @@ export type UpdateChangelogOptions = {
   repoUrl: string;
   isReleaseCandidate: boolean;
   projectRootDirectory?: string;
+  tagPrefixes?: [string, ...string[]];
 };
 
 /**
@@ -159,6 +178,8 @@ export type UpdateChangelogOptions = {
  * filter results from various git commands. This path is assumed to be either
  * absolute, or relative to the current directory. Defaults to the root of the
  * current git repository.
+ * @param options.tagPrefixes - A list of tag prefixes to look for, where the first is the intended
+ * prefix and each subsequent prefix is a fallback in case the previous tag prefixes are not found.
  * @returns The updated changelog text.
  */
 export async function updateChangelog({
@@ -167,19 +188,29 @@ export async function updateChangelog({
   repoUrl,
   isReleaseCandidate,
   projectRootDirectory,
+  tagPrefixes = ['v'],
 }: UpdateChangelogOptions) {
   if (isReleaseCandidate && !currentVersion) {
     throw new Error(
       `A version must be specified if 'isReleaseCandidate' is set.`,
     );
   }
-  const changelog = parseChangelog({ changelogContent, repoUrl });
+  const changelog = parseChangelog({
+    changelogContent,
+    repoUrl,
+    tagPrefix: tagPrefixes[0],
+  });
 
   // Ensure we have all tags on remote
   await runCommand('git', ['fetch', '--tags']);
-  const mostRecentTag = await getMostRecentTag();
+  const mostRecentTag = await getMostRecentTag({
+    tagPrefixes,
+  });
 
-  if (isReleaseCandidate && mostRecentTag === `v${currentVersion}`) {
+  if (
+    isReleaseCandidate &&
+    mostRecentTag === `${tagPrefixes[0]}${currentVersion}`
+  ) {
     throw new Error(
       `Current version already has tag, which is unexpected for a release candidate.`,
     );

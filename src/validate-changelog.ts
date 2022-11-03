@@ -70,6 +70,7 @@ type ValidateChangelogOptions = {
   currentVersion?: Version;
   repoUrl: string;
   isReleaseCandidate: boolean;
+  tagPrefix?: string;
 };
 
 /**
@@ -85,6 +86,7 @@ type ValidateChangelogOptions = {
  * the midst of release preparation or not. If this is set, this command will
  * also ensure the current version is represented in the changelog with a
  * header, and that there are no unreleased changes present.
+ * @param options.tagPrefix - The prefix used in tags before the version number.
  * @throws `InvalidChangelogError` - Will throw if the changelog is invalid
  * @throws `MissingCurrentVersionError` - Will throw if `isReleaseCandidate` is
  * `true` and the changelog is missing the release header for the current
@@ -100,8 +102,9 @@ export function validateChangelog({
   currentVersion,
   repoUrl,
   isReleaseCandidate,
+  tagPrefix = 'v',
 }: ValidateChangelogOptions) {
-  const changelog = parseChangelog({ changelogContent, repoUrl });
+  const changelog = parseChangelog({ changelogContent, repoUrl, tagPrefix });
   const hasUnreleasedChanges =
     Object.keys(changelog.getUnreleasedChanges()).length !== 0;
   const releaseChanges = currentVersion

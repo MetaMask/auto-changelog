@@ -97,6 +97,7 @@ type UpdateOptions = {
   repoUrl: string;
   isReleaseCandidate: boolean;
   projectRootDirectory?: string;
+  tagPrefix: string;
 };
 
 /**
@@ -108,6 +109,7 @@ type UpdateOptions = {
  * @param options.isReleaseCandidate - Whether the current branch is a release candidate or not.
  * @param options.repoUrl - The GitHub repository URL for the current project.
  * @param options.projectRootDirectory - The root project directory.
+ * @param options.tagPrefix - The prefix used in tags before the version number.
  */
 async function update({
   changelogPath,
@@ -115,6 +117,7 @@ async function update({
   isReleaseCandidate,
   repoUrl,
   projectRootDirectory,
+  tagPrefix,
 }: UpdateOptions) {
   const changelogContent = await readChangelog(changelogPath);
 
@@ -124,6 +127,7 @@ async function update({
     repoUrl,
     isReleaseCandidate,
     projectRootDirectory,
+    tagPrefixes: [tagPrefix],
   });
 
   if (newChangelogContent) {
@@ -139,6 +143,7 @@ type ValidateOptions = {
   currentVersion?: Version;
   isReleaseCandidate: boolean;
   repoUrl: string;
+  tagPrefix: string;
 };
 
 /**
@@ -149,12 +154,14 @@ type ValidateOptions = {
  * @param options.currentVersion - The current project version.
  * @param options.isReleaseCandidate - Whether the current branch is a release candidate or not.
  * @param options.repoUrl - The GitHub repository URL for the current project.
+ * @param options.tagPrefix - The prefix used in tags before the version number.
  */
 async function validate({
   changelogPath,
   currentVersion,
   isReleaseCandidate,
   repoUrl,
+  tagPrefix,
 }: ValidateOptions) {
   const changelogContent = await readChangelog(changelogPath);
 
@@ -164,6 +171,7 @@ async function validate({
       currentVersion,
       repoUrl,
       isReleaseCandidate,
+      tagPrefix,
     });
   } catch (error) {
     if (error instanceof ChangelogFormattingError) {
@@ -182,6 +190,7 @@ async function validate({
 type InitOptions = {
   changelogPath: string;
   repoUrl: string;
+  tagPrefix: string;
 };
 
 /**
@@ -190,9 +199,10 @@ type InitOptions = {
  * @param options - Initialization options.
  * @param options.changelogPath - The path to the changelog file.
  * @param options.repoUrl - The GitHub repository URL for the current project.
+ * @param options.tagPrefix - The prefix used in tags before the version number.
  */
-async function init({ changelogPath, repoUrl }: InitOptions) {
-  const changelogContent = await createEmptyChangelog({ repoUrl });
+async function init({ changelogPath, repoUrl, tagPrefix }: InitOptions) {
+  const changelogContent = await createEmptyChangelog({ repoUrl, tagPrefix });
   await saveChangelog(changelogPath, changelogContent);
 }
 
@@ -221,6 +231,11 @@ function configureCommonCommandOptions(_yargs: Argv) {
     })
     .option('root', {
       description: rootDescription,
+      type: 'string',
+    })
+    .option('tagPrefix', {
+      default: 'v',
+      description: 'The prefix used in tags before the version number.',
       type: 'string',
     });
 }
@@ -282,6 +297,7 @@ async function main() {
     rc: isReleaseCandidate,
     repo: repoUrl,
     root: projectRootDirectory,
+    tagPrefix,
   } = argv;
 
   if (isReleaseCandidate && !currentVersion) {
@@ -358,6 +374,7 @@ async function main() {
       isReleaseCandidate,
       repoUrl,
       projectRootDirectory,
+      tagPrefix,
     });
   } else if (command === 'validate') {
     await validate({
@@ -365,11 +382,13 @@ async function main() {
       currentVersion,
       isReleaseCandidate,
       repoUrl,
+      tagPrefix,
     });
   } else if (command === 'init') {
     await init({
       changelogPath,
       repoUrl,
+      tagPrefix,
     });
   }
 }
