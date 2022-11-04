@@ -19,7 +19,7 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
       - name: Get Yarn cache directory
-        run: echo "YARN_CACHE_DIR=$(yarn cache dir)" >> "$GITHUB_OUTPUT"
+        run: echo "YARN_CACHE_DIR=$(yarn config get cacheFolder)" >> "$GITHUB_OUTPUT"
         id: yarn-cache-dir
       - name: Get Yarn version
         run: echo "YARN_VERSION=$(yarn --version)" >> "$GITHUB_OUTPUT"
@@ -29,8 +29,7 @@ jobs:
         with:
           path: ${{ steps.yarn-cache-dir.outputs.YARN_CACHE_DIR }}
           key: yarn-cache-${{ runner.os }}-${{ steps.yarn-version.outputs.YARN_VERSION }}-${{ hashFiles('yarn.lock') }}
-      - run: yarn install --frozen-lockfile
-      - run: yarn setup:postinstall
+      - run: yarn --immutable
       - run: yarn build
       - run: yarn lint
       - run: yarn test
@@ -45,9 +44,8 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
-      - run: yarn --frozen-lockfile
+      - run: yarn --immutable
       - run: yarn build
-      - run: yarn setup:postinstall
       - name: Validate RC changelog
         if: ${{ startsWith(github.head_ref, 'release/') }}
         run: yarn changelog validate --rc
