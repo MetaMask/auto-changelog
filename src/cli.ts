@@ -170,15 +170,14 @@ async function validate({
       isReleaseCandidate,
       tagPrefix,
     });
+    return undefined;
   } catch (error) {
     if (error instanceof ChangelogFormattingError) {
       const { validChangelog, invalidChangelog } = error.data;
       const diff = generateDiff(validChangelog, invalidChangelog);
-      exitWithError(`Changelog not well-formatted. Diff:\n\n${diff}`);
-      return;
+      return exitWithError(`Changelog not well-formatted. Diff:\n\n${diff}`);
     } else if (error instanceof InvalidChangelogError) {
-      exitWithError(`Changelog is invalid: ${error.message}`);
-      return;
+      return exitWithError(`Changelog is invalid: ${error.message}`);
     }
     throw error;
   }
@@ -299,22 +298,19 @@ async function main() {
     try {
       const stat = await fs.stat(projectRootDirectory);
       if (!stat.isDirectory()) {
-        exitWithError(
+        return exitWithError(
           `Project root must be a directory: '${projectRootDirectory}'`,
         );
-        return;
       }
     } catch (error) {
       if (error.code === 'ENOENT') {
-        exitWithError(
+        return exitWithError(
           `Root directory specified does not exist: '${projectRootDirectory}'`,
         );
-        return;
       } else if (error.code === 'EACCES') {
-        exitWithError(
+        return exitWithError(
           `Access to root directory is forbidden by file access permissions: '${projectRootDirectory}'`,
         );
-        return;
       }
       throw error;
     }
@@ -333,41 +329,36 @@ async function main() {
       currentVersion = manifest.version;
     } catch (error) {
       if (error.code === 'ENOENT') {
-        exitWithError(
+        return exitWithError(
           `Package manifest not found at path: '${manifestPath}'\nRun this script from the project root directory, or set the project directory using the '--root' flag.`,
         );
-        return;
       } else if (error.code === 'EACCES') {
-        exitWithError(
+        return exitWithError(
           `Access to package manifest is forbidden by file access permissions: '${manifestPath}'`,
         );
-        return;
       } else if (error.name === 'SyntaxError') {
-        exitWithError(
+        return exitWithError(
           `Package manifest cannot be parsed as JSON: '${manifestPath}'`,
         );
-        return;
       }
       throw error;
     }
   }
 
   if (!currentVersion) {
-    exitWithError(
+    return exitWithError(
       `Version not found. Please set the --currentVersion flag, or run this as an npm script from a project with the 'version' field set.`,
     );
-    return;
   } else if (currentVersion && semver.valid(currentVersion) === null) {
-    exitWithError(`Current version is not valid SemVer: '${currentVersion}'`);
-    return;
+    return exitWithError(
+      `Current version is not valid SemVer: '${currentVersion}'`,
+    );
   } else if (!repoUrl) {
-    exitWithError(
+    return exitWithError(
       `npm package repository URL not found. Please set the '--repo' flag, or run this as an npm script from a project with the 'repository' field set.`,
     );
-    return;
   } else if (!isValidUrl(repoUrl)) {
-    exitWithError(`Invalid repo URL: '${repoUrl}'`);
-    return;
+    return exitWithError(`Invalid repo URL: '${repoUrl}'`);
   }
 
   let changelogPath = changelogFilename;
@@ -386,11 +377,9 @@ async function main() {
       await fs.access(changelogPath, fsConstants.F_OK | fsConstants.W_OK);
     } catch (error) {
       if (error.code === 'ENOENT') {
-        exitWithError(`File does not exist: '${changelogPath}'`);
-      } else {
-        exitWithError(`File is not writable: '${changelogPath}'`);
+        return exitWithError(`File does not exist: '${changelogPath}'`);
       }
-      return;
+      return exitWithError(`File is not writable: '${changelogPath}'`);
     }
   }
 
@@ -418,6 +407,7 @@ async function main() {
       tagPrefix,
     });
   }
+  return undefined;
 }
 
 main().catch((error) => {
