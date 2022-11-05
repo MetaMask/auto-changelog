@@ -21,7 +21,7 @@
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watch",
-    "prepack": "yarn build",
+    "prepack": "./scripts/prepack.sh",
     "lint:eslint": "eslint . --cache --ext js,ts",
     "lint:misc": "prettier '**/*.json' '**/*.md' '!CHANGELOG.md' '**/*.yml' '!.yarnrc.yml' --ignore-path .gitignore",
     "lint": "yarn lint:eslint && yarn lint:misc --check",
