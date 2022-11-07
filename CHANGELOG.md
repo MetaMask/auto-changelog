@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.0]
+### Added
+- Support alternate tag prefixes ([#120](https://github.com/MetaMask/auto-changelog/pull/120))
+
+### Changed
+- **BREAKING:** Update minimum Node.js version to v14 ([#117](https://github.com/MetaMask/auto-changelog/pull/117))
+- Get package version from manifest ([#121](https://github.com/MetaMask/auto-changelog/pull/121))
+
 ## [2.6.1]
 ### Fixed
 - When fetching remote tags, order by date to account for miniscule time differences between tags created within automated tests ([#113](https://github.com/MetaMask/auto-changelog/pull/113))
@@ -82,7 +90,8 @@ Includes the following features:
   - Monorepo support ([#41](https://github.com/MetaMask/auto-changelog/pull/41))
   - Configurable repository URL, version, and changelog file path ([#33](https://github.com/MetaMask/auto-changelog/pull/33), [#31](https://github.com/MetaMask/auto-changelog/pull/31), [#30](https://github.com/MetaMask/auto-changelog/pull/30))
 
-[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v2.6.1...HEAD
+[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v3.0.0...HEAD
+[3.0.0]: https://github.com/MetaMask/auto-changelog/compare/v2.6.1...v3.0.0
 [2.6.1]: https://github.com/MetaMask/auto-changelog/compare/v2.6.0...v2.6.1
 [2.6.0]: https://github.com/MetaMask/auto-changelog/compare/v2.5.0...v2.6.0
 [2.5.0]: https://github.com/MetaMask/auto-changelog/compare/v2.4.0...v2.5.0
