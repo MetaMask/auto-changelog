@@ -7,16 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [3.0.0]
-### Uncategorized
-- Make `prepack.sh` script executable ([#126](https://github.com/MetaMask/auto-changelog/pull/126))
-- Update GitHub actions to match module template ([#125](https://github.com/MetaMask/auto-changelog/pull/125))
-- Refactor: `return` on same line as error ([#122](https://github.com/MetaMask/auto-changelog/pull/122))
-- Get package version from manifest ([#121](https://github.com/MetaMask/auto-changelog/pull/121))
-- Migrate to Yarn v3 ([#123](https://github.com/MetaMask/auto-changelog/pull/123))
+### Added
 - Support alternate tag prefixes ([#120](https://github.com/MetaMask/auto-changelog/pull/120))
-- Update ESLint configuration and packages ([#118](https://github.com/MetaMask/auto-changelog/pull/118))
-- Update GitHub actions to resolve deprecation warnings ([#119](https://github.com/MetaMask/auto-changelog/pull/119))
-- Update minimum Node.js version to v14 ([#117](https://github.com/MetaMask/auto-changelog/pull/117))
+
+### Changed
+- **BREAKING:** Update minimum Node.js version to v14 ([#117](https://github.com/MetaMask/auto-changelog/pull/117))
+- Get package version from manifest ([#121](https://github.com/MetaMask/auto-changelog/pull/121))
 
 ## [2.6.1]
 ### Fixed
