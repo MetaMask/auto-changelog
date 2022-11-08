@@ -352,11 +352,13 @@ async function main() {
           return exitWithError(
             `Access to package manifest is forbidden by file access permissions: '${manifestPath}'`,
           );
-        } else if (error.name === 'SyntaxError') {
-          return exitWithError(
-            `Package manifest cannot be parsed as JSON: '${manifestPath}'`,
-          );
         }
+      }
+
+      if (error instanceof Error && error.name === 'SyntaxError') {
+        return exitWithError(
+          `Package manifest cannot be parsed as JSON: '${manifestPath}'`,
+        );
       }
       throw error;
     }
