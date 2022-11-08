@@ -183,6 +183,19 @@ async function validate({
   }
 }
 
+/**
+ * Returns whether an error has an error code or not.
+ *
+ * @param error - The error to check.
+ * @returns True if the error is a real error and has a code property, false otherwise.
+ */
+function hasErrorCode(error: unknown): error is Error & { code: unknown } {
+  return (
+    error instanceof Error &&
+    Object.prototype.hasOwnProperty.call(error, 'code')
+  );
+}
+
 type InitOptions = {
   changelogPath: string;
   repoUrl: string;
@@ -303,14 +316,16 @@ async function main() {
         );
       }
     } catch (error) {
-      if (error.code === 'ENOENT') {
-        return exitWithError(
-          `Root directory specified does not exist: '${projectRootDirectory}'`,
-        );
-      } else if (error.code === 'EACCES') {
-        return exitWithError(
-          `Access to root directory is forbidden by file access permissions: '${projectRootDirectory}'`,
-        );
+      if (hasErrorCode(error)) {
+        if (error.code === 'ENOENT') {
+          return exitWithError(
+            `Root directory specified does not exist: '${projectRootDirectory}'`,
+          );
+        } else if (error.code === 'EACCES') {
+          return exitWithError(
+            `Access to root directory is forbidden by file access permissions: '${projectRootDirectory}'`,
+          );
+        }
       }
       throw error;
     }
@@ -328,15 +343,19 @@ async function main() {
       const manifest = JSON.parse(manifestText);
       currentVersion = manifest.version;
     } catch (error) {
-      if (error.code === 'ENOENT') {
-        return exitWithError(
-          `Package manifest not found at path: '${manifestPath}'\nRun this script from the project root directory, or set the project directory using the '--root' flag.`,
-        );
-      } else if (error.code === 'EACCES') {
-        return exitWithError(
-          `Access to package manifest is forbidden by file access permissions: '${manifestPath}'`,
-        );
-      } else if (error.name === 'SyntaxError') {
+      if (hasErrorCode(error)) {
+        if (error.code === 'ENOENT') {
+          return exitWithError(
+            `Package manifest not found at path: '${manifestPath}'\nRun this script from the project root directory, or set the project directory using the '--root' flag.`,
+          );
+        } else if (error.code === 'EACCES') {
+          return exitWithError(
+            `Access to package manifest is forbidden by file access permissions: '${manifestPath}'`,
+          );
+        }
+      }
+
+      if (error instanceof Error && error.name === 'SyntaxError') {
         return exitWithError(
           `Package manifest cannot be parsed as JSON: '${manifestPath}'`,
         );
@@ -376,7 +395,7 @@ async function main() {
       // eslint-disable-next-line no-bitwise
       await fs.access(changelogPath, fsConstants.F_OK | fsConstants.W_OK);
     } catch (error) {
-      if (error.code === 'ENOENT') {
+      if (hasErrorCode(error) && error.code === 'ENOENT') {
         return exitWithError(`File does not exist: '${changelogPath}'`);
       }
       return exitWithError(`File is not writable: '${changelogPath}'`);
