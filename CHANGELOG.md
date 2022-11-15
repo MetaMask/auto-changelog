@@ -7,10 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [3.1.0]
-### Uncategorized
+### Added
 - Allow prerelease versions in release headers ([#130](https://github.com/MetaMask/auto-changelog/pull/130))
-- Update publishing instructions ([#129](https://github.com/MetaMask/auto-changelog/pull/129))
-- Update TypeScript to the latest stable version ([#124](https://github.com/MetaMask/auto-changelog/pull/124))
+
+### Changed
+- Check for `code` property when interpreting filesystem errors ([#124](https://github.com/MetaMask/auto-changelog/pull/124))
 
 ## [3.0.0]
 ### Added
