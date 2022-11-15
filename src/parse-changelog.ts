@@ -1,3 +1,4 @@
+import semver from 'semver';
 import Changelog from './changelog';
 import { ChangeCategory, unreleased } from './constants';
 
@@ -88,11 +89,18 @@ export function parseChangelog({
   for (const line of contentfulChangelogLines) {
     if (line.startsWith('## [')) {
       const results = line.match(
-        /^## \[(\d+\.\d+\.\d+)\](?: - (\d\d\d\d-\d\d-\d\d))?(?: \[(\w+)\])?/u,
+        /^## \[([^[\]]+)\](?: - (\d\d\d\d-\d\d-\d\d))?(?: \[(\w+)\])?/u,
       );
       if (results === null) {
         throw new Error(`Malformed release header: '${truncated(line)}'`);
       }
+
+      if (semver.valid(results[1]) === null) {
+        throw new Error(
+          `Invalid SemVer version in release header: '${truncated(line)}'`,
+        );
+      }
+
       // Trailing newline removed because the release section is expected to
       // be prefixed by a newline.
       finalizePreviousChange({
