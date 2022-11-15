@@ -10,9 +10,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Allow prerelease versions in release headers ([#130](https://github.com/MetaMask/auto-changelog/pull/130))
 
-### Changed
-- Check for `code` property when interpreting filesystem errors ([#124](https://github.com/MetaMask/auto-changelog/pull/124))
-
 ## [3.0.0]
 ### Added
 - Support alternate tag prefixes ([#120](https://github.com/MetaMask/auto-changelog/pull/120))
