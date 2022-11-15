@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.1.0]
+### Uncategorized
+- Allow prerelease versions in release headers ([#130](https://github.com/MetaMask/auto-changelog/pull/130))
+- Update publishing instructions ([#129](https://github.com/MetaMask/auto-changelog/pull/129))
+- Update TypeScript to the latest stable version ([#124](https://github.com/MetaMask/auto-changelog/pull/124))
+
 ## [3.0.0]
 ### Added
 - Support alternate tag prefixes ([#120](https://github.com/MetaMask/auto-changelog/pull/120))
@@ -90,7 +96,8 @@ Includes the following features:
   - Monorepo support ([#41](https://github.com/MetaMask/auto-changelog/pull/41))
   - Configurable repository URL, version, and changelog file path ([#33](https://github.com/MetaMask/auto-changelog/pull/33), [#31](https://github.com/MetaMask/auto-changelog/pull/31), [#30](https://github.com/MetaMask/auto-changelog/pull/30))
 
-[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v3.0.0...HEAD
+[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v3.1.0...HEAD
+[3.1.0]: https://github.com/MetaMask/auto-changelog/compare/v3.0.0...v3.1.0
 [3.0.0]: https://github.com/MetaMask/auto-changelog/compare/v2.6.1...v3.0.0
 [2.6.1]: https://github.com/MetaMask/auto-changelog/compare/v2.6.0...v2.6.1
 [2.6.0]: https://github.com/MetaMask/auto-changelog/compare/v2.5.0...v2.6.0
