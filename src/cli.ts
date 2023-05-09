@@ -2,12 +2,7 @@
 
 import { promises as fs, constants as fsConstants } from 'fs';
 import path from 'path';
-// Intentionally shadowing 'URL' global, which is equivalent
-// Can't use global directly because of missing type, see:
-// https://github.com/DefinitelyTyped/DefinitelyTyped/issues/34960
-// eslint-disable-next-line @typescript-eslint/no-shadow
 import semver from 'semver';
-import { URL } from 'url';
 import type { Argv } from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import yargs from 'yargs/yargs';
@@ -209,7 +204,7 @@ type InitOptions = {
  * @param options.tagPrefix - The prefix used in tags before the version number.
  */
 async function init({ changelogPath, repoUrl, tagPrefix }: InitOptions) {
-  const changelogContent = await createEmptyChangelog({ repoUrl, tagPrefix });
+  const changelogContent = createEmptyChangelog({ repoUrl, tagPrefix });
   await saveChangelog(changelogPath, changelogContent);
 }
 
