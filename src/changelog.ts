@@ -249,13 +249,13 @@ type AddChangeOptions = {
  * formatting, update a changelog, or build one from scratch.
  */
 export default class Changelog {
-  private _releases: ReleaseMetadata[];
+  private readonly _releases: ReleaseMetadata[];
 
   private _changes: ChangelogChanges;
 
-  private _repoUrl: string;
+  private readonly _repoUrl: string;
 
-  private _tagPrefix: string;
+  private readonly _tagPrefix: string;
 
   /**
    * Construct an empty changelog.

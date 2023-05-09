@@ -1,6 +1,7 @@
 /* eslint-disable node/no-process-env */
 
 import path from 'path';
+
 import { getRepositoryUrl } from './repo';
 
 describe('getRepositoryUrl', () => {

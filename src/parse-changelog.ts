@@ -1,4 +1,5 @@
 import semver from 'semver';
+
 import Changelog from './changelog';
 import { ChangeCategory, unreleased } from './constants';
 
