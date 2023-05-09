@@ -1,5 +1,5 @@
 import { strict as assert } from 'assert';
-import execa from 'execa';
+import { execa } from 'execa';
 
 import type Changelog from './changelog';
 import { ChangeCategory, Version } from './constants';
@@ -288,7 +288,7 @@ export async function updateChangelog({
  * @returns An array of the non-empty lines returned by the command.
  */
 async function runCommand(command: string, args: string[]): Promise<string[]> {
-  return (await execa(command, [...args])).stdout
+  return ((await execa(command, [...args])).stdout as string)
     .trim()
     .split('\n')
     .filter((line) => line !== '');

@@ -32,7 +32,7 @@
   },
   "dependencies": {
     "diff": "^5.0.0",
-    "execa": "^5.1.1",
+    "execa": "^7.1.1",
     "semver": "^7.3.5",
     "yargs": "^17.0.1"
   },
