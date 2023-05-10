@@ -249,13 +249,13 @@ type AddChangeOptions = {
  * formatting, update a changelog, or build one from scratch.
  */
 export default class Changelog {
-  private _releases: ReleaseMetadata[];
+  readonly #releases: ReleaseMetadata[];
 
-  private _changes: ChangelogChanges;
+  #changes: ChangelogChanges;
 
-  private _repoUrl: string;
+  readonly #repoUrl: string;
 
-  private _tagPrefix: string;
+  readonly #tagPrefix: string;
 
   /**
    * Construct an empty changelog.
@@ -271,10 +271,10 @@ export default class Changelog {
     repoUrl: string;
     tagPrefix?: string;
   }) {
-    this._releases = [];
-    this._changes = { [unreleased]: {} };
-    this._repoUrl = repoUrl;
-    this._tagPrefix = tagPrefix;
+    this.#releases = [];
+    this.#changes = { [unreleased]: {} };
+    this.#repoUrl = repoUrl;
+    this.#tagPrefix = tagPrefix;
   }
 
   /**
@@ -297,16 +297,16 @@ export default class Changelog {
       throw new Error('Version required');
     } else if (semver.valid(version) === null) {
       throw new Error(`Not a valid semver version: '${version}'`);
-    } else if (this._changes[version]) {
+    } else if (this.#changes[version]) {
       throw new Error(`Release already exists: '${version}'`);
     }
 
-    this._changes[version] = {};
+    this.#changes[version] = {};
     const newRelease = { version, date, status };
     if (addToStart) {
-      this._releases.unshift(newRelease);
+      this.#releases.unshift(newRelease);
     } else {
-      this._releases.push(newRelease);
+      this.#releases.push(newRelease);
     }
   }
 
@@ -335,13 +335,13 @@ export default class Changelog {
       throw new Error(`Unrecognized category: '${category}'`);
     } else if (!description) {
       throw new Error('Description required');
-    } else if (version !== undefined && !this._changes[version]) {
+    } else if (version !== undefined && !this.#changes[version]) {
       throw new Error(`Specified release version does not exist: '${version}'`);
     }
 
     const release = version
-      ? this._changes[version]
-      : this._changes[unreleased];
+      ? this.#changes[version]
+      : this.#changes[unreleased];
 
     if (!release[category]) {
       release[category] = [];
@@ -365,12 +365,12 @@ export default class Changelog {
    * @param version - The release version to migrate unreleased changes to.
    */
   migrateUnreleasedChangesToRelease(version: Version) {
-    const releaseChanges = this._changes[version];
+    const releaseChanges = this.#changes[version];
     if (!releaseChanges) {
       throw new Error(`Specified release version does not exist: '${version}'`);
     }
 
-    const unreleasedChanges = this._changes[unreleased];
+    const unreleasedChanges = this.#changes[unreleased];
 
     for (const category of Object.keys(unreleasedChanges) as ChangeCategory[]) {
       if (releaseChanges[category]) {
@@ -382,7 +382,7 @@ export default class Changelog {
         releaseChanges[category] = unreleasedChanges[category];
       }
     }
-    this._changes[unreleased] = {};
+    this.#changes[unreleased] = {};
   }
 
   /**
@@ -391,7 +391,7 @@ export default class Changelog {
    * @returns The metadata for each release.
    */
   getReleases() {
-    return this._releases;
+    return this.#releases;
   }
 
   /**
@@ -429,7 +429,7 @@ export default class Changelog {
    * @returns The changes included in the given released.
    */
   getReleaseChanges(version: Version) {
-    return this._changes[version];
+    return this.#changes[version];
   }
 
   /**
@@ -438,7 +438,7 @@ export default class Changelog {
    * @returns The changes that have not yet been released.
    */
   getUnreleasedChanges() {
-    return this._changes[unreleased];
+    return this.#changes[unreleased];
   }
 
   /**
@@ -450,12 +450,12 @@ export default class Changelog {
     return `${changelogTitle}
 ${changelogDescription}
 
-${stringifyReleases(this._releases, this._changes)}
+${stringifyReleases(this.#releases, this.#changes)}
 
 ${stringifyLinkReferenceDefinitions(
-  this._repoUrl,
-  this._tagPrefix,
-  this._releases,
+  this.#repoUrl,
+  this.#tagPrefix,
+  this.#releases,
 )}`;
   }
 }

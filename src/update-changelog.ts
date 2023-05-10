@@ -1,8 +1,9 @@
 import { strict as assert } from 'assert';
 import execa from 'execa';
-import { parseChangelog } from './parse-changelog';
-import { ChangeCategory, Version } from './constants';
+
 import type Changelog from './changelog';
+import { ChangeCategory, Version } from './constants';
+import { parseChangelog } from './parse-changelog';
 
 /**
  * Get the most recent tag for a project.
@@ -70,7 +71,7 @@ async function getCommits(commitHashes: string[]) {
     if (matchResults) {
       // Squash & Merge: the commit subject is parsed as `<description> (#<PR ID>)`
       prNumber = matchResults[1];
-      description = subject.match(/^(.+)\s\(#\d+\)/u)?.[1] || '';
+      description = subject.match(/^(.+)\s\(#\d+\)/u)?.[1] ?? '';
     } else {
       // Merge: the PR ID is parsed from the git subject (which is of the form `Merge pull request
       // #<PR ID> from <branch>`, and the description is assumed to be the first line of the body.
@@ -125,8 +126,10 @@ function getAllLoggedPrNumbers(changelog: Changelog) {
 
   const prNumbersWithChangelogEntries = [];
   for (const description of changeDescriptions) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const matchResults = description!.matchAll(/\[#(\d+)\]/gu);
+    if (!description) {
+      continue;
+    }
+    const matchResults = description.matchAll(/\[#(\d+)\]/gu);
     const prNumbers = Array.from(matchResults, (result) => result[1]);
     prNumbersWithChangelogEntries.push(...prNumbers);
   }
@@ -209,7 +212,7 @@ export async function updateChangelog({
 
   if (
     isReleaseCandidate &&
-    mostRecentTag === `${tagPrefixes[0]}${currentVersion}`
+    mostRecentTag === `${tagPrefixes[0]}${currentVersion || ''}`
   ) {
     throw new Error(
       `Current version already has tag, which is unexpected for a release candidate.`,

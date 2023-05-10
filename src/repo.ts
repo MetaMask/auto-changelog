@@ -1,7 +1,7 @@
 /* eslint-disable node/no-process-env, node/no-sync */
 
-import path from 'path';
 import fs from 'fs';
+import path from 'path';
 
 type PackageJson = {
   repository:

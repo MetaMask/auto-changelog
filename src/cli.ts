@@ -2,28 +2,21 @@
 
 import { promises as fs, constants as fsConstants } from 'fs';
 import path from 'path';
-// Intentionally shadowing 'URL' global, which is equivalent
-// Can't use global directly because of missing type, see:
-// https://github.com/DefinitelyTyped/DefinitelyTyped/issues/34960
-// eslint-disable-next-line @typescript-eslint/no-shadow
-import { URL } from 'url';
 import semver from 'semver';
-import yargs from 'yargs/yargs';
 import type { Argv } from 'yargs';
 import { hideBin } from 'yargs/helpers';
-
-import { updateChangelog } from './update-changelog';
-import { generateDiff } from './generate-diff';
-import { createEmptyChangelog } from './init';
+import yargs from 'yargs/yargs';
 
 import { unreleased, Version } from './constants';
-
+import { generateDiff } from './generate-diff';
+import { createEmptyChangelog } from './init';
+import { getRepositoryUrl } from './repo';
+import { updateChangelog } from './update-changelog';
 import {
   ChangelogFormattingError,
   InvalidChangelogError,
   validateChangelog,
 } from './validate-changelog';
-import { getRepositoryUrl } from './repo';
 
 const updateEpilog = `New commits will be added to the "${unreleased}" section (or \
 to the section for the current release if the '--rc' flag is used) in reverse \
@@ -211,7 +204,7 @@ type InitOptions = {
  * @param options.tagPrefix - The prefix used in tags before the version number.
  */
 async function init({ changelogPath, repoUrl, tagPrefix }: InitOptions) {
-  const changelogContent = await createEmptyChangelog({ repoUrl, tagPrefix });
+  const changelogContent = createEmptyChangelog({ repoUrl, tagPrefix });
   await saveChangelog(changelogPath, changelogContent);
 }
 

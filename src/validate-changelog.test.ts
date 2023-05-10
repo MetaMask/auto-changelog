@@ -233,10 +233,8 @@ describe('validateChangelog', () => {
   });
 
   it('should throw when a change category is unrecognized', () => {
-    const changelogWithUnrecognizedChangeCategory = changelogWithReleases.replace(
-      '### Changed',
-      '### Updated',
-    );
+    const changelogWithUnrecognizedChangeCategory =
+      changelogWithReleases.replace('### Changed', '### Updated');
     expect(() =>
       validateChangelog({
         changelogContent: changelogWithUnrecognizedChangeCategory,
