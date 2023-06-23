@@ -134,6 +134,7 @@ type ValidateOptions = {
   isReleaseCandidate: boolean;
   repoUrl: string;
   tagPrefix: string;
+  fix: boolean;
 };
 
 /**
@@ -145,6 +146,7 @@ type ValidateOptions = {
  * @param options.isReleaseCandidate - Whether the current branch is a release candidate or not.
  * @param options.repoUrl - The GitHub repository URL for the current project.
  * @param options.tagPrefix - The prefix used in tags before the version number.
+ * @param options.fix - Whether to attempt to fix the changelog or not.
  */
 async function validate({
   changelogPath,
@@ -152,6 +154,7 @@ async function validate({
   isReleaseCandidate,
   repoUrl,
   tagPrefix,
+  fix,
 }: ValidateOptions) {
   const changelogContent = await readChangelog(changelogPath);
 
@@ -167,6 +170,11 @@ async function validate({
   } catch (error) {
     if (error instanceof ChangelogFormattingError) {
       const { validChangelog, invalidChangelog } = error.data;
+      if (fix) {
+        await saveChangelog(changelogPath, validChangelog);
+        return undefined;
+      }
+
       const diff = generateDiff(validChangelog, invalidChangelog);
       return exitWithError(`Changelog not well-formatted. Diff:\n\n${diff}`);
     } else if (error instanceof InvalidChangelogError) {
@@ -279,6 +287,11 @@ async function main() {
               'The current version of the project that the changelog belongs to.',
             type: 'string',
           })
+          .option('fix', {
+            default: false,
+            description: `Attempt to fix any formatting errors in the changelog`,
+            type: 'boolean',
+          })
           .epilog(validateEpilog),
     )
     .command('init', 'Initialize a new empty changelog', (_yargs) => {
@@ -297,6 +310,7 @@ async function main() {
     repo: repoUrl,
     root: projectRootDirectory,
     tagPrefix,
+    fix,
   } = argv;
   let { currentVersion } = argv;
 
@@ -411,6 +425,7 @@ async function main() {
       isReleaseCandidate,
       repoUrl,
       tagPrefix,
+      fix,
     });
   } else if (command === 'init') {
     await init({
