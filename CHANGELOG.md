@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.2.0]
+### Added
+- Add `--fix` option to validate command ([#148](https://github.com/MetaMask/auto-changelog/pull/148))
+
 ## [3.1.0]
 ### Added
 - Allow prerelease versions in release headers ([#130](https://github.com/MetaMask/auto-changelog/pull/130))
@@ -94,7 +98,8 @@ Includes the following features:
   - Monorepo support ([#41](https://github.com/MetaMask/auto-changelog/pull/41))
   - Configurable repository URL, version, and changelog file path ([#33](https://github.com/MetaMask/auto-changelog/pull/33), [#31](https://github.com/MetaMask/auto-changelog/pull/31), [#30](https://github.com/MetaMask/auto-changelog/pull/30))
 
-[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v3.1.0...HEAD
+[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v3.2.0...HEAD
+[3.2.0]: https://github.com/MetaMask/auto-changelog/compare/v3.1.0...v3.2.0
 [3.1.0]: https://github.com/MetaMask/auto-changelog/compare/v3.0.0...v3.1.0
 [3.0.0]: https://github.com/MetaMask/auto-changelog/compare/v2.6.1...v3.0.0
 [2.6.1]: https://github.com/MetaMask/auto-changelog/compare/v2.6.0...v2.6.1
