@@ -7,9 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [3.2.0]
-### Uncategorized
+### Added
 - Add `--fix` option to validate command ([#148](https://github.com/MetaMask/auto-changelog/pull/148))
-- devDeps: bump eslint packages ([#147](https://github.com/MetaMask/auto-changelog/pull/147))
 
 ## [3.1.0]
 ### Added
