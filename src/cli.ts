@@ -280,9 +280,9 @@ async function main() {
               'The current version of the project that the changelog belongs to.',
             type: 'string',
           })
-          .option('usePrettier', {
+          .option('prettier', {
             default: false,
-            description: `Use prettier to format the changelog`,
+            description: `Expect the changelog to be formatted with Prettier.`,
             type: 'boolean',
           })
           .epilog(updateEpilog),
@@ -307,9 +307,9 @@ async function main() {
             description: `Attempt to fix any formatting errors in the changelog`,
             type: 'boolean',
           })
-          .option('usePrettier', {
+          .option('prettier', {
             default: false,
-            description: `Use prettier to format the changelog`,
+            description: `Expect the changelog to be formatted with Prettier.`,
             type: 'boolean',
           })
           .epilog(validateEpilog),
@@ -331,7 +331,7 @@ async function main() {
     root: projectRootDirectory,
     tagPrefix,
     fix,
-    usePrettier,
+    prettier: usePrettier,
   } = argv;
   let { currentVersion } = argv;
 
