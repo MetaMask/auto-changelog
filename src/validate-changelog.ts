@@ -100,7 +100,7 @@ type ValidateChangelogOptions = {
  * `true` and the changelog contains uncategorized changes.
  * @throws `ChangelogFormattingError` - Will throw if there is a formatting error.
  */
-export async function validateChangelog({
+export function validateChangelog({
   changelogContent,
   currentVersion,
   repoUrl,
@@ -141,7 +141,7 @@ export async function validateChangelog({
     }
   }
 
-  const validChangelog = await changelog.toString();
+  const validChangelog = changelog.toString();
   if (validChangelog !== changelogContent) {
     throw new ChangelogFormattingError({
       validChangelog,

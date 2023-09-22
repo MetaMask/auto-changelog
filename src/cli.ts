@@ -168,7 +168,7 @@ async function validate({
   const changelogContent = await readChangelog(changelogPath);
 
   try {
-    await validateChangelog({
+    validateChangelog({
       changelogContent,
       currentVersion,
       repoUrl,
@@ -222,7 +222,7 @@ type InitOptions = {
  * @param options.tagPrefix - The prefix used in tags before the version number.
  */
 async function init({ changelogPath, repoUrl, tagPrefix }: InitOptions) {
-  const changelogContent = await createEmptyChangelog({ repoUrl, tagPrefix });
+  const changelogContent = createEmptyChangelog({ repoUrl, tagPrefix });
   await saveChangelog(changelogPath, changelogContent);
 }
 
@@ -430,7 +430,7 @@ async function main() {
     }
   }
 
-  const formatter = async (changelog: string) => {
+  const formatter = (changelog: string) => {
     return usePrettier
       ? prettier.format(changelog, { parser: 'markdown' })
       : changelog;

@@ -13,7 +13,10 @@ const changelogDescription = `All notable changes to this project will be docume
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).`;
 
-export type Formatter = (changelog: string) => Promise<string>;
+/**
+ * Formatter function that formats a Markdown changelog string.
+ */
+export type Formatter = (changelog: string) => string;
 
 type ReleaseMetadata = {
   /**
@@ -272,7 +275,7 @@ export default class Changelog {
   constructor({
     repoUrl,
     tagPrefix = 'v',
-    formatter = async (changelog) => changelog,
+    formatter = (changelog) => changelog,
   }: {
     repoUrl: string;
     tagPrefix?: string;
@@ -454,7 +457,7 @@ export default class Changelog {
    *
    * @returns The stringified changelog.
    */
-  async toString(): Promise<string> {
+  toString(): string {
     const changelog = `${changelogTitle}
 ${changelogDescription}
 

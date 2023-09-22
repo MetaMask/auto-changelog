@@ -8,7 +8,7 @@ import Changelog from './changelog';
  * @param options.tagPrefix - The prefix used in tags before the version number.
  * @returns The initial changelog text.
  */
-export async function createEmptyChangelog({
+export function createEmptyChangelog({
   repoUrl,
   tagPrefix = 'v',
 }: {
