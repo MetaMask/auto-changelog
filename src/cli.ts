@@ -432,7 +432,7 @@ async function main() {
 
   const formatter = async (changelog: string) => {
     return usePrettier
-      ? await prettier.format(changelog, { parser: 'markdown' })
+      ? prettier.format(changelog, { parser: 'markdown' })
       : changelog;
   };
 

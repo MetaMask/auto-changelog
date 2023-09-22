@@ -450,15 +450,6 @@ export default class Changelog {
   }
 
   /**
-   * Sets the formatter to be used when stringifying the changelog.
-   *
-   * @param formatter - The formatter to use.
-   */
-  setFormatter(formatter: (changelog: string) => Promise<string>): void {
-    this.#formatter = formatter;
-  }
-
-  /**
    * The stringified changelog, formatted according to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
    *
    * @returns The stringified changelog.
