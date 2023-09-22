@@ -1,3 +1,4 @@
+import { Formatter } from './changelog';
 import { Version, ChangeCategory } from './constants';
 import { parseChangelog } from './parse-changelog';
 
@@ -71,6 +72,7 @@ type ValidateChangelogOptions = {
   repoUrl: string;
   isReleaseCandidate: boolean;
   tagPrefix?: string;
+  formatter?: Formatter;
 };
 
 /**
@@ -87,6 +89,7 @@ type ValidateChangelogOptions = {
  * also ensure the current version is represented in the changelog with a
  * header, and that there are no unreleased changes present.
  * @param options.tagPrefix - The prefix used in tags before the version number.
+ * @param options.formatter - A custom Markdown formatter to use.
  * @throws `InvalidChangelogError` - Will throw if the changelog is invalid
  * @throws `MissingCurrentVersionError` - Will throw if `isReleaseCandidate` is
  * `true` and the changelog is missing the release header for the current
@@ -103,8 +106,14 @@ export function validateChangelog({
   repoUrl,
   isReleaseCandidate,
   tagPrefix = 'v',
+  formatter = undefined,
 }: ValidateChangelogOptions) {
-  const changelog = parseChangelog({ changelogContent, repoUrl, tagPrefix });
+  const changelog = parseChangelog({
+    changelogContent,
+    repoUrl,
+    tagPrefix,
+    formatter,
+  });
   const hasUnreleasedChanges =
     Object.keys(changelog.getUnreleasedChanges()).length !== 0;
   const releaseChanges = currentVersion
