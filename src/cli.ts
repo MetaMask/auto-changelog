@@ -2,11 +2,13 @@
 
 import { promises as fs, constants as fsConstants } from 'fs';
 import path from 'path';
+import prettier from 'prettier';
 import semver from 'semver';
 import type { Argv } from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import yargs from 'yargs/yargs';
 
+import { Formatter } from './changelog';
 import { unreleased, Version } from './constants';
 import { generateDiff } from './generate-diff';
 import { createEmptyChangelog } from './init';
@@ -88,6 +90,7 @@ type UpdateOptions = {
   isReleaseCandidate: boolean;
   projectRootDirectory?: string;
   tagPrefix: string;
+  formatter: Formatter;
 };
 
 /**
@@ -100,6 +103,7 @@ type UpdateOptions = {
  * @param options.repoUrl - The GitHub repository URL for the current project.
  * @param options.projectRootDirectory - The root project directory.
  * @param options.tagPrefix - The prefix used in tags before the version number.
+ * @param options.formatter - A custom Markdown formatter to use.
  */
 async function update({
   changelogPath,
@@ -108,6 +112,7 @@ async function update({
   repoUrl,
   projectRootDirectory,
   tagPrefix,
+  formatter,
 }: UpdateOptions) {
   const changelogContent = await readChangelog(changelogPath);
 
@@ -118,6 +123,7 @@ async function update({
     isReleaseCandidate,
     projectRootDirectory,
     tagPrefixes: [tagPrefix],
+    formatter,
   });
 
   if (newChangelogContent) {
@@ -135,6 +141,7 @@ type ValidateOptions = {
   repoUrl: string;
   tagPrefix: string;
   fix: boolean;
+  formatter: Formatter;
 };
 
 /**
@@ -147,6 +154,7 @@ type ValidateOptions = {
  * @param options.repoUrl - The GitHub repository URL for the current project.
  * @param options.tagPrefix - The prefix used in tags before the version number.
  * @param options.fix - Whether to attempt to fix the changelog or not.
+ * @param options.formatter - A custom Markdown formatter to use.
  */
 async function validate({
   changelogPath,
@@ -155,16 +163,18 @@ async function validate({
   repoUrl,
   tagPrefix,
   fix,
+  formatter,
 }: ValidateOptions) {
   const changelogContent = await readChangelog(changelogPath);
 
   try {
-    validateChangelog({
+    await validateChangelog({
       changelogContent,
       currentVersion,
       repoUrl,
       isReleaseCandidate,
       tagPrefix,
+      formatter,
     });
     return undefined;
   } catch (error) {
@@ -212,7 +222,7 @@ type InitOptions = {
  * @param options.tagPrefix - The prefix used in tags before the version number.
  */
 async function init({ changelogPath, repoUrl, tagPrefix }: InitOptions) {
-  const changelogContent = createEmptyChangelog({ repoUrl, tagPrefix });
+  const changelogContent = await createEmptyChangelog({ repoUrl, tagPrefix });
   await saveChangelog(changelogPath, changelogContent);
 }
 
@@ -270,6 +280,11 @@ async function main() {
               'The current version of the project that the changelog belongs to.',
             type: 'string',
           })
+          .option('usePrettier', {
+            default: false,
+            description: `Use prettier to format the changelog`,
+            type: 'boolean',
+          })
           .epilog(updateEpilog),
     )
     .command(
@@ -292,6 +307,11 @@ async function main() {
             description: `Attempt to fix any formatting errors in the changelog`,
             type: 'boolean',
           })
+          .option('usePrettier', {
+            default: false,
+            description: `Use prettier to format the changelog`,
+            type: 'boolean',
+          })
           .epilog(validateEpilog),
     )
     .command('init', 'Initialize a new empty changelog', (_yargs) => {
@@ -311,6 +331,7 @@ async function main() {
     root: projectRootDirectory,
     tagPrefix,
     fix,
+    usePrettier,
   } = argv;
   let { currentVersion } = argv;
 
@@ -409,6 +430,12 @@ async function main() {
     }
   }
 
+  const formatter = async (changelog: string) => {
+    return usePrettier
+      ? await prettier.format(changelog, { parser: 'markdown' })
+      : changelog;
+  };
+
   if (command === 'update') {
     await update({
       changelogPath,
@@ -417,6 +444,7 @@ async function main() {
       repoUrl,
       projectRootDirectory,
       tagPrefix,
+      formatter,
     });
   } else if (command === 'validate') {
     await validate({
@@ -426,6 +454,7 @@ async function main() {
       repoUrl,
       tagPrefix,
       fix,
+      formatter,
     });
   } else if (command === 'init') {
     await init({

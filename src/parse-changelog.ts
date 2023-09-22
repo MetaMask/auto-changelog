@@ -1,6 +1,6 @@
 import semver from 'semver';
 
-import Changelog from './changelog';
+import Changelog, { Formatter } from './changelog';
 import { ChangeCategory, unreleased } from './constants';
 
 /**
@@ -31,19 +31,22 @@ function isValidChangeCategory(category: string): category is ChangeCategory {
  * @param options.changelogContent - The changelog to parse.
  * @param options.repoUrl - The GitHub repository URL for the current project.
  * @param options.tagPrefix - The prefix used in tags before the version number.
+ * @param options.formatter - A custom Markdown formatter to use.
  * @returns A changelog instance that reflects the changelog text provided.
  */
 export function parseChangelog({
   changelogContent,
   repoUrl,
   tagPrefix = 'v',
+  formatter = undefined,
 }: {
   changelogContent: string;
   repoUrl: string;
   tagPrefix?: string;
+  formatter?: Formatter;
 }) {
   const changelogLines = changelogContent.split('\n');
-  const changelog = new Changelog({ repoUrl, tagPrefix });
+  const changelog = new Changelog({ repoUrl, tagPrefix, formatter });
 
   const unreleasedHeaderIndex = changelogLines.indexOf(`## [${unreleased}]`);
   if (unreleasedHeaderIndex === -1) {

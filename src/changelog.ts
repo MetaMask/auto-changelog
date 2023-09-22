@@ -13,6 +13,8 @@ const changelogDescription = `All notable changes to this project will be docume
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).`;
 
+export type Formatter = (changelog: string) => Promise<string>;
+
 type ReleaseMetadata = {
   /**
    * The version of the current release.
@@ -257,24 +259,30 @@ export default class Changelog {
 
   readonly #tagPrefix: string;
 
+  #formatter: Formatter;
+
   /**
    * Construct an empty changelog.
    *
    * @param options - Changelog options.
    * @param options.repoUrl - The GitHub repository URL for the current project.
    * @param options.tagPrefix - The prefix used in tags before the version number.
+   * @param options.formatter - A function that formats the changelog string.
    */
   constructor({
     repoUrl,
     tagPrefix = 'v',
+    formatter = async (changelog) => changelog,
   }: {
     repoUrl: string;
     tagPrefix?: string;
+    formatter?: Formatter;
   }) {
     this.#releases = [];
     this.#changes = { [unreleased]: {} };
     this.#repoUrl = repoUrl;
     this.#tagPrefix = tagPrefix;
+    this.#formatter = formatter;
   }
 
   /**
@@ -442,12 +450,21 @@ export default class Changelog {
   }
 
   /**
+   * Sets the formatter to be used when stringifying the changelog.
+   *
+   * @param formatter - The formatter to use.
+   */
+  setFormatter(formatter: (changelog: string) => Promise<string>): void {
+    this.#formatter = formatter;
+  }
+
+  /**
    * The stringified changelog, formatted according to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
    *
    * @returns The stringified changelog.
    */
-  toString() {
-    return `${changelogTitle}
+  async toString(): Promise<string> {
+    const changelog = `${changelogTitle}
 ${changelogDescription}
 
 ${stringifyReleases(this.#releases, this.#changes)}
@@ -457,5 +474,7 @@ ${stringifyLinkReferenceDefinitions(
   this.#tagPrefix,
   this.#releases,
 )}`;
+
+    return this.#formatter(changelog);
   }
 }

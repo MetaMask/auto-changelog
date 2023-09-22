@@ -2,6 +2,7 @@ import { strict as assert } from 'assert';
 import execa from 'execa';
 
 import type Changelog from './changelog';
+import { Formatter } from './changelog';
 import { ChangeCategory, Version } from './constants';
 import { parseChangelog } from './parse-changelog';
 
@@ -162,6 +163,7 @@ export type UpdateChangelogOptions = {
   isReleaseCandidate: boolean;
   projectRootDirectory?: string;
   tagPrefixes?: [string, ...string[]];
+  formatter?: Formatter;
 };
 
 /**
@@ -183,6 +185,7 @@ export type UpdateChangelogOptions = {
  * current git repository.
  * @param options.tagPrefixes - A list of tag prefixes to look for, where the first is the intended
  * prefix and each subsequent prefix is a fallback in case the previous tag prefixes are not found.
+ * @param options.formatter - A custom Markdown formatter to use.
  * @returns The updated changelog text.
  */
 export async function updateChangelog({
@@ -192,7 +195,8 @@ export async function updateChangelog({
   isReleaseCandidate,
   projectRootDirectory,
   tagPrefixes = ['v'],
-}: UpdateChangelogOptions) {
+  formatter = undefined,
+}: UpdateChangelogOptions): Promise<string | undefined> {
   if (isReleaseCandidate && !currentVersion) {
     throw new Error(
       `A version must be specified if 'isReleaseCandidate' is set.`,
@@ -202,6 +206,7 @@ export async function updateChangelog({
     changelogContent,
     repoUrl,
     tagPrefix: tagPrefixes[0],
+    formatter,
   });
 
   // Ensure we have all tags on remote
