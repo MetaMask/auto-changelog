@@ -7,8 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [3.3.0]
-### Uncategorized
-- Add `--prettier` flag for Prettier-formatted changelogs ([#155](https://github.com/MetaMask/auto-changelog/pull/155))
+### Added
+- Add `--prettier` option for Prettier-formatted changelogs ([#155](https://github.com/MetaMask/auto-changelog/pull/155))
 
 ## [3.2.0]
 ### Added
