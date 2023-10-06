@@ -1,6 +1,10 @@
 import semver from 'semver';
 
 import {
+  getOriginalLatestVersion,
+  getOriginalTagPrefix,
+} from './changelog-config';
+import {
   ChangeCategory,
   orderedChangeCategories,
   unreleased,
@@ -181,7 +185,6 @@ function stringifyLinkReferenceDefinitions(
   // A list of release versions in chronological order
   const chronologicalVersions = releases.map(({ version }) => version);
   const hasReleases = chronologicalVersions.length > 0;
-
   // The "Unreleased" section represents all changes made since the *highest*
   // release, not the most recent release. This is to accomodate patch releases
   // of older versions that don't represent the latest set of changes.
@@ -192,9 +195,26 @@ function stringifyLinkReferenceDefinitions(
   //
   // If there have not been any releases yet, the repo URL is used directly as
   // the link definition.
+  const orgLatestVersion = getOriginalLatestVersion();
+  const orgTagPrefix = getOriginalTagPrefix();
+  let tagPrefixToCompare = tagPrefix;
+  // if there is a package renamed and version and tag prefix set in package.json
+  // original package tag prefix will be considered for compare
+  // below if is for an example from changelog [Unreleased]: https://github.com/MetaMask/core/compare/json-rpc-middleware-stream@5.0.1...HEAD
+  if (
+    orgTagPrefix &&
+    orgLatestVersion &&
+    orgLatestVersion === latestSemverVersion
+  ) {
+    tagPrefixToCompare = orgTagPrefix;
+  }
   const unreleasedLinkReferenceDefinition = `[${unreleased}]: ${
     hasReleases
-      ? getCompareUrl(repoUrl, `${tagPrefix}${latestSemverVersion}`, 'HEAD')
+      ? getCompareUrl(
+          repoUrl,
+          `${tagPrefixToCompare}${latestSemverVersion}`,
+          'HEAD',
+        )
       : withTrailingSlash(repoUrl)
   }`;
 
@@ -202,11 +222,17 @@ function stringifyLinkReferenceDefinitions(
   // the most recent release chronologically. The _highest_ version that is
   // lower than the current release is used as the previous release, so that
   // patch releases on older releases can be accomodated.
+  // by default tag prefix from new package will be used
+  tagPrefixToCompare = tagPrefix;
   const releaseLinkReferenceDefinitions = releases
     .map(({ version }) => {
       let diffUrl;
+      // once the version matches with original version, rest of the lines in changelog will be assumed as migrated tags
+      if (orgTagPrefix && orgLatestVersion === version) {
+        tagPrefixToCompare = orgTagPrefix;
+      }
       if (version === chronologicalVersions[chronologicalVersions.length - 1]) {
-        diffUrl = getTagUrl(repoUrl, `${tagPrefix}${version}`);
+        diffUrl = getTagUrl(repoUrl, `${tagPrefixToCompare}${version}`);
       } else {
         const versionIndex = chronologicalVersions.indexOf(version);
         const previousVersion = chronologicalVersions
@@ -214,13 +240,26 @@ function stringifyLinkReferenceDefinitions(
           .find((releaseVersion: Version) => {
             return semver.gt(version, releaseVersion);
           });
-        diffUrl = previousVersion
-          ? getCompareUrl(
-              repoUrl,
-              `${tagPrefix}${previousVersion}`,
-              `${tagPrefix}${version}`,
-            )
-          : getTagUrl(repoUrl, `${tagPrefix}${version}`);
+        // if there is a package renamed and version and tag prefix set in config
+        // this if condition will fix the validation for original package's first release from new/renamed package
+        // [6.0.0]: https://github.com/MetaMask/core/compare/json-rpc-middleware-stream@5.0.1...@metamask/json-rpc-middleware-stream@6.0.0
+        if (orgLatestVersion && orgLatestVersion === previousVersion) {
+          diffUrl = previousVersion
+            ? getCompareUrl(
+                repoUrl,
+                `${orgTagPrefix as string}${previousVersion}`,
+                `${tagPrefixToCompare}${version}`,
+              )
+            : getTagUrl(repoUrl, `${tagPrefixToCompare}${version}`);
+        } else {
+          diffUrl = previousVersion
+            ? getCompareUrl(
+                repoUrl,
+                `${tagPrefixToCompare}${previousVersion}`,
+                `${tagPrefixToCompare}${version}`,
+              )
+            : getTagUrl(repoUrl, `${tagPrefixToCompare}${version}`);
+        }
       }
       return `[${version}]: ${diffUrl}`;
     })
