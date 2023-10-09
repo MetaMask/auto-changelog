@@ -239,11 +239,11 @@ function stringifyLinkReferenceDefinitions(
         // if there is a package renamed and version and tag prefix set in config
         // this if condition will fix the validation for original package's first release from new/renamed package
         // [6.0.0]: https://github.com/MetaMask/core/compare/json-rpc-middleware-stream@5.0.1...@metamask/json-rpc-middleware-stream@6.0.0
-        if (orgLatestVersion && orgLatestVersion === previousVersion) {
+        if (orgTagPrefix && orgLatestVersion === previousVersion) {
           diffUrl = previousVersion
             ? getCompareUrl(
                 repoUrl,
-                `${orgTagPrefix as string}${previousVersion}`,
+                `${orgTagPrefix}${previousVersion}`,
                 `${tagPrefixToCompare}${version}`,
               )
             : getTagUrl(repoUrl, `${tagPrefixToCompare}${version}`);
