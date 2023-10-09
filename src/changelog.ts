@@ -201,11 +201,7 @@ function stringifyLinkReferenceDefinitions(
   // if there is a package renamed and version and tag prefix set in package.json
   // original package tag prefix will be considered for compare
   // below if is for an example from changelog [Unreleased]: https://github.com/MetaMask/core/compare/json-rpc-middleware-stream@5.0.1...HEAD
-  if (
-    orgTagPrefix &&
-    orgLatestVersion &&
-    orgLatestVersion === latestSemverVersion
-  ) {
+  if (orgTagPrefix && orgLatestVersion === latestSemverVersion) {
     tagPrefixToCompare = orgTagPrefix;
   }
   const unreleasedLinkReferenceDefinition = `[${unreleased}]: ${
