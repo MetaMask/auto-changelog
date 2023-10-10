@@ -15,7 +15,7 @@ type PackageJson = {
 /**
  * Returns the latest version of the original package in case of package renamed.
  *
- * @returns The original package latest version.
+ * @returns The latest version string of the original package, or null.
  */
 export function getOriginalLatestVersion(): string | null {
   // Set automatically by Yarn 3.x
