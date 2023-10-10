@@ -41,7 +41,7 @@ export function getOriginalLatestVersion(): string | null {
 /**
  * Returns the original package tag prefix in case of package renamed.
  *
- * @returns The original package tag prefix.
+ * @returns The tag prefix string for the original package, or null.
  */
 export function getOriginalTagPrefix(): string | null {
   // Set automatically by Yarn 3.x
