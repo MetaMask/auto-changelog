@@ -201,52 +201,13 @@ function stringifyLinkReferenceDefinitions(
   // lower than the current release is used as the previous release, so that
   // patch releases on older releases can be accomodated.
   // by default tag prefix from new package will be used
-  // A list of release versions in chronological order
-  const chronologicalVersions = releases.map(({ version }) => version);
-  let tagPrefixToCompare = tagPrefix;
-  const releaseLinkReferenceDefinitions = releases
-    .map(({ version }) => {
-      let diffUrl;
-      // once the version matches with original version, rest of the lines in changelog will be assumed as migrated tags
-      if (tagPrefixBeforePkgRename && versionBeforePkgRename === version) {
-        tagPrefixToCompare = tagPrefixBeforePkgRename;
-      }
-      if (version === chronologicalVersions[chronologicalVersions.length - 1]) {
-        diffUrl = getTagUrl(repoUrl, `${tagPrefixToCompare}${version}`);
-      } else {
-        const versionIndex = chronologicalVersions.indexOf(version);
-        const previousVersion = chronologicalVersions
-          .slice(versionIndex)
-          .find((releaseVersion: Version) => {
-            return semver.gt(version, releaseVersion);
-          });
-        // if there is a package renamed and version and tag prefix set in config
-        // this if condition will fix the validation for original package's first release from new/renamed package
-        // [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/test@0.0.2...@metamask/test@1.0.0
-        if (
-          tagPrefixBeforePkgRename &&
-          versionBeforePkgRename === previousVersion
-        ) {
-          diffUrl = previousVersion
-            ? getCompareUrl(
-                repoUrl,
-                `${tagPrefixBeforePkgRename}${previousVersion}`,
-                `${tagPrefixToCompare}${version}`,
-              )
-            : getTagUrl(repoUrl, `${tagPrefixToCompare}${version}`);
-        } else {
-          diffUrl = previousVersion
-            ? getCompareUrl(
-                repoUrl,
-                `${tagPrefixToCompare}${previousVersion}`,
-                `${tagPrefixToCompare}${version}`,
-              )
-            : getTagUrl(repoUrl, `${tagPrefixToCompare}${version}`);
-        }
-      }
-      return `[${version}]: ${diffUrl}`;
-    })
-    .join('\n');
+  const releaseLinkReferenceDefinitions = getReleaseLinkReferenceDefinitions(
+    repoUrl,
+    tagPrefix,
+    releases,
+    versionBeforePkgRename,
+    tagPrefixBeforePkgRename,
+  ).join('\n');
   return `${unreleasedLinkReferenceDefinition}\n${releaseLinkReferenceDefinitions}${
     releases.length > 0 ? '\n' : ''
   }`;
@@ -293,6 +254,70 @@ function getUnreleasedLinkReferenceDefinition(
         )
       : withTrailingSlash(repoUrl)
   }`;
+}
+
+/**
+ * Get a list of release link reference definitions.
+ *
+ * @param repoUrl - The URL for the GitHub repository.
+ * @param tagPrefix - The prefix used in tags before the version number.
+ * @param releases - The releases to generate link definitions for.
+ * @param versionBeforePkgRename - A version string of the package before being renamed.
+ * @param tagPrefixBeforePkgRename - A tag prefix string of the package before being renamed.
+ * @returns A list of release link reference definitions.
+ */
+function getReleaseLinkReferenceDefinitions(
+  repoUrl: string,
+  tagPrefix: string,
+  releases: ReleaseMetadata[],
+  versionBeforePkgRename?: string,
+  tagPrefixBeforePkgRename?: string,
+): string[] {
+  const chronologicalVersions = releases.map(({ version }) => version);
+  let tagPrefixToCompare = tagPrefix;
+  const releaseLinkReferenceDefinitions = releases.map(({ version }) => {
+    let diffUrl;
+    // once the version matches with original version, rest of the lines in changelog will be assumed as migrated tags
+    if (tagPrefixBeforePkgRename && versionBeforePkgRename === version) {
+      tagPrefixToCompare = tagPrefixBeforePkgRename;
+    }
+    if (version === chronologicalVersions[chronologicalVersions.length - 1]) {
+      diffUrl = getTagUrl(repoUrl, `${tagPrefixToCompare}${version}`);
+    } else {
+      const versionIndex = chronologicalVersions.indexOf(version);
+      const previousVersion = chronologicalVersions
+        .slice(versionIndex)
+        .find((releaseVersion: Version) => {
+          return semver.gt(version, releaseVersion);
+        });
+      // when there is a package renamed below if will fix the validation for renamed package's first release
+      // In the below example `test` package has been renamed to `@metamask/test`
+      // [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/test@0.0.2...@metamask/test@1.0.0
+      if (
+        tagPrefixBeforePkgRename &&
+        versionBeforePkgRename === previousVersion
+      ) {
+        diffUrl = previousVersion
+          ? getCompareUrl(
+              repoUrl,
+              `${tagPrefixBeforePkgRename}${previousVersion}`,
+              `${tagPrefixToCompare}${version}`,
+            )
+          : getTagUrl(repoUrl, `${tagPrefixToCompare}${version}`);
+      } else {
+        diffUrl = previousVersion
+          ? getCompareUrl(
+              repoUrl,
+              `${tagPrefixToCompare}${previousVersion}`,
+              `${tagPrefixToCompare}${version}`,
+            )
+          : getTagUrl(repoUrl, `${tagPrefixToCompare}${version}`);
+      }
+    }
+    return `[${version}]: ${diffUrl}`;
+  });
+
+  return releaseLinkReferenceDefinitions;
 }
 
 type AddReleaseOptions = {
