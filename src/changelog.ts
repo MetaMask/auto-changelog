@@ -164,11 +164,11 @@ function getTagUrl(repoUrl: string, tag: string) {
  * @param repoUrl - The URL for the GitHub repository.
  * @param tagPrefix - The prefix used in tags before the version number.
  * @param releases - The releases to generate link definitions for.
- * @returns The stringified release link definitions.
  * @param versionBeforePkgRename - A version string of the package before being renamed.
  * An optional, which is required only in case of package renamed.
  * @param tagPrefixBeforePkgRename - A tag prefix string of the package before being renamed.
  * An optional, which is required only in case of package renamed.
+ * @returns The stringified release link definitions.
  */
 function stringifyLinkReferenceDefinitions(
   repoUrl: string,
@@ -177,16 +177,6 @@ function stringifyLinkReferenceDefinitions(
   versionBeforePkgRename?: string,
   tagPrefixBeforePkgRename?: string,
 ) {
-  // A list of release versions in descending SemVer order
-  const descendingSemverVersions = releases
-    .map(({ version }) => version)
-    .sort((a: Version, b: Version) => {
-      return semver.gt(a, b) ? -1 : 1;
-    });
-  const latestSemverVersion = descendingSemverVersions[0];
-  // A list of release versions in chronological order
-  const chronologicalVersions = releases.map(({ version }) => version);
-  const hasReleases = chronologicalVersions.length > 0;
   // The "Unreleased" section represents all changes made since the *highest*
   // release, not the most recent release. This is to accomodate patch releases
   // of older versions that don't represent the latest set of changes.
@@ -197,32 +187,23 @@ function stringifyLinkReferenceDefinitions(
   //
   // If there have not been any releases yet, the repo URL is used directly as
   // the link definition.
-  let tagPrefixToCompare = tagPrefix;
-  // if there is a package renamed and version and tag prefix set in package.json
-  // original package tag prefix will be considered for compare
-  // [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/@metamask/test@1.0.0...HEAD
-  if (
-    tagPrefixBeforePkgRename &&
-    versionBeforePkgRename === latestSemverVersion
-  ) {
-    tagPrefixToCompare = tagPrefixBeforePkgRename;
-  }
-  const unreleasedLinkReferenceDefinition = `[${unreleased}]: ${
-    hasReleases
-      ? getCompareUrl(
-          repoUrl,
-          `${tagPrefixToCompare}${latestSemverVersion}`,
-          'HEAD',
-        )
-      : withTrailingSlash(repoUrl)
-  }`;
+  const unreleasedLinkReferenceDefinition =
+    getUnreleasedLinkReferenceDefinition(
+      repoUrl,
+      tagPrefix,
+      releases,
+      versionBeforePkgRename,
+      tagPrefixBeforePkgRename,
+    );
 
   // The "previous" release that should be used for comparison is not always
   // the most recent release chronologically. The _highest_ version that is
   // lower than the current release is used as the previous release, so that
   // patch releases on older releases can be accomodated.
   // by default tag prefix from new package will be used
-  tagPrefixToCompare = tagPrefix;
+  // A list of release versions in chronological order
+  const chronologicalVersions = releases.map(({ version }) => version);
+  let tagPrefixToCompare = tagPrefix;
   const releaseLinkReferenceDefinitions = releases
     .map(({ version }) => {
       let diffUrl;
@@ -268,6 +249,49 @@ function stringifyLinkReferenceDefinitions(
     .join('\n');
   return `${unreleasedLinkReferenceDefinition}\n${releaseLinkReferenceDefinitions}${
     releases.length > 0 ? '\n' : ''
+  }`;
+}
+
+/**
+ * Get a string of unreleased link reference definition.
+ *
+ * @param repoUrl - The URL for the GitHub repository.
+ * @param tagPrefix - The prefix used in tags before the version number.
+ * @param releases - The releases to generate link definitions for.
+ * @param versionBeforePkgRename - A version string of the package before being renamed.
+ * @param tagPrefixBeforePkgRename - A tag prefix string of the package before being renamed.
+ * @returns A unreleased link reference definition string.
+ */
+function getUnreleasedLinkReferenceDefinition(
+  repoUrl: string,
+  tagPrefix: string,
+  releases: ReleaseMetadata[],
+  versionBeforePkgRename?: string,
+  tagPrefixBeforePkgRename?: string,
+): string {
+  // A list of release versions in descending SemVer order
+  const descendingSemverVersions = releases
+    .map(({ version }) => version)
+    .sort((a: Version, b: Version) => {
+      return semver.gt(a, b) ? -1 : 1;
+    });
+  const latestSemverVersion = descendingSemverVersions[0];
+  const hasReleases = descendingSemverVersions.length > 0;
+  // if there is a package renamed, the tag prefix before the rename will be considered for compare
+  // [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/test@0.0.2...HEAD
+  const tagPrefixToCompare =
+    tagPrefixBeforePkgRename && versionBeforePkgRename === latestSemverVersion
+      ? tagPrefixBeforePkgRename
+      : tagPrefix;
+
+  return `[${unreleased}]: ${
+    hasReleases
+      ? getCompareUrl(
+          repoUrl,
+          `${tagPrefixToCompare}${latestSemverVersion}`,
+          'HEAD',
+        )
+      : withTrailingSlash(repoUrl)
   }`;
 }
 
