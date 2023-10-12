@@ -1,9 +1,6 @@
 import prettier from 'prettier';
 
-import * as ChangelogConfig from './changelog-config';
 import { validateChangelog } from './validate-changelog';
-
-jest.mock('./changelog-config');
 
 const emptyChangelog = `# Changelog
 All notable changes to this project will be documented in this file.
@@ -718,12 +715,6 @@ describe('validateChangelog', () => {
 
   // when the package has been renamed from `test` to `@metamast/test`
   it('should not throw for a valid changelog with renamed package', () => {
-    jest
-      .spyOn(ChangelogConfig, 'getOriginalLatestVersion')
-      .mockReturnValue('0.0.2');
-    jest
-      .spyOn(ChangelogConfig, 'getOriginalTagPrefix')
-      .mockReturnValue('test@');
     expect(() =>
       validateChangelog({
         changelogContent: changelogWithRenamedPackage,
@@ -732,11 +723,9 @@ describe('validateChangelog', () => {
           'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
         isReleaseCandidate: false,
         tagPrefix: '@metamask/test@',
+        versionBeforePkgRename: '0.0.2',
+        tagPrefixBeforePkgRename: 'test@',
       }),
     ).not.toThrow();
-    expect(ChangelogConfig.getOriginalLatestVersion).toHaveBeenCalled();
-    expect(ChangelogConfig.getOriginalLatestVersion()).toBe('0.0.2');
-    expect(ChangelogConfig.getOriginalTagPrefix).toHaveBeenCalled();
-    expect(ChangelogConfig.getOriginalTagPrefix()).toBe('test@');
   });
 });

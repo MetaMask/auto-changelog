@@ -1,10 +1,6 @@
 import semver from 'semver';
 
 import {
-  getOriginalLatestVersion,
-  getOriginalTagPrefix,
-} from './changelog-config';
-import {
   ChangeCategory,
   orderedChangeCategories,
   unreleased,
@@ -169,11 +165,17 @@ function getTagUrl(repoUrl: string, tag: string) {
  * @param tagPrefix - The prefix used in tags before the version number.
  * @param releases - The releases to generate link definitions for.
  * @returns The stringified release link definitions.
+ * @param versionBeforePkgRename - A version string of the package before being renamed.
+ * An optional, which is required only in case of package renamed.
+ * @param tagPrefixBeforePkgRename - A tag prefix string of the package before being renamed.
+ * An optional, which is required only in case of package renamed.
  */
 function stringifyLinkReferenceDefinitions(
   repoUrl: string,
   tagPrefix: string,
   releases: ReleaseMetadata[],
+  versionBeforePkgRename?: string,
+  tagPrefixBeforePkgRename?: string,
 ) {
   // A list of release versions in descending SemVer order
   const descendingSemverVersions = releases
@@ -195,14 +197,15 @@ function stringifyLinkReferenceDefinitions(
   //
   // If there have not been any releases yet, the repo URL is used directly as
   // the link definition.
-  const orgLatestVersion = getOriginalLatestVersion();
-  const orgTagPrefix = getOriginalTagPrefix();
   let tagPrefixToCompare = tagPrefix;
   // if there is a package renamed and version and tag prefix set in package.json
   // original package tag prefix will be considered for compare
-  // below if is for an example from changelog [Unreleased]: https://github.com/MetaMask/core/compare/json-rpc-middleware-stream@5.0.1...HEAD
-  if (orgTagPrefix && orgLatestVersion === latestSemverVersion) {
-    tagPrefixToCompare = orgTagPrefix;
+  // [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/@metamask/test@1.0.0...HEAD
+  if (
+    tagPrefixBeforePkgRename &&
+    versionBeforePkgRename === latestSemverVersion
+  ) {
+    tagPrefixToCompare = tagPrefixBeforePkgRename;
   }
   const unreleasedLinkReferenceDefinition = `[${unreleased}]: ${
     hasReleases
@@ -224,8 +227,8 @@ function stringifyLinkReferenceDefinitions(
     .map(({ version }) => {
       let diffUrl;
       // once the version matches with original version, rest of the lines in changelog will be assumed as migrated tags
-      if (orgTagPrefix && orgLatestVersion === version) {
-        tagPrefixToCompare = orgTagPrefix;
+      if (tagPrefixBeforePkgRename && versionBeforePkgRename === version) {
+        tagPrefixToCompare = tagPrefixBeforePkgRename;
       }
       if (version === chronologicalVersions[chronologicalVersions.length - 1]) {
         diffUrl = getTagUrl(repoUrl, `${tagPrefixToCompare}${version}`);
@@ -238,12 +241,15 @@ function stringifyLinkReferenceDefinitions(
           });
         // if there is a package renamed and version and tag prefix set in config
         // this if condition will fix the validation for original package's first release from new/renamed package
-        // [6.0.0]: https://github.com/MetaMask/core/compare/json-rpc-middleware-stream@5.0.1...@metamask/json-rpc-middleware-stream@6.0.0
-        if (orgTagPrefix && orgLatestVersion === previousVersion) {
+        // [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/test@0.0.2...@metamask/test@1.0.0
+        if (
+          tagPrefixBeforePkgRename &&
+          versionBeforePkgRename === previousVersion
+        ) {
           diffUrl = previousVersion
             ? getCompareUrl(
                 repoUrl,
-                `${orgTagPrefix}${previousVersion}`,
+                `${tagPrefixBeforePkgRename}${previousVersion}`,
                 `${tagPrefixToCompare}${version}`,
               )
             : getTagUrl(repoUrl, `${tagPrefixToCompare}${version}`);
@@ -299,6 +305,10 @@ export default class Changelog {
 
   #formatter: Formatter;
 
+  readonly #versionBeforePkgRename: string | undefined;
+
+  readonly #tagPrefixBeforePkgRename: string | undefined;
+
   /**
    * Construct an empty changelog.
    *
@@ -306,21 +316,31 @@ export default class Changelog {
    * @param options.repoUrl - The GitHub repository URL for the current project.
    * @param options.tagPrefix - The prefix used in tags before the version number.
    * @param options.formatter - A function that formats the changelog string.
+   * @param options.versionBeforePkgRename - A version string of the package before being renamed.
+   * An optional, which is required only in case of package renamed.
+   * @param options.tagPrefixBeforePkgRename - A tag prefix string of the package before being renamed.
+   * An optional, which is required only in case of package renamed.
    */
   constructor({
     repoUrl,
     tagPrefix = 'v',
     formatter = (changelog) => changelog,
+    versionBeforePkgRename = undefined,
+    tagPrefixBeforePkgRename = undefined,
   }: {
     repoUrl: string;
     tagPrefix?: string;
     formatter?: Formatter;
+    versionBeforePkgRename?: string | undefined;
+    tagPrefixBeforePkgRename?: string | undefined;
   }) {
     this.#releases = [];
     this.#changes = { [unreleased]: {} };
     this.#repoUrl = repoUrl;
     this.#tagPrefix = tagPrefix;
     this.#formatter = formatter;
+    this.#versionBeforePkgRename = versionBeforePkgRename;
+    this.#tagPrefixBeforePkgRename = tagPrefixBeforePkgRename;
   }
 
   /**
@@ -502,6 +522,8 @@ ${stringifyLinkReferenceDefinitions(
   this.#repoUrl,
   this.#tagPrefix,
   this.#releases,
+  this.#versionBeforePkgRename,
+  this.#tagPrefixBeforePkgRename,
 )}`;
 
     return this.#formatter(changelog);
