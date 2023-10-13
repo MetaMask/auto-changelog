@@ -217,7 +217,7 @@ export async function updateChangelog({
 
   if (
     isReleaseCandidate &&
-    mostRecentTag === `${tagPrefixes[0]}${currentVersion || ''}`
+    mostRecentTag === `${tagPrefixes[0]}${currentVersion ?? ''}`
   ) {
     throw new Error(
       `Current version already has tag, which is unexpected for a release candidate.`,
@@ -250,19 +250,16 @@ export async function updateChangelog({
   // Ensure release header exists, if necessary
   if (
     isReleaseCandidate &&
+    currentVersion &&
     !changelog
       .getReleases()
       .find((release) => release.version === currentVersion)
   ) {
-    // Typecast: currentVersion will be defined here due to type guard at the
-    // top of this function.
-    changelog.addRelease({ version: currentVersion as Version });
+    changelog.addRelease({ version: currentVersion });
   }
 
-  if (isReleaseCandidate && hasUnreleasedChanges) {
-    // Typecast: currentVersion will be defined here due to type guard at the
-    // top of this function.
-    changelog.migrateUnreleasedChangesToRelease(currentVersion as Version);
+  if (isReleaseCandidate && currentVersion && hasUnreleasedChanges) {
+    changelog.migrateUnreleasedChangesToRelease(currentVersion);
   }
 
   const newChangeEntries = newCommits.map(({ prNumber, description }) => {
