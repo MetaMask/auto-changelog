@@ -142,7 +142,7 @@ function getAllLoggedPrNumbers(changelog: Changelog) {
  * Get all commit hashes included in the given commit range.
  *
  * @param commitRange - The commit range.
- * @param rootDirectory - The project root directory.
+ * @param [rootDirectory] - The project root directory.
  * @returns A list of commit hashes for the given range.
  */
 async function getCommitHashesInRange(
@@ -172,20 +172,20 @@ export type UpdateChangelogOptions = {
  *
  * @param options - Update options.
  * @param options.changelogContent - The current changelog.
- * @param options.currentVersion - The current version. Required if
+ * @param [options.currentVersion] - The current version. Required if
  * `isReleaseCandidate` is set, but optional otherwise.
  * @param options.repoUrl - The GitHub repository URL for the current project.
  * @param options.isReleaseCandidate - Denotes whether the current project.
  * is in the midst of release preparation or not. If this is set, any new
  * changes are listed under the current release header. Otherwise, they are
  * listed under the 'Unreleased' section.
- * @param options.projectRootDirectory - The root project directory, used to
+ * @param [options.projectRootDirectory] - The root project directory, used to
  * filter results from various git commands. This path is assumed to be either
  * absolute, or relative to the current directory. Defaults to the root of the
  * current git repository.
- * @param options.tagPrefixes - A list of tag prefixes to look for, where the first is the intended
+ * @param [options.tagPrefixes] - A list of tag prefixes to look for, where the first is the intended
  * prefix and each subsequent prefix is a fallback in case the previous tag prefixes are not found.
- * @param options.formatter - A custom Markdown formatter to use.
+ * @param [options.formatter] - A custom Markdown formatter to use.
  * @returns The updated changelog text.
  */
 export async function updateChangelog({

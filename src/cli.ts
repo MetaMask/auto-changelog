@@ -98,10 +98,10 @@ type UpdateOptions = {
  *
  * @param options - Update options.
  * @param options.changelogPath - The path to the changelog file.
- * @param options.currentVersion - The current project version.
+ * @param [options.currentVersion] - The current project version.
  * @param options.isReleaseCandidate - Whether the current branch is a release candidate or not.
  * @param options.repoUrl - The GitHub repository URL for the current project.
- * @param options.projectRootDirectory - The root project directory.
+ * @param [options.projectRootDirectory] - The root project directory.
  * @param options.tagPrefix - The prefix used in tags before the version number.
  * @param options.formatter - A custom Markdown formatter to use.
  */
@@ -149,7 +149,7 @@ type ValidateOptions = {
  *
  * @param options - Validation options.
  * @param options.changelogPath - The path to the changelog file.
- * @param options.currentVersion - The current project version.
+ * @param [options.currentVersion] - The current project version.
  * @param options.isReleaseCandidate - Whether the current branch is a release candidate or not.
  * @param options.repoUrl - The GitHub repository URL for the current project.
  * @param options.tagPrefix - The prefix used in tags before the version number.

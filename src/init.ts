@@ -5,7 +5,7 @@ import Changelog from './changelog';
  *
  * @param options - Changelog options.
  * @param options.repoUrl - The GitHub repository URL for the current project.
- * @param options.tagPrefix - The prefix used in tags before the version number.
+ * @param [options.tagPrefix] - The prefix used in tags before the version number.
  * @returns The initial changelog text.
  */
 export function createEmptyChangelog({

@@ -80,7 +80,7 @@ type ValidateChangelogOptions = {
  *
  * @param options - Validation options.
  * @param options.changelogContent - The current changelog.
- * @param options.currentVersion - The current version. Required if
+ * @param [options.currentVersion] - The current version. Required if
  * `isReleaseCandidate` is set, but optional otherwise.
  * @param options.repoUrl - The GitHub repository URL for the current
  * project.
@@ -88,8 +88,8 @@ type ValidateChangelogOptions = {
  * the midst of release preparation or not. If this is set, this command will
  * also ensure the current version is represented in the changelog with a
  * header, and that there are no unreleased changes present.
- * @param options.tagPrefix - The prefix used in tags before the version number.
- * @param options.formatter - A custom Markdown formatter to use.
+ * @param [options.tagPrefix] - The prefix used in tags before the version number.
+ * @param [options.formatter] - A custom Markdown formatter to use.
  * @throws `InvalidChangelogError` - Will throw if the changelog is invalid
  * @throws `MissingCurrentVersionError` - Will throw if `isReleaseCandidate` is
  * `true` and the changelog is missing the release header for the current

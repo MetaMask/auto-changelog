@@ -30,8 +30,8 @@ function isValidChangeCategory(category: string): category is ChangeCategory {
  * @param options - Options.
  * @param options.changelogContent - The changelog to parse.
  * @param options.repoUrl - The GitHub repository URL for the current project.
- * @param options.tagPrefix - The prefix used in tags before the version number.
- * @param options.formatter - A custom Markdown formatter to use.
+ * @param [options.tagPrefix] - The prefix used in tags before the version number.
+ * @param [options.formatter] - A custom Markdown formatter to use.
  * @returns A changelog instance that reflects the changelog text provided.
  */
 export function parseChangelog({
@@ -74,7 +74,7 @@ export function parseChangelog({
    * This is required because change entries can span multiple lines.
    *
    * @param options - Options.
-   * @param options.removeTrailingNewline - Indicates that the trailing newline
+   * @param [options.removeTrailingNewline] - Indicates that the trailing newline
    * is not a part of the change description, and should therefore be removed.
    */
   function finalizePreviousChange({

@@ -74,8 +74,8 @@ function stringifyCategory(category: ChangeCategory, changes: string[]) {
  * @param version - The release version.
  * @param categories - The categories of changes included in this release.
  * @param options - Additional release options.
- * @param options.date - The date of the release.
- * @param options.status - The status of the release (e.g., "DEPRECATED").
+ * @param [options.date] - The date of the release.
+ * @param [options.status] - The status of the release (e.g., "DEPRECATED").
  * @returns The stringified release section.
  */
 function stringifyRelease(
@@ -269,8 +269,8 @@ export default class Changelog {
    *
    * @param options - Changelog options.
    * @param options.repoUrl - The GitHub repository URL for the current project.
-   * @param options.tagPrefix - The prefix used in tags before the version number.
-   * @param options.formatter - A function that formats the changelog string.
+   * @param [options.tagPrefix] - The prefix used in tags before the version number.
+   * @param [options.formatter] - A function that formats the changelog string.
    */
   constructor({
     repoUrl,
@@ -292,13 +292,13 @@ export default class Changelog {
    * Add a release to the changelog.
    *
    * @param options - Release options.
-   * @param options.addToStart - Determines whether the change is added to the
+   * @param [options.addToStart] - Determines whether the change is added to the
    * top or bottom of the list of changes in this category. This defaults to
    * `true` because changes should be in reverse-chronological order. This
    * should be set to `false` when parsing a changelog top-to-bottom.
-   * @param options.date - An ISO-8601 formatted date, representing the release
+   * @param [options.date] - An ISO-8601 formatted date, representing the release
    * date.
-   * @param options.status - The status of the release (e.g., 'WITHDRAWN',
+   * @param [options.status] - The status of the release (e.g., 'WITHDRAWN',
    * 'DEPRECATED').
    * @param options.version - The version of the current release, which should
    * be a [SemVer](https://semver.org/spec/v2.0.0.html)-compatible version.
@@ -325,13 +325,13 @@ export default class Changelog {
    * Add a change to the changelog.
    *
    * @param options - Change options.
-   * @param options.addToStart - Determines whether the change is added to the
+   * @param [options.addToStart] - Determines whether the change is added to the
    * top or bottom of the list of changes in this category. This defaults to
    * `true` because changes should be in reverse-chronological order. This
    * should be set to `false` when parsing a changelog top-to-bottom.
    * @param options.category - The category of the change.
    * @param options.description - The description of the change.
-   * @param options.version - The version this change was released in. If this
+   * @param [options.version] - The version this change was released in. If this
    * is not given, the change is assumed to be unreleased.
    */
   addChange({
