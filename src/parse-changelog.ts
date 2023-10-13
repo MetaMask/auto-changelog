@@ -32,9 +32,9 @@ function isValidChangeCategory(category: string): category is ChangeCategory {
  * @param options.repoUrl - The GitHub repository URL for the current project.
  * @param [options.tagPrefix] - The prefix used in tags before the version number.
  * @param [options.formatter] - A custom Markdown formatter to use.
- * @param [options.versionBeforePkgRename] - A version string of the package before being renamed.
+ * @param [options.versionBeforePackageRename] - A version string of the package before being renamed.
  * An optional, which is required only in case of package renamed.
- * @param [options.tagPrefixBeforePkgRename] - A tag prefix string of the package before being renamed.
+ * @param [options.tagPrefixBeforePackageRename] - A tag prefix string of the package before being renamed.
  * An optional, which is required only in case of package renamed.
  * @returns A changelog instance that reflects the changelog text provided.
  */
@@ -43,23 +43,23 @@ export function parseChangelog({
   repoUrl,
   tagPrefix = 'v',
   formatter = undefined,
-  versionBeforePkgRename = undefined,
-  tagPrefixBeforePkgRename = undefined,
+  versionBeforePackageRename = undefined,
+  tagPrefixBeforePackageRename = undefined,
 }: {
   changelogContent: string;
   repoUrl: string;
   tagPrefix?: string;
   formatter?: Formatter;
-  versionBeforePkgRename?: string;
-  tagPrefixBeforePkgRename?: string;
+  versionBeforePackageRename?: string;
+  tagPrefixBeforePackageRename?: string;
 }) {
   const changelogLines = changelogContent.split('\n');
   const changelog = new Changelog({
     repoUrl,
     tagPrefix,
     formatter,
-    versionBeforePkgRename,
-    tagPrefixBeforePkgRename,
+    versionBeforePackageRename,
+    tagPrefixBeforePackageRename,
   });
 
   const unreleasedHeaderIndex = changelogLines.indexOf(`## [${unreleased}]`);

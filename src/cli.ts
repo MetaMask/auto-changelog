@@ -142,8 +142,14 @@ type ValidateOptions = {
   tagPrefix: string;
   fix: boolean;
   formatter: Formatter;
-  versionBeforePkgRename?: string; // used in case of package renamed
-  tagPrefixBeforePkgRename?: string; // used in case of package renamed
+  /**
+   * Used in case of package renamed
+   */
+  versionBeforePackageRename?: string;
+  /**
+   * Used in case of package renamed
+   */
+  tagPrefixBeforePackageRename?: string;
 };
 
 /**
@@ -157,9 +163,9 @@ type ValidateOptions = {
  * @param options.tagPrefix - The prefix used in tags before the version number.
  * @param options.fix - Whether to attempt to fix the changelog or not.
  * @param options.formatter - A custom Markdown formatter to use.
- * @param [options.versionBeforePkgRename] - A version of the package before being renamed.
+ * @param [options.versionBeforePackageRename] - A version of the package before being renamed.
  * An optional, which is required only in case of package renamed.
- * @param [options.tagPrefixBeforePkgRename] - A tag prefix of the package before being renamed.
+ * @param [options.tagPrefixBeforePackageRename] - A tag prefix of the package before being renamed.
  * An optional, which is required only in case of package renamed.
  */
 async function validate({
@@ -170,8 +176,8 @@ async function validate({
   tagPrefix,
   fix,
   formatter,
-  versionBeforePkgRename,
-  tagPrefixBeforePkgRename,
+  versionBeforePackageRename,
+  tagPrefixBeforePackageRename,
 }: ValidateOptions) {
   const changelogContent = await readChangelog(changelogPath);
 
@@ -183,8 +189,8 @@ async function validate({
       isReleaseCandidate,
       tagPrefix,
       formatter,
-      versionBeforePkgRename,
-      tagPrefixBeforePkgRename,
+      versionBeforePackageRename,
+      tagPrefixBeforePackageRename,
     });
     return undefined;
   } catch (error) {
@@ -268,11 +274,11 @@ function configureCommonCommandOptions(_yargs: Argv) {
       description: 'The prefix used in tags before the version number.',
       type: 'string',
     })
-    .option('versionBeforePkgRename', {
+    .option('versionBeforePackageRename', {
       description: 'A version of the package before being renamed.',
       type: 'string',
     })
-    .option('tagPrefixBeforePkgRename', {
+    .option('tagPrefixBeforePackageRename', {
       description: 'A tag prefix of the package before being renamed.',
       type: 'string',
     });
@@ -350,8 +356,8 @@ async function main() {
     tagPrefix,
     fix,
     prettier: usePrettier,
-    versionBeforePkgRename,
-    tagPrefixBeforePkgRename,
+    versionBeforePackageRename,
+    tagPrefixBeforePackageRename,
   } = argv;
   let { currentVersion } = argv;
 
@@ -475,8 +481,8 @@ async function main() {
       tagPrefix,
       fix,
       formatter,
-      versionBeforePkgRename,
-      tagPrefixBeforePkgRename,
+      versionBeforePackageRename,
+      tagPrefixBeforePackageRename,
     });
   } else if (command === 'init') {
     await init({

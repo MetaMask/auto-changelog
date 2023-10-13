@@ -723,8 +723,8 @@ describe('validateChangelog', () => {
           'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
         isReleaseCandidate: false,
         tagPrefix: '@metamask/test@',
-        versionBeforePkgRename: '0.0.2',
-        tagPrefixBeforePkgRename: 'test@',
+        versionBeforePackageRename: '0.0.2',
+        tagPrefixBeforePackageRename: 'test@',
       }),
     ).not.toThrow();
   });
