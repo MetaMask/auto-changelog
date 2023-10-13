@@ -89,7 +89,7 @@ function stringifyRelease(
   const categorizedChanges = orderedChangeCategories
     .filter((category) => categories[category])
     .map((category) => {
-      const changes = categories[category] as string[];
+      const changes = categories[category] ?? [];
       return stringifyCategory(category, changes);
     })
     .join('\n\n');
@@ -386,8 +386,8 @@ export default class Changelog {
     for (const category of Object.keys(unreleasedChanges) as ChangeCategory[]) {
       if (releaseChanges[category]) {
         releaseChanges[category] = [
-          ...(unreleasedChanges[category] as string[]),
-          ...(releaseChanges[category] as string[]),
+          ...(unreleasedChanges[category] ?? []),
+          ...(releaseChanges[category] ?? []),
         ];
       } else {
         releaseChanges[category] = unreleasedChanges[category];
