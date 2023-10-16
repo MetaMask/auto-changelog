@@ -2,6 +2,7 @@ import semver from 'semver';
 
 import Changelog, { Formatter } from './changelog';
 import { ChangeCategory, unreleased } from './constants';
+import { PackageRename } from './shared-types';
 
 /**
  * Truncate the given string at 80 characters.
@@ -32,9 +33,7 @@ function isValidChangeCategory(category: string): category is ChangeCategory {
  * @param options.repoUrl - The GitHub repository URL for the current project.
  * @param options.tagPrefix - The prefix used in tags before the version number.
  * @param options.formatter - A custom Markdown formatter to use.
- * @param options.versionBeforePackageRename - A version string of the package before being renamed.
- * An optional, which is required only in case of package renamed.
- * @param options.tagPrefixBeforePackageRename - A tag prefix string of the package before being renamed.
+ * @param options.packageRename - The package rename properties
  * An optional, which is required only in case of package renamed.
  * @returns A changelog instance that reflects the changelog text provided.
  */
@@ -43,23 +42,20 @@ export function parseChangelog({
   repoUrl,
   tagPrefix = 'v',
   formatter = undefined,
-  versionBeforePackageRename = undefined,
-  tagPrefixBeforePackageRename = undefined,
+  packageRename,
 }: {
   changelogContent: string;
   repoUrl: string;
   tagPrefix?: string;
   formatter?: Formatter;
-  versionBeforePackageRename?: string;
-  tagPrefixBeforePackageRename?: string;
+  packageRename?: PackageRename;
 }) {
   const changelogLines = changelogContent.split('\n');
   const changelog = new Changelog({
     repoUrl,
     tagPrefix,
     formatter,
-    versionBeforePackageRename,
-    tagPrefixBeforePackageRename,
+    packageRename,
   });
 
   const unreleasedHeaderIndex = changelogLines.indexOf(`## [${unreleased}]`);

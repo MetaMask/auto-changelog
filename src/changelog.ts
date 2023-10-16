@@ -6,6 +6,7 @@ import {
   unreleased,
   Version,
 } from './constants';
+import { PackageRename } from './shared-types';
 
 const changelogTitle = '# Changelog';
 const changelogDescription = `All notable changes to this project will be documented in this file.
@@ -164,9 +165,7 @@ function getTagUrl(repoUrl: string, tag: string) {
  * @param repoUrl - The URL for the GitHub repository.
  * @param tagPrefix - The prefix used in tags before the version number.
  * @param releases - The releases to generate link definitions for.
- * @param versionBeforePackageRename - A version string of the package before being renamed.
- * An optional, which is required only in case of package renamed.
- * @param tagPrefixBeforePackageRename - A tag prefix string of the package before being renamed.
+ * @param packageRename - The package rename properties
  * An optional, which is required only in case of package renamed.
  * @returns The stringified release link definitions.
  */
@@ -174,24 +173,21 @@ function stringifyLinkReferenceDefinitions(
   repoUrl: string,
   tagPrefix: string,
   releases: ReleaseMetadata[],
-  versionBeforePackageRename?: string,
-  tagPrefixBeforePackageRename?: string,
+  packageRename?: PackageRename,
 ) {
   const unreleasedLinkReferenceDefinition =
     getUnreleasedLinkReferenceDefinition(
       repoUrl,
       tagPrefix,
       releases,
-      versionBeforePackageRename,
-      tagPrefixBeforePackageRename,
+      packageRename,
     );
 
   const releaseLinkReferenceDefinitions = getReleaseLinkReferenceDefinitions(
     repoUrl,
     tagPrefix,
     releases,
-    versionBeforePackageRename,
-    tagPrefixBeforePackageRename,
+    packageRename,
   ).join('\n');
   return `${unreleasedLinkReferenceDefinition}\n${releaseLinkReferenceDefinitions}${
     releases.length > 0 ? '\n' : ''
@@ -204,16 +200,14 @@ function stringifyLinkReferenceDefinitions(
  * @param repoUrl - The URL for the GitHub repository.
  * @param tagPrefix - The prefix used in tags before the version number.
  * @param releases - The releases to generate link definitions for.
- * @param versionBeforePackageRename - A version string of the package before being renamed.
- * @param tagPrefixBeforePackageRename - A tag prefix string of the package before being renamed.
+ * @param packageRename - The package rename properties.
  * @returns A unreleased link reference definition string.
  */
 function getUnreleasedLinkReferenceDefinition(
   repoUrl: string,
   tagPrefix: string,
   releases: ReleaseMetadata[],
-  versionBeforePackageRename?: string,
-  tagPrefixBeforePackageRename?: string,
+  packageRename?: PackageRename,
 ): string {
   // The "Unreleased" section represents all changes made since the *highest*
   // release, not the most recent release. This is to accomodate patch releases
@@ -237,9 +231,8 @@ function getUnreleasedLinkReferenceDefinition(
   // if there is a package renamed, the tag prefix before the rename will be considered for compare
   // [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/test@0.0.2...HEAD
   const tagPrefixToCompare =
-    tagPrefixBeforePackageRename &&
-    versionBeforePackageRename === latestSemverVersion
-      ? tagPrefixBeforePackageRename
+    packageRename && packageRename.versionBeforeRename === latestSemverVersion
+      ? packageRename.tagPrefixBeforeRename
       : tagPrefix;
 
   return `[${unreleased}]: ${
@@ -259,32 +252,26 @@ function getUnreleasedLinkReferenceDefinition(
  * @param repoUrl - The URL for the GitHub repository.
  * @param tagPrefix - The prefix used in tags before the version number.
  * @param releases - The releases to generate link definitions for.
- * @param versionBeforePackageRename - A version string of the package before being renamed.
- * @param tagPrefixBeforePackageRename - A tag prefix string of the package before being renamed.
+ * @param packageRename - The package rename properties.
  * @returns A list of release link reference definitions.
  */
 function getReleaseLinkReferenceDefinitions(
   repoUrl: string,
   tagPrefix: string,
   releases: ReleaseMetadata[],
-  versionBeforePackageRename?: string,
-  tagPrefixBeforePackageRename?: string,
+  packageRename?: PackageRename,
 ): string[] {
   // The "previous" release that should be used for comparison is not always
   // the most recent release chronologically. The _highest_ version that is
   // lower than the current release is used as the previous release, so that
   // patch releases on older releases can be accomodated.
-  // by default tag prefix from new package will be used
   const chronologicalVersions = releases.map(({ version }) => version);
   let tagPrefixToCompare = tagPrefix;
   const releaseLinkReferenceDefinitions = releases.map(({ version }) => {
     let diffUrl;
-    // once the version matches with versionBeforePackageRename, rest of the lines in changelog will be assumed as migrated tags
-    if (
-      tagPrefixBeforePackageRename &&
-      versionBeforePackageRename === version
-    ) {
-      tagPrefixToCompare = tagPrefixBeforePackageRename;
+    // once the version matches with versionBeforeRename, rest of the lines in changelog will be assumed as migrated tags
+    if (packageRename && packageRename?.versionBeforeRename === version) {
+      tagPrefixToCompare = packageRename.tagPrefixBeforeRename;
     }
 
     if (version === chronologicalVersions[chronologicalVersions.length - 1]) {
@@ -299,14 +286,14 @@ function getReleaseLinkReferenceDefinitions(
 
       if (previousVersion) {
         if (
-          tagPrefixBeforePackageRename &&
-          versionBeforePackageRename === previousVersion
+          packageRename &&
+          packageRename.versionBeforeRename === previousVersion
         ) {
           // The package was renamed at this version
           // (the tag prefix holds the new name).
           diffUrl = getCompareUrl(
             repoUrl,
-            `${tagPrefixBeforePackageRename}${previousVersion}`,
+            `${packageRename.tagPrefixBeforeRename}${previousVersion}`,
             `${tagPrefix}${version}`,
           );
         } else {
@@ -364,42 +351,35 @@ export default class Changelog {
 
   #formatter: Formatter;
 
-  readonly #versionBeforePackageRename: string | undefined;
-
-  readonly #tagPrefixBeforePackageRename: string | undefined;
+  readonly #packageRename: PackageRename | undefined;
 
   /**
    * Construct an empty changelog.
    *
    * @param options - Changelog options.
    * @param options.repoUrl - The GitHub repository URL for the current project.
-   * @param options.tagPrefix - The prefix used in tags before the version number.
-   * @param options.formatter - A function that formats the changelog string.
-   * @param options.versionBeforePackageRename - A version string of the package before being renamed.
-   * An optional, which is required only in case of package renamed.
-   * @param options.tagPrefixBeforePackageRename - A tag prefix string of the package before being renamed.
+   * @param [options.tagPrefix] - The prefix used in tags before the version number.
+   * @param [options.formatter] - A function that formats the changelog string.
+   * @param [options.packageRename] - The package rename properties.
    * An optional, which is required only in case of package renamed.
    */
   constructor({
     repoUrl,
     tagPrefix = 'v',
     formatter = (changelog) => changelog,
-    versionBeforePackageRename = undefined,
-    tagPrefixBeforePackageRename = undefined,
+    packageRename,
   }: {
     repoUrl: string;
     tagPrefix?: string;
     formatter?: Formatter;
-    versionBeforePackageRename?: string | undefined;
-    tagPrefixBeforePackageRename?: string | undefined;
+    packageRename?: PackageRename;
   }) {
     this.#releases = [];
     this.#changes = { [unreleased]: {} };
     this.#repoUrl = repoUrl;
     this.#tagPrefix = tagPrefix;
     this.#formatter = formatter;
-    this.#versionBeforePackageRename = versionBeforePackageRename;
-    this.#tagPrefixBeforePackageRename = tagPrefixBeforePackageRename;
+    this.#packageRename = packageRename;
   }
 
   /**
@@ -581,8 +561,7 @@ ${stringifyLinkReferenceDefinitions(
   this.#repoUrl,
   this.#tagPrefix,
   this.#releases,
-  this.#versionBeforePackageRename,
-  this.#tagPrefixBeforePackageRename,
+  this.#packageRename,
 )}`;
 
     return this.#formatter(changelog);

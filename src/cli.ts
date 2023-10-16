@@ -13,6 +13,7 @@ import { unreleased, Version } from './constants';
 import { generateDiff } from './generate-diff';
 import { createEmptyChangelog } from './init';
 import { getRepositoryUrl } from './repo';
+import { PackageRename } from './shared-types';
 import { updateChangelog } from './update-changelog';
 import {
   ChangelogFormattingError,
@@ -143,13 +144,9 @@ type ValidateOptions = {
   fix: boolean;
   formatter: Formatter;
   /**
-   * Used in case of package renamed
+   * The package rename properties, used in case of package is renamed
    */
-  versionBeforePackageRename?: string;
-  /**
-   * Used in case of package renamed
-   */
-  tagPrefixBeforePackageRename?: string;
+  packageRename?: PackageRename;
 };
 
 /**
@@ -163,9 +160,7 @@ type ValidateOptions = {
  * @param options.tagPrefix - The prefix used in tags before the version number.
  * @param options.fix - Whether to attempt to fix the changelog or not.
  * @param options.formatter - A custom Markdown formatter to use.
- * @param options.versionBeforePackageRename - A version of the package before being renamed.
- * An optional, which is required only in case of package renamed.
- * @param options.tagPrefixBeforePackageRename - A tag prefix of the package before being renamed.
+ * @param options.packageRename - The package rename properties.
  * An optional, which is required only in case of package renamed.
  */
 async function validate({
@@ -176,8 +171,7 @@ async function validate({
   tagPrefix,
   fix,
   formatter,
-  versionBeforePackageRename,
-  tagPrefixBeforePackageRename,
+  packageRename,
 }: ValidateOptions) {
   const changelogContent = await readChangelog(changelogPath);
 
@@ -189,8 +183,7 @@ async function validate({
       isReleaseCandidate,
       tagPrefix,
       formatter,
-      versionBeforePackageRename,
-      tagPrefixBeforePackageRename,
+      packageRename,
     });
     return undefined;
   } catch (error) {
@@ -434,6 +427,15 @@ async function main() {
     return exitWithError(`Invalid repo URL: '${repoUrl}'`);
   }
 
+  if (
+    (versionBeforePackageRename && !tagPrefixBeforePackageRename) ||
+    (!versionBeforePackageRename && tagPrefixBeforePackageRename)
+  ) {
+    return exitWithError(
+      '--version-before-package-rename and --tag-prefix-before-package-rename must be given together or not at all.',
+    );
+  }
+
   let changelogPath = changelogFilename;
   if (!path.isAbsolute(changelogFilename) && projectRootDirectory) {
     changelogPath = path.resolve(projectRootDirectory, changelogFilename);
@@ -473,6 +475,13 @@ async function main() {
       formatter,
     });
   } else if (command === 'validate') {
+    let packageRename: PackageRename | undefined;
+    if (versionBeforePackageRename && tagPrefixBeforePackageRename) {
+      packageRename = {
+        versionBeforeRename: versionBeforePackageRename,
+        tagPrefixBeforeRename: tagPrefixBeforePackageRename,
+      };
+    }
     await validate({
       changelogPath,
       currentVersion,
@@ -481,8 +490,7 @@ async function main() {
       tagPrefix,
       fix,
       formatter,
-      versionBeforePackageRename,
-      tagPrefixBeforePackageRename,
+      packageRename,
     });
   } else if (command === 'init') {
     await init({

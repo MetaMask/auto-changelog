@@ -1,6 +1,7 @@
 import { Formatter } from './changelog';
 import { Version, ChangeCategory } from './constants';
 import { parseChangelog } from './parse-changelog';
+import { PackageRename } from './shared-types';
 
 /**
  * Indicates that the changelog is invalid.
@@ -74,13 +75,9 @@ type ValidateChangelogOptions = {
   tagPrefix?: string;
   formatter?: Formatter;
   /**
-   * Used in case of package renamed
+   * The package rename properties, used in case of package is renamed
    */
-  versionBeforePackageRename?: string;
-  /**
-   * Used in case of package renamed
-   */
-  tagPrefixBeforePackageRename?: string;
+  packageRename?: PackageRename;
 };
 
 /**
@@ -98,9 +95,7 @@ type ValidateChangelogOptions = {
  * header, and that there are no unreleased changes present.
  * @param options.tagPrefix - The prefix used in tags before the version number.
  * @param options.formatter - A custom Markdown formatter to use.
- * @param options.versionBeforePackageRename - A version string of the package before being renamed.
- * An optional, which is required only in case of package renamed.
- * @param options.tagPrefixBeforePackageRename - A tag prefix string of the package before being renamed.
+ * @param options.packageRename - The package rename properties.
  * An optional, which is required only in case of package renamed.
  * @throws `InvalidChangelogError` - Will throw if the changelog is invalid
  * @throws `MissingCurrentVersionError` - Will throw if `isReleaseCandidate` is
@@ -119,16 +114,14 @@ export function validateChangelog({
   isReleaseCandidate,
   tagPrefix = 'v',
   formatter = undefined,
-  versionBeforePackageRename = undefined,
-  tagPrefixBeforePackageRename = undefined,
+  packageRename,
 }: ValidateChangelogOptions) {
   const changelog = parseChangelog({
     changelogContent,
     repoUrl,
     tagPrefix,
     formatter,
-    versionBeforePackageRename,
-    tagPrefixBeforePackageRename,
+    packageRename,
   });
   const hasUnreleasedChanges =
     Object.keys(changelog.getUnreleasedChanges()).length !== 0;
