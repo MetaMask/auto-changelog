@@ -163,9 +163,9 @@ type ValidateOptions = {
  * @param options.tagPrefix - The prefix used in tags before the version number.
  * @param options.fix - Whether to attempt to fix the changelog or not.
  * @param options.formatter - A custom Markdown formatter to use.
- * @param [options.versionBeforePackageRename] - A version of the package before being renamed.
+ * @param options.versionBeforePackageRename - A version of the package before being renamed.
  * An optional, which is required only in case of package renamed.
- * @param [options.tagPrefixBeforePackageRename] - A tag prefix of the package before being renamed.
+ * @param options.tagPrefixBeforePackageRename - A tag prefix of the package before being renamed.
  * An optional, which is required only in case of package renamed.
  */
 async function validate({

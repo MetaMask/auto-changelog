@@ -96,11 +96,11 @@ type ValidateChangelogOptions = {
  * the midst of release preparation or not. If this is set, this command will
  * also ensure the current version is represented in the changelog with a
  * header, and that there are no unreleased changes present.
- * @param [options.tagPrefix] - The prefix used in tags before the version number.
- * @param [options.formatter] - A custom Markdown formatter to use.
- * @param [options.versionBeforePackageRename] - A version string of the package before being renamed.
+ * @param options.tagPrefix - The prefix used in tags before the version number.
+ * @param options.formatter - A custom Markdown formatter to use.
+ * @param options.versionBeforePackageRename - A version string of the package before being renamed.
  * An optional, which is required only in case of package renamed.
- * @param [options.tagPrefixBeforePackageRename] - A tag prefix string of the package before being renamed.
+ * @param options.tagPrefixBeforePackageRename - A tag prefix string of the package before being renamed.
  * An optional, which is required only in case of package renamed.
  * @throws `InvalidChangelogError` - Will throw if the changelog is invalid
  * @throws `MissingCurrentVersionError` - Will throw if `isReleaseCandidate` is

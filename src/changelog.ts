@@ -164,9 +164,9 @@ function getTagUrl(repoUrl: string, tag: string) {
  * @param repoUrl - The URL for the GitHub repository.
  * @param tagPrefix - The prefix used in tags before the version number.
  * @param releases - The releases to generate link definitions for.
- * @param [versionBeforePackageRename] - A version string of the package before being renamed.
+ * @param versionBeforePackageRename - A version string of the package before being renamed.
  * An optional, which is required only in case of package renamed.
- * @param [tagPrefixBeforePackageRename] - A tag prefix string of the package before being renamed.
+ * @param tagPrefixBeforePackageRename - A tag prefix string of the package before being renamed.
  * An optional, which is required only in case of package renamed.
  * @returns The stringified release link definitions.
  */
@@ -204,8 +204,8 @@ function stringifyLinkReferenceDefinitions(
  * @param repoUrl - The URL for the GitHub repository.
  * @param tagPrefix - The prefix used in tags before the version number.
  * @param releases - The releases to generate link definitions for.
- * @param [versionBeforePackageRename] - A version string of the package before being renamed.
- * @param [tagPrefixBeforePackageRename] - A tag prefix string of the package before being renamed.
+ * @param versionBeforePackageRename - A version string of the package before being renamed.
+ * @param tagPrefixBeforePackageRename - A tag prefix string of the package before being renamed.
  * @returns A unreleased link reference definition string.
  */
 function getUnreleasedLinkReferenceDefinition(
@@ -259,8 +259,8 @@ function getUnreleasedLinkReferenceDefinition(
  * @param repoUrl - The URL for the GitHub repository.
  * @param tagPrefix - The prefix used in tags before the version number.
  * @param releases - The releases to generate link definitions for.
- * @param [versionBeforePackageRename] - A version string of the package before being renamed.
- * @param [tagPrefixBeforePackageRename] - A tag prefix string of the package before being renamed.
+ * @param versionBeforePackageRename - A version string of the package before being renamed.
+ * @param tagPrefixBeforePackageRename - A tag prefix string of the package before being renamed.
  * @returns A list of release link reference definitions.
  */
 function getReleaseLinkReferenceDefinitions(
@@ -373,11 +373,11 @@ export default class Changelog {
    *
    * @param options - Changelog options.
    * @param options.repoUrl - The GitHub repository URL for the current project.
-   * @param [options.tagPrefix] - The prefix used in tags before the version number.
-   * @param [options.formatter] - A function that formats the changelog string.
-   * @param [options.versionBeforePackageRename] - A version string of the package before being renamed.
+   * @param options.tagPrefix - The prefix used in tags before the version number.
+   * @param options.formatter - A function that formats the changelog string.
+   * @param options.versionBeforePackageRename - A version string of the package before being renamed.
    * An optional, which is required only in case of package renamed.
-   * @param [options.tagPrefixBeforePackageRename] - A tag prefix string of the package before being renamed.
+   * @param options.tagPrefixBeforePackageRename - A tag prefix string of the package before being renamed.
    * An optional, which is required only in case of package renamed.
    */
   constructor({
