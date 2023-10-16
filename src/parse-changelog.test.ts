@@ -756,4 +756,71 @@ describe('parseChangelog', () => {
       `Unrecognized line: '* Very very very very very very very very very very very very very very very ver...'`,
     );
   });
+
+  it('should parse changelog with releases which has renamed package', () => {
+    const changelog = parseChangelog({
+      changelogContent: outdent`
+        # Changelog
+        All notable changes to this project will be documented in this file.
+
+        The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+        and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+        ## [Unreleased]
+
+        ## [1.0.0] - 2020-01-01
+        ### Changed
+        - package renamed
+
+        ## [0.0.2] - 2020-01-01
+        ### Fixed
+        - Something
+
+        ## [0.0.1] - 2020-01-01
+        ### Changed
+        - Something
+
+        [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/@metamask/test@1.0.0...HEAD
+        [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/test@0.0.2...@metamask/test@1.0.0
+        [0.0.2]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/test@0.0.1...test@0.0.2
+        [0.0.1]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/test@0.0.1
+        `,
+      repoUrl:
+        'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+    });
+
+    expect(changelog.getReleases()).toStrictEqual([
+      { date: '2020-01-01', status: undefined, version: '1.0.0' },
+      { date: '2020-01-01', status: undefined, version: '0.0.2' },
+      { date: '2020-01-01', status: undefined, version: '0.0.1' },
+    ]);
+
+    expect(changelog.getReleaseChanges('1.0.0')).toStrictEqual({
+      Changed: ['package renamed'],
+    });
+
+    expect(changelog.getReleaseChanges('0.0.2')).toStrictEqual({
+      Fixed: ['Something'],
+    });
+
+    expect(changelog.getReleaseChanges('0.0.1')).toStrictEqual({
+      Changed: ['Something'],
+    });
+
+    expect(changelog.getRelease('1.0.0')).toStrictEqual({
+      date: '2020-01-01',
+      status: undefined,
+      version: '1.0.0',
+    });
+
+    expect(changelog.getStringifiedRelease('1.0.0')).toStrictEqual(outdent`
+    ## [1.0.0] - 2020-01-01
+    ### Changed
+    - package renamed`);
+    expect(changelog.getRelease('2.0.0')).toBeUndefined();
+    expect(() => changelog.getStringifiedRelease('2.0.0')).toThrow(
+      "Specified release version does not exist: '2.0.0'",
+    );
+    expect(changelog.getUnreleasedChanges()).toStrictEqual({});
+  });
 });
