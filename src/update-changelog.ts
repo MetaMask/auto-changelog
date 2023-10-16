@@ -197,11 +197,6 @@ export async function updateChangelog({
   tagPrefixes = ['v'],
   formatter = undefined,
 }: UpdateChangelogOptions): Promise<string | undefined> {
-  if (isReleaseCandidate && !currentVersion) {
-    throw new Error(
-      `A version must be specified if 'isReleaseCandidate' is set.`,
-    );
-  }
   const changelog = parseChangelog({
     changelogContent,
     repoUrl,
@@ -214,15 +209,6 @@ export async function updateChangelog({
   const mostRecentTag = await getMostRecentTag({
     tagPrefixes,
   });
-
-  if (
-    isReleaseCandidate &&
-    mostRecentTag === `${tagPrefixes[0]}${currentVersion ?? ''}`
-  ) {
-    throw new Error(
-      `Current version already has tag, which is unexpected for a release candidate.`,
-    );
-  }
 
   const commitRange =
     mostRecentTag === null ? 'HEAD' : `${mostRecentTag}..HEAD`;
@@ -247,35 +233,47 @@ export async function updateChangelog({
     return undefined;
   }
 
-  // Ensure release header exists, if necessary
-  if (
-    isReleaseCandidate &&
-    currentVersion &&
-    !changelog
-      .getReleases()
-      .find((release) => release.version === currentVersion)
-  ) {
-    changelog.addRelease({ version: currentVersion });
-  }
-
-  if (isReleaseCandidate && currentVersion && hasUnreleasedChanges) {
-    changelog.migrateUnreleasedChangesToRelease(currentVersion);
-  }
-
-  const newChangeEntries = newCommits.map(({ prNumber, description }) => {
-    if (prNumber) {
-      const suffix = `([#${prNumber}](${repoUrl}/pull/${prNumber}))`;
-      return `${description} ${suffix}`;
+  if (isReleaseCandidate) {
+    if (!currentVersion) {
+      throw new Error(
+        `A version must be specified if 'isReleaseCandidate' is set.`,
+      );
     }
-    return description;
-  });
 
-  for (const description of newChangeEntries.reverse()) {
-    changelog.addChange({
-      version: isReleaseCandidate ? currentVersion : undefined,
-      category: ChangeCategory.Uncategorized,
-      description,
+    if (mostRecentTag === `${tagPrefixes[0]}${currentVersion ?? ''}`) {
+      throw new Error(
+        `Current version already has tag, which is unexpected for a release candidate.`,
+      );
+    }
+
+    // Ensure release header exists, if necessary
+    if (
+      !changelog
+        .getReleases()
+        .find((release) => release.version === currentVersion)
+    ) {
+      changelog.addRelease({ version: currentVersion });
+    }
+
+    if (hasUnreleasedChanges) {
+      changelog.migrateUnreleasedChangesToRelease(currentVersion);
+    }
+
+    const newChangeEntries = newCommits.map(({ prNumber, description }) => {
+      if (prNumber) {
+        const suffix = `([#${prNumber}](${repoUrl}/pull/${prNumber}))`;
+        return `${description} ${suffix}`;
+      }
+      return description;
     });
+
+    for (const description of newChangeEntries.reverse()) {
+      changelog.addChange({
+        version: isReleaseCandidate ? currentVersion : undefined,
+        category: ChangeCategory.Uncategorized,
+        description,
+      });
+    }
   }
 
   return changelog.toString();
