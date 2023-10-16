@@ -1,3 +1,4 @@
+import { getKnownPropertyNames } from '@metamask/utils';
 import semver from 'semver';
 
 import {
@@ -383,9 +384,7 @@ export default class Changelog {
 
     const unreleasedChanges = this.#changes[unreleased];
 
-    for (const category of Object.keys(
-      unreleasedChanges,
-    ) as (keyof typeof unreleasedChanges)[]) {
+    for (const category of getKnownPropertyNames(unreleasedChanges)) {
       if (releaseChanges[category]) {
         releaseChanges[category] = [
           ...(unreleasedChanges[category] ?? []),
