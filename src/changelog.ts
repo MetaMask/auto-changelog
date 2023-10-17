@@ -271,7 +271,7 @@ function getReleaseLinkReferenceDefinitions(
   const releaseLinkReferenceDefinitions = releases.map(({ version }) => {
     let diffUrl;
     // once the version matches with versionBeforeRename, rest of the lines in changelog will be assumed as migrated tags
-    if (packageRename && packageRename?.versionBeforeRename === version) {
+    if (packageRename && packageRename.versionBeforeRename === version) {
       tagPrefixToCompare = packageRename.tagPrefixBeforeRename;
     }
 
