@@ -1,3 +1,4 @@
+import { getKnownPropertyNames } from '@metamask/utils';
 import semver from 'semver';
 
 import {
@@ -89,7 +90,7 @@ function stringifyRelease(
   const categorizedChanges = orderedChangeCategories
     .filter((category) => categories[category])
     .map((category) => {
-      const changes = categories[category] as string[];
+      const changes = categories[category] ?? [];
       return stringifyCategory(category, changes);
     })
     .join('\n\n');
@@ -383,11 +384,11 @@ export default class Changelog {
 
     const unreleasedChanges = this.#changes[unreleased];
 
-    for (const category of Object.keys(unreleasedChanges) as ChangeCategory[]) {
+    for (const category of getKnownPropertyNames(unreleasedChanges)) {
       if (releaseChanges[category]) {
         releaseChanges[category] = [
-          ...(unreleasedChanges[category] as string[]),
-          ...(releaseChanges[category] as string[]),
+          ...(unreleasedChanges[category] ?? []),
+          ...(releaseChanges[category] ?? []),
         ];
       } else {
         releaseChanges[category] = unreleasedChanges[category];
