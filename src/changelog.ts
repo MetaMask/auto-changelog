@@ -359,9 +359,9 @@ export default class Changelog {
    *
    * @param options - Changelog options.
    * @param options.repoUrl - The GitHub repository URL for the current project.
-   * @param [options.tagPrefix] - The prefix used in tags before the version number.
-   * @param [options.formatter] - A function that formats the changelog string.
-   * @param [options.packageRename] - The package rename properties.
+   * @param options.tagPrefix - The prefix used in tags before the version number.
+   * @param options.formatter - A function that formats the changelog string.
+   * @param options.packageRename - The package rename properties.
    * An optional, which is required only in case of package renamed.
    */
   constructor({
