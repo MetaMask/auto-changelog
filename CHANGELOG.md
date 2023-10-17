@@ -6,6 +6,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.4.0]
+### Uncategorized
+- package rename changelog validation ([#157](https://github.com/MetaMask/auto-changelog/pull/157))
+- Remove `as` assertions, or fix to mitigate the risk of silent failure ([#158](https://github.com/MetaMask/auto-changelog/pull/158))
+- Bump json5 from 1.0.1 to 1.0.2 ([#162](https://github.com/MetaMask/auto-changelog/pull/162))
+- Bump qs from 6.5.2 to 6.5.3 ([#165](https://github.com/MetaMask/auto-changelog/pull/165))
+- Bump word-wrap from 1.2.3 to 1.2.5 ([#161](https://github.com/MetaMask/auto-changelog/pull/161))
+- Bump http-cache-semantics from 4.1.0 to 4.1.1 ([#166](https://github.com/MetaMask/auto-changelog/pull/166))
+- Bump decode-uri-component from 0.2.0 to 0.2.2 ([#163](https://github.com/MetaMask/auto-changelog/pull/163))
+- Bump tmpl from 1.0.4 to 1.0.5 ([#164](https://github.com/MetaMask/auto-changelog/pull/164))
+
 ## [3.3.0]
 ### Added
 - Add `--prettier` option for Prettier-formatted changelogs ([#155](https://github.com/MetaMask/auto-changelog/pull/155))
@@ -102,7 +113,8 @@ Includes the following features:
   - Monorepo support ([#41](https://github.com/MetaMask/auto-changelog/pull/41))
   - Configurable repository URL, version, and changelog file path ([#33](https://github.com/MetaMask/auto-changelog/pull/33), [#31](https://github.com/MetaMask/auto-changelog/pull/31), [#30](https://github.com/MetaMask/auto-changelog/pull/30))
 
-[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v3.3.0...HEAD
+[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v3.4.0...HEAD
+[3.4.0]: https://github.com/MetaMask/auto-changelog/compare/v3.3.0...v3.4.0
 [3.3.0]: https://github.com/MetaMask/auto-changelog/compare/v3.2.0...v3.3.0
 [3.2.0]: https://github.com/MetaMask/auto-changelog/compare/v3.1.0...v3.2.0
 [3.1.0]: https://github.com/MetaMask/auto-changelog/compare/v3.0.0...v3.1.0
