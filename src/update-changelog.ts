@@ -242,7 +242,7 @@ export async function updateChangelog({
 
     if (mostRecentTag === `${tagPrefixes[0]}${currentVersion ?? ''}`) {
       throw new Error(
-        `Current version already has tag, which is unexpected for a release candidate.`,
+        `Current version already has a tag ('${mostRecentTag}'), which is unexpected for a release candidate.`,
       );
     }
 
