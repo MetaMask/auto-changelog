@@ -132,6 +132,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/v1.0.0
 `;
 
+const changelogWithRenamedPackage = `# Changelog
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+## [1.0.0] - 2020-01-01
+### Changed
+- package renamed
+
+## [0.0.2] - 2020-01-01
+### Fixed
+- Something
+
+## [0.0.1] - 2020-01-01
+### Changed
+- Something
+
+[Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/@metamask/test@1.0.0...HEAD
+[1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/test@0.0.2...@metamask/test@1.0.0
+[0.0.2]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/test@0.0.1...test@0.0.2
+[0.0.1]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/test@0.0.1
+`;
+
 describe('validateChangelog', () => {
   it('should not throw for any empty valid changelog', () => {
     expect(() =>
@@ -685,5 +711,23 @@ describe('validateChangelog', () => {
         }),
       ).not.toThrow();
     });
+  });
+
+  // when the package has been renamed from `test` to `@metamast/test`
+  it('should not throw for a valid changelog with renamed package', () => {
+    expect(() =>
+      validateChangelog({
+        changelogContent: changelogWithRenamedPackage,
+        currentVersion: '1.0.0',
+        repoUrl:
+          'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+        isReleaseCandidate: false,
+        tagPrefix: '@metamask/test@',
+        packageRename: {
+          versionBeforeRename: '0.0.2',
+          tagPrefixBeforeRename: 'test@',
+        },
+      }),
+    ).not.toThrow();
   });
 });

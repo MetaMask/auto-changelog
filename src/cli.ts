@@ -13,6 +13,7 @@ import { unreleased, Version } from './constants';
 import { generateDiff } from './generate-diff';
 import { createEmptyChangelog } from './init';
 import { getRepositoryUrl } from './repo';
+import { PackageRename } from './shared-types';
 import { updateChangelog } from './update-changelog';
 import {
   ChangelogFormattingError,
@@ -142,6 +143,10 @@ type ValidateOptions = {
   tagPrefix: string;
   fix: boolean;
   formatter: Formatter;
+  /**
+   * The package rename properties, used in case of package is renamed
+   */
+  packageRename?: PackageRename;
 };
 
 /**
@@ -155,6 +160,8 @@ type ValidateOptions = {
  * @param options.tagPrefix - The prefix used in tags before the version number.
  * @param options.fix - Whether to attempt to fix the changelog or not.
  * @param options.formatter - A custom Markdown formatter to use.
+ * @param options.packageRename - The package rename properties.
+ * An optional, which is required only in case of package renamed.
  */
 async function validate({
   changelogPath,
@@ -164,6 +171,7 @@ async function validate({
   tagPrefix,
   fix,
   formatter,
+  packageRename,
 }: ValidateOptions) {
   const changelogContent = await readChangelog(changelogPath);
 
@@ -175,6 +183,7 @@ async function validate({
       isReleaseCandidate,
       tagPrefix,
       formatter,
+      packageRename,
     });
     return undefined;
   } catch (error) {
@@ -257,6 +266,14 @@ function configureCommonCommandOptions(_yargs: Argv) {
       default: 'v',
       description: 'The prefix used in tags before the version number.',
       type: 'string',
+    })
+    .option('versionBeforePackageRename', {
+      description: 'A version of the package before being renamed.',
+      type: 'string',
+    })
+    .option('tagPrefixBeforePackageRename', {
+      description: 'A tag prefix of the package before being renamed.',
+      type: 'string',
     });
 }
 
@@ -332,6 +349,8 @@ async function main() {
     tagPrefix,
     fix,
     prettier: usePrettier,
+    versionBeforePackageRename,
+    tagPrefixBeforePackageRename,
   } = argv;
   let { currentVersion } = argv;
 
@@ -408,6 +427,15 @@ async function main() {
     return exitWithError(`Invalid repo URL: '${repoUrl}'`);
   }
 
+  if (
+    (versionBeforePackageRename && !tagPrefixBeforePackageRename) ||
+    (!versionBeforePackageRename && tagPrefixBeforePackageRename)
+  ) {
+    return exitWithError(
+      '--version-before-package-rename and --tag-prefix-before-package-rename must be given together or not at all.',
+    );
+  }
+
   let changelogPath = changelogFilename;
   if (!path.isAbsolute(changelogFilename) && projectRootDirectory) {
     changelogPath = path.resolve(projectRootDirectory, changelogFilename);
@@ -447,6 +475,13 @@ async function main() {
       formatter,
     });
   } else if (command === 'validate') {
+    let packageRename: PackageRename | undefined;
+    if (versionBeforePackageRename && tagPrefixBeforePackageRename) {
+      packageRename = {
+        versionBeforeRename: versionBeforePackageRename,
+        tagPrefixBeforeRename: tagPrefixBeforePackageRename,
+      };
+    }
     await validate({
       changelogPath,
       currentVersion,
@@ -455,6 +490,7 @@ async function main() {
       tagPrefix,
       fix,
       formatter,
+      packageRename,
     });
   } else if (command === 'init') {
     await init({

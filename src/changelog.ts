@@ -7,6 +7,7 @@ import {
   unreleased,
   Version,
 } from './constants';
+import { PackageRename } from './shared-types';
 
 const changelogTitle = '# Changelog';
 const changelogDescription = `All notable changes to this project will be documented in this file.
@@ -165,24 +166,50 @@ function getTagUrl(repoUrl: string, tag: string) {
  * @param repoUrl - The URL for the GitHub repository.
  * @param tagPrefix - The prefix used in tags before the version number.
  * @param releases - The releases to generate link definitions for.
+ * @param packageRename - The package rename properties
+ * An optional, which is required only in case of package renamed.
  * @returns The stringified release link definitions.
  */
 function stringifyLinkReferenceDefinitions(
   repoUrl: string,
   tagPrefix: string,
   releases: ReleaseMetadata[],
+  packageRename?: PackageRename,
 ) {
-  // A list of release versions in descending SemVer order
-  const descendingSemverVersions = releases
-    .map(({ version }) => version)
-    .sort((a: Version, b: Version) => {
-      return semver.gt(a, b) ? -1 : 1;
-    });
-  const latestSemverVersion = descendingSemverVersions[0];
-  // A list of release versions in chronological order
-  const chronologicalVersions = releases.map(({ version }) => version);
-  const hasReleases = chronologicalVersions.length > 0;
+  const unreleasedLinkReferenceDefinition =
+    getUnreleasedLinkReferenceDefinition(
+      repoUrl,
+      tagPrefix,
+      releases,
+      packageRename,
+    );
 
+  const releaseLinkReferenceDefinitions = getReleaseLinkReferenceDefinitions(
+    repoUrl,
+    tagPrefix,
+    releases,
+    packageRename,
+  ).join('\n');
+  return `${unreleasedLinkReferenceDefinition}\n${releaseLinkReferenceDefinitions}${
+    releases.length > 0 ? '\n' : ''
+  }`;
+}
+
+/**
+ * Get a string of unreleased link reference definition.
+ *
+ * @param repoUrl - The URL for the GitHub repository.
+ * @param tagPrefix - The prefix used in tags before the version number.
+ * @param releases - The releases to generate link definitions for.
+ * @param packageRename - The package rename properties.
+ * @returns A unreleased link reference definition string.
+ */
+function getUnreleasedLinkReferenceDefinition(
+  repoUrl: string,
+  tagPrefix: string,
+  releases: ReleaseMetadata[],
+  packageRename?: PackageRename,
+): string {
   // The "Unreleased" section represents all changes made since the *highest*
   // release, not the most recent release. This is to accomodate patch releases
   // of older versions that don't represent the latest set of changes.
@@ -193,42 +220,102 @@ function stringifyLinkReferenceDefinitions(
   //
   // If there have not been any releases yet, the repo URL is used directly as
   // the link definition.
-  const unreleasedLinkReferenceDefinition = `[${unreleased}]: ${
+
+  // A list of release versions in descending SemVer order
+  const descendingSemverVersions = releases
+    .map(({ version }) => version)
+    .sort((a: Version, b: Version) => {
+      return semver.gt(a, b) ? -1 : 1;
+    });
+  const latestSemverVersion = descendingSemverVersions[0];
+  const hasReleases = descendingSemverVersions.length > 0;
+  // if there is a package renamed, the tag prefix before the rename will be considered for compare
+  // [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/test@0.0.2...HEAD
+  const tagPrefixToCompare =
+    packageRename && packageRename.versionBeforeRename === latestSemverVersion
+      ? packageRename.tagPrefixBeforeRename
+      : tagPrefix;
+
+  return `[${unreleased}]: ${
     hasReleases
-      ? getCompareUrl(repoUrl, `${tagPrefix}${latestSemverVersion}`, 'HEAD')
+      ? getCompareUrl(
+          repoUrl,
+          `${tagPrefixToCompare}${latestSemverVersion}`,
+          'HEAD',
+        )
       : withTrailingSlash(repoUrl)
   }`;
+}
 
+/**
+ * Get a list of release link reference definitions.
+ *
+ * @param repoUrl - The URL for the GitHub repository.
+ * @param tagPrefix - The prefix used in tags before the version number.
+ * @param releases - The releases to generate link definitions for.
+ * @param packageRename - The package rename properties.
+ * @returns A list of release link reference definitions.
+ */
+function getReleaseLinkReferenceDefinitions(
+  repoUrl: string,
+  tagPrefix: string,
+  releases: ReleaseMetadata[],
+  packageRename?: PackageRename,
+): string[] {
   // The "previous" release that should be used for comparison is not always
   // the most recent release chronologically. The _highest_ version that is
   // lower than the current release is used as the previous release, so that
   // patch releases on older releases can be accomodated.
-  const releaseLinkReferenceDefinitions = releases
-    .map(({ version }) => {
-      let diffUrl;
-      if (version === chronologicalVersions[chronologicalVersions.length - 1]) {
-        diffUrl = getTagUrl(repoUrl, `${tagPrefix}${version}`);
+  const chronologicalVersions = releases.map(({ version }) => version);
+  let tagPrefixToCompare = tagPrefix;
+  const releaseLinkReferenceDefinitions = releases.map(({ version }) => {
+    let diffUrl;
+    // once the version matches with versionBeforeRename, rest of the lines in changelog will be assumed as migrated tags
+    if (packageRename && packageRename.versionBeforeRename === version) {
+      tagPrefixToCompare = packageRename.tagPrefixBeforeRename;
+    }
+
+    if (version === chronologicalVersions[chronologicalVersions.length - 1]) {
+      diffUrl = getTagUrl(repoUrl, `${tagPrefixToCompare}${version}`);
+    } else {
+      const versionIndex = chronologicalVersions.indexOf(version);
+      const previousVersion = chronologicalVersions
+        .slice(versionIndex)
+        .find((releaseVersion: Version) => {
+          return semver.gt(version, releaseVersion);
+        });
+
+      if (previousVersion) {
+        if (
+          packageRename &&
+          packageRename.versionBeforeRename === previousVersion
+        ) {
+          // The package was renamed at this version
+          // (the tag prefix holds the new name).
+          diffUrl = getCompareUrl(
+            repoUrl,
+            `${packageRename.tagPrefixBeforeRename}${previousVersion}`,
+            `${tagPrefix}${version}`,
+          );
+        } else {
+          // If the package was ever renamed, it was not renamed at this version,
+          // so use either the old tag prefix or the new tag prefix.
+          // If the package was never renamed, use the tag prefix as it is.
+          diffUrl = getCompareUrl(
+            repoUrl,
+            `${tagPrefixToCompare}${previousVersion}`,
+            `${tagPrefixToCompare}${version}`,
+          );
+        }
       } else {
-        const versionIndex = chronologicalVersions.indexOf(version);
-        const previousVersion = chronologicalVersions
-          .slice(versionIndex)
-          .find((releaseVersion: Version) => {
-            return semver.gt(version, releaseVersion);
-          });
-        diffUrl = previousVersion
-          ? getCompareUrl(
-              repoUrl,
-              `${tagPrefix}${previousVersion}`,
-              `${tagPrefix}${version}`,
-            )
-          : getTagUrl(repoUrl, `${tagPrefix}${version}`);
+        // This is the smallest release.
+        diffUrl = getTagUrl(repoUrl, `${tagPrefixToCompare}${version}`);
       }
-      return `[${version}]: ${diffUrl}`;
-    })
-    .join('\n');
-  return `${unreleasedLinkReferenceDefinition}\n${releaseLinkReferenceDefinitions}${
-    releases.length > 0 ? '\n' : ''
-  }`;
+    }
+    return `[${version}]: ${diffUrl}`;
+  });
+
+  return releaseLinkReferenceDefinitions;
 }
 
 type AddReleaseOptions = {
@@ -265,6 +352,8 @@ export default class Changelog {
 
   #formatter: Formatter;
 
+  readonly #packageRename: PackageRename | undefined;
+
   /**
    * Construct an empty changelog.
    *
@@ -272,21 +361,26 @@ export default class Changelog {
    * @param options.repoUrl - The GitHub repository URL for the current project.
    * @param options.tagPrefix - The prefix used in tags before the version number.
    * @param options.formatter - A function that formats the changelog string.
+   * @param options.packageRename - The package rename properties.
+   * An optional, which is required only in case of package renamed.
    */
   constructor({
     repoUrl,
     tagPrefix = 'v',
     formatter = (changelog) => changelog,
+    packageRename,
   }: {
     repoUrl: string;
     tagPrefix?: string;
     formatter?: Formatter;
+    packageRename?: PackageRename;
   }) {
     this.#releases = [];
     this.#changes = { [unreleased]: {} };
     this.#repoUrl = repoUrl;
     this.#tagPrefix = tagPrefix;
     this.#formatter = formatter;
+    this.#packageRename = packageRename;
   }
 
   /**
@@ -468,6 +562,7 @@ ${stringifyLinkReferenceDefinitions(
   this.#repoUrl,
   this.#tagPrefix,
   this.#releases,
+  this.#packageRename,
 )}`;
 
     return this.#formatter(changelog);
