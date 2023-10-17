@@ -7,15 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [3.4.0]
-### Uncategorized
-- package rename changelog validation ([#157](https://github.com/MetaMask/auto-changelog/pull/157))
+### Added
+- Allow to retain tags history in case of renamed packages ([#157](https://github.com/MetaMask/auto-changelog/pull/157))
+  - Added --version-before-package-rename and --tag-prefix-before-package-rename options to validate command.
 - Remove `as` assertions, or fix to mitigate the risk of silent failure ([#158](https://github.com/MetaMask/auto-changelog/pull/158))
-- Bump json5 from 1.0.1 to 1.0.2 ([#162](https://github.com/MetaMask/auto-changelog/pull/162))
-- Bump qs from 6.5.2 to 6.5.3 ([#165](https://github.com/MetaMask/auto-changelog/pull/165))
-- Bump word-wrap from 1.2.3 to 1.2.5 ([#161](https://github.com/MetaMask/auto-changelog/pull/161))
-- Bump http-cache-semantics from 4.1.0 to 4.1.1 ([#166](https://github.com/MetaMask/auto-changelog/pull/166))
-- Bump decode-uri-component from 0.2.0 to 0.2.2 ([#163](https://github.com/MetaMask/auto-changelog/pull/163))
-- Bump tmpl from 1.0.4 to 1.0.5 ([#164](https://github.com/MetaMask/auto-changelog/pull/164))
 
 ## [3.3.0]
 ### Added
