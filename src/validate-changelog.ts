@@ -1,6 +1,7 @@
 import { Formatter } from './changelog';
 import { Version, ChangeCategory } from './constants';
 import { parseChangelog } from './parse-changelog';
+import { PackageRename } from './shared-types';
 
 /**
  * Indicates that the changelog is invalid.
@@ -73,6 +74,10 @@ type ValidateChangelogOptions = {
   isReleaseCandidate: boolean;
   tagPrefix?: string;
   formatter?: Formatter;
+  /**
+   * The package rename properties, used in case of package is renamed
+   */
+  packageRename?: PackageRename;
 };
 
 /**
@@ -90,6 +95,8 @@ type ValidateChangelogOptions = {
  * header, and that there are no unreleased changes present.
  * @param options.tagPrefix - The prefix used in tags before the version number.
  * @param options.formatter - A custom Markdown formatter to use.
+ * @param options.packageRename - The package rename properties.
+ * An optional, which is required only in case of package renamed.
  * @throws `InvalidChangelogError` - Will throw if the changelog is invalid
  * @throws `MissingCurrentVersionError` - Will throw if `isReleaseCandidate` is
  * `true` and the changelog is missing the release header for the current
@@ -107,12 +114,14 @@ export function validateChangelog({
   isReleaseCandidate,
   tagPrefix = 'v',
   formatter = undefined,
+  packageRename,
 }: ValidateChangelogOptions) {
   const changelog = parseChangelog({
     changelogContent,
     repoUrl,
     tagPrefix,
     formatter,
+    packageRename,
   });
   const hasUnreleasedChanges =
     Object.keys(changelog.getUnreleasedChanges()).length !== 0;
