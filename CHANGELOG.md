@@ -10,7 +10,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Allow to retain tags history in case of renamed packages ([#157](https://github.com/MetaMask/auto-changelog/pull/157))
   - Added --version-before-package-rename and --tag-prefix-before-package-rename options to validate command.
-- Remove `as` assertions, or fix to mitigate the risk of silent failure ([#158](https://github.com/MetaMask/auto-changelog/pull/158))
 
 ## [3.3.0]
 ### Added
