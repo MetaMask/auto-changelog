@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Retain tag history for renamed packages with new validation options ([#157](https://github.com/MetaMask/auto-changelog/pull/157))
 
   - Introduced --version-before-package-rename and --tag-prefix-before-package-rename options for validate command.
+  
 ## [3.3.0]
 ### Added
 - Add `--prettier` option for Prettier-formatted changelogs ([#155](https://github.com/MetaMask/auto-changelog/pull/155))
