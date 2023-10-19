@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.4.0]
+### Added
+- Retain tag history for renamed packages with new validation options ([#157](https://github.com/MetaMask/auto-changelog/pull/157))
+
+  - Introduced --version-before-package-rename and --tag-prefix-before-package-rename options for validate command.
+
 ## [3.3.0]
 ### Added
 - Add `--prettier` option for Prettier-formatted changelogs ([#155](https://github.com/MetaMask/auto-changelog/pull/155))
@@ -102,7 +108,8 @@ Includes the following features:
   - Monorepo support ([#41](https://github.com/MetaMask/auto-changelog/pull/41))
   - Configurable repository URL, version, and changelog file path ([#33](https://github.com/MetaMask/auto-changelog/pull/33), [#31](https://github.com/MetaMask/auto-changelog/pull/31), [#30](https://github.com/MetaMask/auto-changelog/pull/30))
 
-[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v3.3.0...HEAD
+[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v3.4.0...HEAD
+[3.4.0]: https://github.com/MetaMask/auto-changelog/compare/v3.3.0...v3.4.0
 [3.3.0]: https://github.com/MetaMask/auto-changelog/compare/v3.2.0...v3.3.0
 [3.2.0]: https://github.com/MetaMask/auto-changelog/compare/v3.1.0...v3.2.0
 [3.1.0]: https://github.com/MetaMask/auto-changelog/compare/v3.0.0...v3.1.0
