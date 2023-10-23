@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [3.4.1]
 ### Fixed
-- Add missing dependency @metamask/utils ([#168](https://github.com/MetaMask/auto-changelog/pull/168))
+- Add missing dependency `@metamask/utils` ([#168](https://github.com/MetaMask/auto-changelog/pull/168))
 
 ## [3.4.0]
 ### Added
