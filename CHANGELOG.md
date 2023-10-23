@@ -7,8 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [3.4.1]
-### Uncategorized
-- fix: move @metamask/utils from devDeps to deps ([#168](https://github.com/MetaMask/auto-changelog/pull/168))
+### Fixed
+- Add missing dependency @metamask/utils ([#168](https://github.com/MetaMask/auto-changelog/pull/168))
 
 ## [3.4.0]
 ### Added
