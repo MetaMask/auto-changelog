@@ -31,7 +31,6 @@
     "changelog": "node dist/cli.js"
   },
   "dependencies": {
-    "@metamask/utils": "^8.1.0",
     "diff": "^5.0.0",
     "execa": "^5.1.1",
     "prettier": "^2.8.8",
