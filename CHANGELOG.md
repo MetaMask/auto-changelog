@@ -7,8 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [3.4.2]
-### Uncategorized
-- Avoid circular dependency on @metamask/utils ([#170](https://github.com/MetaMask/auto-changelog/pull/170))
+### Changed
+- Remove circular dependency on `@metamask/utils` ([#170](https://github.com/MetaMask/auto-changelog/pull/170))
 
 ## [3.4.1]
 ### Fixed
