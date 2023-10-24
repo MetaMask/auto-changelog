@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.4.2]
+### Uncategorized
+- Avoid circular dependency on @metamask/utils ([#170](https://github.com/MetaMask/auto-changelog/pull/170))
+
 ## [3.4.1]
 ### Fixed
 - Add missing dependency `@metamask/utils` ([#168](https://github.com/MetaMask/auto-changelog/pull/168))
@@ -112,7 +116,8 @@ Includes the following features:
   - Monorepo support ([#41](https://github.com/MetaMask/auto-changelog/pull/41))
   - Configurable repository URL, version, and changelog file path ([#33](https://github.com/MetaMask/auto-changelog/pull/33), [#31](https://github.com/MetaMask/auto-changelog/pull/31), [#30](https://github.com/MetaMask/auto-changelog/pull/30))
 
-[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v3.4.1...HEAD
+[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v3.4.2...HEAD
+[3.4.2]: https://github.com/MetaMask/auto-changelog/compare/v3.4.1...v3.4.2
 [3.4.1]: https://github.com/MetaMask/auto-changelog/compare/v3.4.0...v3.4.1
 [3.4.0]: https://github.com/MetaMask/auto-changelog/compare/v3.3.0...v3.4.0
 [3.3.0]: https://github.com/MetaMask/auto-changelog/compare/v3.2.0...v3.3.0
