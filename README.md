@@ -16,23 +16,63 @@ or
 
 ### Update
 
-To update the 'Unreleased' section of the changelog:
+#### Update the "Unreleased" section of the changelog
 
-`npx @metamask/auto-changelog update`
+`yarn run auto-changelog update`
 
-To update the current release section of the changelog:
+or
 
-`npx @metamask/auto-changelog update --rc`
+`npm run auto-changelog update`
+
+#### Update the current release section of the changelog
+
+`yarn run auto-changelog update --rc`
+
+or
+
+`npm run auto-changelog update --rc`
 
 ### Validate
 
-To validate the changelog:
+#### Validate the changelog simply
 
-`npx @metamask/auto-changelog validate`
+`yarn run auto-changelog validate`
 
-To validate the changelog in a release candidate environment:
+or
 
-`npx @metamask/auto-changelog validate --rc`
+`npm run auto-changelog validate`
+
+#### Validate the changelog for a release candidate
+
+`yarn run auto-changelog validate --rc`
+
+or
+
+`npm run auto-changelog validate --rc`
+
+#### Validate the changelog with package-specific Git tags
+
+This option is designed to be used for packages that live in a monorepo.
+
+For instance, if your package is called `@metamask/polling-controller` and thus all Git tags for this package are prefixed with `@metamask/polling-controller@`:
+
+`yarn run auto-changelog validate --tag-prefix "@metamask/polling-controller@"`
+
+or
+
+`npm run auto-changelog validate --tag-prefix "@metamask/polling-controller@"`
+
+#### Validate the changelog for a renamed package
+
+This option is designed to be used for packages that live in a monorepo.
+
+For instance, if your package is called `polling-controller` and was renamed to `@metamask/polling-controller` at version 0.2.3, and thus the Git tags followed suit:
+
+`yarn run auto-changelog validate --tag-prefix-before-package-rename "polling-controller@" --version-before-package-name 0.2.3 --tag-prefix "@metamask/polling-controller@"`
+
+or
+
+`npm run auto-changelog validate --tag-prefix-before-package-rename "polling-controller@" --version-before-package-name 0.2.3 --tag-prefix "@metamask/polling-controller@"`
 
 ## API Usage
 
