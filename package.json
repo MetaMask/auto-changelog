@@ -18,7 +18,7 @@
     "type": "git",
     "url": "https://github.com/MetaMask/auto-changelog.git"
   },
-  "license": "(MIT AND Apache-2.0)",
+  "license": "(MIT OR Apache-2.0)",
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watch",
