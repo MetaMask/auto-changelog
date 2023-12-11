@@ -205,6 +205,11 @@ export async function updateChangelog({
   formatter = undefined,
   packageRename,
 }: UpdateChangelogOptions): Promise<string | undefined> {
+  if (isReleaseCandidate && !currentVersion) {
+    throw new Error(
+      `A version must be specified if 'isReleaseCandidate' is set.`,
+    );
+  }
   const changelog = parseChangelog({
     changelogContent,
     repoUrl,
@@ -242,14 +247,8 @@ export async function updateChangelog({
     return undefined;
   }
 
-  if (isReleaseCandidate) {
-    if (!currentVersion) {
-      throw new Error(
-        `A version must be specified if 'isReleaseCandidate' is set.`,
-      );
-    }
-
-    if (mostRecentTag === `${tagPrefixes[0]}${currentVersion ?? ''}`) {
+  if (isReleaseCandidate && currentVersion) {
+    if (mostRecentTag === `${tagPrefixes[0]}${currentVersion}`) {
       throw new Error(
         `Current version already has a tag ('${mostRecentTag}'), which is unexpected for a release candidate.`,
       );
@@ -267,22 +266,22 @@ export async function updateChangelog({
     if (hasUnreleasedChanges) {
       changelog.migrateUnreleasedChangesToRelease(currentVersion);
     }
+  }
 
-    const newChangeEntries = newCommits.map(({ prNumber, description }) => {
-      if (prNumber) {
-        const suffix = `([#${prNumber}](${repoUrl}/pull/${prNumber}))`;
-        return `${description} ${suffix}`;
-      }
-      return description;
-    });
-
-    for (const description of newChangeEntries.reverse()) {
-      changelog.addChange({
-        version: isReleaseCandidate ? currentVersion : undefined,
-        category: ChangeCategory.Uncategorized,
-        description,
-      });
+  const newChangeEntries = newCommits.map(({ prNumber, description }) => {
+    if (prNumber) {
+      const suffix = `([#${prNumber}](${repoUrl}/pull/${prNumber}))`;
+      return `${description} ${suffix}`;
     }
+    return description;
+  });
+
+  for (const description of newChangeEntries.reverse()) {
+    changelog.addChange({
+      version: isReleaseCandidate ? currentVersion : undefined,
+      category: ChangeCategory.Uncategorized,
+      description,
+    });
   }
 
   return changelog.toString();
