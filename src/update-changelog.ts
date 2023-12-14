@@ -157,6 +157,54 @@ async function getCommitHashesInRange(
   return await runCommand('git', revListArgs);
 }
 
+type AddNewCommitsOptions = {
+  mostRecentTag: string | null;
+  repoUrl: string;
+  loggedPrNumbers: string[];
+  projectRootDirectory?: string;
+};
+
+/**
+ * Get the list of new change entries to add to a changelog.
+ *
+ * @param options - Options.
+ * @param options.mostRecentTag - The most recent tag.
+ * @param options.repoUrl - The GitHub repository URL for the current project.
+ * @param options.loggedPrNumbers - A list of all pull request numbers included in the relevant parsed changelog.
+ * @param options.projectRootDirectory - The root project directory, used to
+ * filter results from various git commands. This path is assumed to be either
+ * absolute, or relative to the current directory. Defaults to the root of the
+ * current git repository.
+ * @returns A list of new change entries to add to the changelog, based on commits made since the last release.
+ */
+async function getNewChangeEntries({
+  mostRecentTag,
+  repoUrl,
+  loggedPrNumbers,
+  projectRootDirectory,
+}: AddNewCommitsOptions) {
+  const commitRange =
+    mostRecentTag === null ? 'HEAD' : `${mostRecentTag}..HEAD`;
+  const commitsHashesSinceLastRelease = await getCommitHashesInRange(
+    commitRange,
+    projectRootDirectory,
+  );
+  const commits = await getCommits(commitsHashesSinceLastRelease);
+
+  const newCommits = commits.filter(
+    ({ prNumber }) =>
+      prNumber === undefined || !loggedPrNumbers.includes(prNumber),
+  );
+
+  return newCommits.map(({ prNumber, description }) => {
+    if (prNumber) {
+      const suffix = `([#${prNumber}](${repoUrl}/pull/${prNumber}))`;
+      return `${description} ${suffix}`;
+    }
+    return description;
+  });
+}
+
 export type UpdateChangelogOptions = {
   changelogContent: string;
   currentVersion?: Version;
@@ -205,11 +253,6 @@ export async function updateChangelog({
   formatter = undefined,
   packageRename,
 }: UpdateChangelogOptions): Promise<string | undefined> {
-  if (isReleaseCandidate && !currentVersion) {
-    throw new Error(
-      `A version must be specified if 'isReleaseCandidate' is set.`,
-    );
-  }
   const changelog = parseChangelog({
     changelogContent,
     repoUrl,
@@ -224,30 +267,12 @@ export async function updateChangelog({
     tagPrefixes,
   });
 
-  const commitRange =
-    mostRecentTag === null ? 'HEAD' : `${mostRecentTag}..HEAD`;
-  const commitsHashesSinceLastRelease = await getCommitHashesInRange(
-    commitRange,
-    projectRootDirectory,
-  );
-  const commits = await getCommits(commitsHashesSinceLastRelease);
-
-  const loggedPrNumbers = getAllLoggedPrNumbers(changelog);
-  const newCommits = commits.filter(
-    ({ prNumber }) =>
-      prNumber === undefined || !loggedPrNumbers.includes(prNumber),
-  );
-
-  const hasUnreleasedChanges =
-    Object.keys(changelog.getUnreleasedChanges()).length !== 0;
-  if (
-    newCommits.length === 0 &&
-    (!isReleaseCandidate || hasUnreleasedChanges)
-  ) {
-    return undefined;
-  }
-
-  if (isReleaseCandidate && currentVersion) {
+  if (isReleaseCandidate) {
+    if (!currentVersion) {
+      throw new Error(
+        `A version must be specified if 'isReleaseCandidate' is set.`,
+      );
+    }
     if (mostRecentTag === `${tagPrefixes[0]}${currentVersion}`) {
       throw new Error(
         `Current version already has a tag ('${mostRecentTag}'), which is unexpected for a release candidate.`,
@@ -263,17 +288,18 @@ export async function updateChangelog({
       changelog.addRelease({ version: currentVersion });
     }
 
-    if (hasUnreleasedChanges) {
+    const hasUnreleasedChangesToRelease =
+      Object.keys(changelog.getUnreleasedChanges()).length > 0;
+    if (hasUnreleasedChangesToRelease) {
       changelog.migrateUnreleasedChangesToRelease(currentVersion);
     }
   }
 
-  const newChangeEntries = newCommits.map(({ prNumber, description }) => {
-    if (prNumber) {
-      const suffix = `([#${prNumber}](${repoUrl}/pull/${prNumber}))`;
-      return `${description} ${suffix}`;
-    }
-    return description;
+  const newChangeEntries = await getNewChangeEntries({
+    mostRecentTag,
+    repoUrl,
+    loggedPrNumbers: getAllLoggedPrNumbers(changelog),
+    projectRootDirectory,
   });
 
   for (const description of newChangeEntries.reverse()) {
@@ -283,8 +309,11 @@ export async function updateChangelog({
       description,
     });
   }
+  const newChangelogContent = changelog.toString();
 
-  return changelog.toString();
+  return changelogContent === newChangelogContent
+    ? undefined
+    : newChangelogContent;
 }
 
 /**
