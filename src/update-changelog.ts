@@ -5,6 +5,7 @@ import type Changelog from './changelog';
 import { Formatter } from './changelog';
 import { ChangeCategory, Version } from './constants';
 import { parseChangelog } from './parse-changelog';
+import { PackageRename } from './shared-types';
 
 /**
  * Get the most recent tag for a project.
@@ -164,6 +165,10 @@ export type UpdateChangelogOptions = {
   projectRootDirectory?: string;
   tagPrefixes?: [string, ...string[]];
   formatter?: Formatter;
+  /**
+   * The package rename properties, used in case of package is renamed
+   */
+  packageRename?: PackageRename;
 };
 
 /**
@@ -186,6 +191,8 @@ export type UpdateChangelogOptions = {
  * @param options.tagPrefixes - A list of tag prefixes to look for, where the first is the intended
  * prefix and each subsequent prefix is a fallback in case the previous tag prefixes are not found.
  * @param options.formatter - A custom Markdown formatter to use.
+ * @param options.packageRename - The package rename properties.
+ * An optional, which is required only in case of package renamed.
  * @returns The updated changelog text.
  */
 export async function updateChangelog({
@@ -196,12 +203,14 @@ export async function updateChangelog({
   projectRootDirectory,
   tagPrefixes = ['v'],
   formatter = undefined,
+  packageRename,
 }: UpdateChangelogOptions): Promise<string | undefined> {
   const changelog = parseChangelog({
     changelogContent,
     repoUrl,
     tagPrefix: tagPrefixes[0],
     formatter,
+    packageRename,
   });
 
   // Ensure we have all tags on remote

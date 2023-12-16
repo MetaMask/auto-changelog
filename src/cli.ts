@@ -92,6 +92,10 @@ type UpdateOptions = {
   projectRootDirectory?: string;
   tagPrefix: string;
   formatter: Formatter;
+  /**
+   * The package rename properties, used in case of package is renamed
+   */
+  packageRename?: PackageRename;
 };
 
 /**
@@ -105,6 +109,8 @@ type UpdateOptions = {
  * @param options.projectRootDirectory - The root project directory.
  * @param options.tagPrefix - The prefix used in tags before the version number.
  * @param options.formatter - A custom Markdown formatter to use.
+ * @param options.packageRename - The package rename properties.
+ * An optional, which is required only in case of package renamed.
  */
 async function update({
   changelogPath,
@@ -114,6 +120,7 @@ async function update({
   projectRootDirectory,
   tagPrefix,
   formatter,
+  packageRename,
 }: UpdateOptions) {
   const changelogContent = await readChangelog(changelogPath);
 
@@ -125,6 +132,7 @@ async function update({
     projectRootDirectory,
     tagPrefixes: [tagPrefix],
     formatter,
+    packageRename,
   });
 
   if (newChangelogContent) {
@@ -465,6 +473,13 @@ async function main() {
   };
 
   if (command === 'update') {
+    let packageRename: PackageRename | undefined;
+    if (versionBeforePackageRename && tagPrefixBeforePackageRename) {
+      packageRename = {
+        versionBeforeRename: versionBeforePackageRename,
+        tagPrefixBeforeRename: tagPrefixBeforePackageRename,
+      };
+    }
     await update({
       changelogPath,
       currentVersion,
@@ -473,6 +488,7 @@ async function main() {
       projectRootDirectory,
       tagPrefix,
       formatter,
+      packageRename,
     });
   } else if (command === 'validate') {
     let packageRename: PackageRename | undefined;
