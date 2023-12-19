@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.4.4]
+### Uncategorized
+- Add changelog update usage for package rename options in README ([#184](https://github.com/MetaMask/auto-changelog/pull/184))
+- Fix: changelog-update retain history for renamed packages ([#182](https://github.com/MetaMask/auto-changelog/pull/182))
+
 ## [3.4.3]
 ### Changed
 - Place this library under the MIT / Apache 2.0 dual license ([#175](https://github.com/MetaMask/auto-changelog/pull/175))
@@ -120,7 +125,8 @@ Includes the following features:
   - Monorepo support ([#41](https://github.com/MetaMask/auto-changelog/pull/41))
   - Configurable repository URL, version, and changelog file path ([#33](https://github.com/MetaMask/auto-changelog/pull/33), [#31](https://github.com/MetaMask/auto-changelog/pull/31), [#30](https://github.com/MetaMask/auto-changelog/pull/30))
 
-[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v3.4.3...HEAD
+[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v3.4.4...HEAD
+[3.4.4]: https://github.com/MetaMask/auto-changelog/compare/v3.4.3...v3.4.4
 [3.4.3]: https://github.com/MetaMask/auto-changelog/compare/v3.4.2...v3.4.3
 [3.4.2]: https://github.com/MetaMask/auto-changelog/compare/v3.4.1...v3.4.2
 [3.4.1]: https://github.com/MetaMask/auto-changelog/compare/v3.4.0...v3.4.1
