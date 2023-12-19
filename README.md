@@ -32,6 +32,18 @@ or
 
 `npm run auto-changelog update --rc`
 
+#### Update the changelog for a renamed package
+
+This option is designed to be used for packages that live in a monorepo.
+
+For instance, if your package is called `polling-controller` and was renamed to `@metamask/polling-controller` at version 0.2.3, and thus the Git tags followed suit:
+
+`yarn run auto-changelog update --tag-prefix-before-package-rename "polling-controller@" --version-before-package-name 0.2.3 --tag-prefix "@metamask/polling-controller@"`
+
+or
+
+`npm run auto-changelog update --tag-prefix-before-package-rename "polling-controller@" --version-before-package-name 0.2.3 --tag-prefix "@metamask/polling-controller@"`
+
 ### Validate
 
 #### Validate the changelog simply
