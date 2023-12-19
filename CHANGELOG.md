@@ -7,9 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [3.4.4]
-### Uncategorized
-- Add changelog update usage for package rename options in README ([#184](https://github.com/MetaMask/auto-changelog/pull/184))
-- Fix: changelog-update retain history for renamed packages ([#182](https://github.com/MetaMask/auto-changelog/pull/182))
+### Added
+- Retain tag history on update command for renamed packages with new options ([#182](https://github.com/MetaMask/auto-changelog/pull/182))
+
+  - Introduced --version-before-package-rename and --tag-prefix-before-package-rename options for update command.
 
 ## [3.4.3]
 ### Changed
