@@ -310,11 +310,10 @@ export async function updateChangelog({
       description,
     });
   }
-  const newChangelogContent = changelog.toString();
 
-  return changelogContent === newChangelogContent
-    ? undefined
-    : newChangelogContent;
+  const newChangelogContent = changelog.toString();
+  const isChangelogUpdated = changelogContent !== newChangelogContent;
+  return isChangelogUpdated ? newChangelogContent : undefined;
 }
 
 /**
