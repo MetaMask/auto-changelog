@@ -195,8 +195,7 @@ async function getNewChangeEntries({
   const commits = await getCommits(commitsHashesSinceLastRelease);
 
   const newCommits = commits.filter(
-    ({ prNumber }) =>
-      prNumber === undefined || !loggedPrNumbers.includes(prNumber),
+    ({ prNumber }) => !prNumber || !loggedPrNumbers.includes(prNumber),
   );
 
   return newCommits.map(({ prNumber, description }) => {
