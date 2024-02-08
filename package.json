@@ -44,6 +44,8 @@
     "@metamask/eslint-config-jest": "^11.1.0",
     "@metamask/eslint-config-nodejs": "^11.1.0",
     "@metamask/eslint-config-typescript": "^11.1.0",
+    "@metamask/module-lint": "git://github.com/MetaMask/module-lint",
+    "@metamask/utils": "^8.3.0",
     "@types/cross-spawn": "^6.0.2",
     "@types/diff": "^5.0.0",
     "@types/jest": "^26.0.23",
