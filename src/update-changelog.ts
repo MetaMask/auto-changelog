@@ -2,7 +2,7 @@ import { strict as assert } from 'assert';
 import execa from 'execa';
 
 import type Changelog from './changelog';
-import { Formatter } from './changelog';
+import { Formatter, getKnownPropertyNames } from './changelog';
 import { ChangeCategory, Version } from './constants';
 import { parseChangelog } from './parse-changelog';
 import { PackageRename } from './shared-types';
@@ -290,7 +290,7 @@ export async function updateChangelog({
     }
 
     const hasUnreleasedChangesToRelease =
-      Object.keys(changelog.getUnreleasedChanges()).length > 0;
+      getKnownPropertyNames(changelog.getUnreleasedChanges()).length > 0;
     if (hasUnreleasedChangesToRelease) {
       changelog.migrateUnreleasedChangesToRelease(currentVersion);
     }
