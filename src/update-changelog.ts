@@ -20,6 +20,9 @@ async function getMostRecentTag({
 }: {
   tagPrefixes: [string, ...string[]];
 }) {
+  // Ensure we have all tags on remote
+  await runCommand('git', ['fetch', '--tags']);
+
   let mostRecentTagCommitHash: string | null = null;
   for (const tagPrefix of tagPrefixes) {
     const revListArgs = [
@@ -261,8 +264,6 @@ export async function updateChangelog({
     packageRename,
   });
 
-  // Ensure we have all tags on remote
-  await runCommand('git', ['fetch', '--tags']);
   const mostRecentTag = await getMostRecentTag({
     tagPrefixes,
   });
