@@ -1,5 +1,5 @@
 import { strict as assert } from 'assert';
-import execa from 'execa';
+import { execa } from 'execa';
 
 import type Changelog from './changelog';
 import { Formatter, getKnownPropertyNames } from './changelog';
