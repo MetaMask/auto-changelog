@@ -11,17 +11,25 @@ import { PackageRename } from './shared-types';
  * Get the most recent tag for a project.
  *
  * @param options - Options.
+ * @param options.fetchRemote - Whether to synchronize local tags with remote.
  * @param options.tagPrefixes - A list of tag prefixes to look for, where the first is the intended
  * prefix and each subsequent prefix is a fallback in case the previous tag prefixes are not found.
+ * @param options.run - Optional alternative shell command interpreter
  * @returns The most recent tag.
  */
 async function getMostRecentTag({
+  fetchRemote,
   tagPrefixes,
+  run = runCommand,
 }: {
+  fetchRemote?: boolean;
   tagPrefixes: [string, ...string[]];
+  run?: (cmd: string, args: string[]) => Promise<(string|null)[]>;
 }) {
   // Ensure we have all tags on remote
-  await runCommand('git', ['fetch', '--tags']);
+  if (typeof fetchRemote !== 'boolean' || fetchRemote) {
+    await run('git', ['fetch', '--tags']);
+  }
 
   let mostRecentTagCommitHash: string | null = null;
   for (const tagPrefix of tagPrefixes) {
@@ -219,6 +227,8 @@ export type UpdateChangelogOptions = {
    * The package rename properties, used in case of package is renamed
    */
   packageRename?: PackageRename;
+  fetchRemote?: boolean;
+  run?: (cmd: string, args: string[]) => Promise<(string|null)[]>;
 };
 
 /**
@@ -243,6 +253,8 @@ export type UpdateChangelogOptions = {
  * @param options.formatter - A custom Markdown formatter to use.
  * @param options.packageRename - The package rename properties.
  * An optional, which is required only in case of package renamed.
+ * @param options.fetchRemote - Whether to synchronize local tags with remote.
+ * @param options.run - Optional alternative shell command interpreter
  * @returns The updated changelog text.
  */
 export async function updateChangelog({
@@ -254,6 +266,8 @@ export async function updateChangelog({
   tagPrefixes = ['v'],
   formatter = undefined,
   packageRename,
+  fetchRemote = true,
+  run,
 }: UpdateChangelogOptions): Promise<string | undefined> {
   const changelog = parseChangelog({
     changelogContent,
@@ -264,6 +278,8 @@ export async function updateChangelog({
   });
 
   const mostRecentTag = await getMostRecentTag({
+    fetchRemote,
+    run,
     tagPrefixes,
   });
 
