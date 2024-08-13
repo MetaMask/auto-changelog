@@ -11,17 +11,22 @@ import { PackageRename } from './shared-types';
  * Get the most recent tag for a project.
  *
  * @param options - Options.
+ * @param options.fetchRemote - Whether to synchronize local tags with remote.
  * @param options.tagPrefixes - A list of tag prefixes to look for, where the first is the intended
  * prefix and each subsequent prefix is a fallback in case the previous tag prefixes are not found.
  * @returns The most recent tag.
  */
 async function getMostRecentTag({
+  fetchRemote,
   tagPrefixes,
 }: {
+  fetchRemote?: boolean;
   tagPrefixes: [string, ...string[]];
 }) {
   // Ensure we have all tags on remote
-  await runCommand('git', ['fetch', '--tags']);
+  if (typeof fetchRemote !== 'boolean' || fetchRemote) {
+    await runCommand('git', ['fetch', '--tags']);
+  }
 
   let mostRecentTagCommitHash: string | null = null;
   for (const tagPrefix of tagPrefixes) {
