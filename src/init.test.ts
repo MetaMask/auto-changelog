@@ -2,6 +2,7 @@ import { createEmptyChangelog } from './init';
 
 const exampleRepoUrl =
   'https://github.com/ExampleUsernameOrOrganization/ExampleRepository/';
+
 const emptyChangelog = `# Changelog
 All notable changes to this project will be documented in this file.
 
@@ -14,15 +15,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 `;
 
 describe('createEmptyChangelog', () => {
-  it('creates an empty changelog', () => {
-    expect(createEmptyChangelog({ repoUrl: exampleRepoUrl })).toStrictEqual(
-      emptyChangelog,
-    );
+  it('creates an empty changelog', async () => {
+    expect(
+      await createEmptyChangelog({ repoUrl: exampleRepoUrl }),
+    ).toStrictEqual(emptyChangelog);
   });
 
-  it('creates an empty changelog with a custom tag prefix', () => {
+  it('creates an empty changelog with a custom tag prefix', async () => {
     expect(
-      createEmptyChangelog({ repoUrl: exampleRepoUrl, tagPrefix: 'foo' }),
+      await createEmptyChangelog({ repoUrl: exampleRepoUrl, tagPrefix: 'foo' }),
     ).toStrictEqual(emptyChangelog);
   });
 });

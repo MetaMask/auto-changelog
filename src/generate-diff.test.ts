@@ -318,7 +318,7 @@ const testCases = [
 
 describe('generateDiff', () => {
   for (const { description, before, after, expected } of testCases) {
-    it(`${description}`, () => {
+    it(`${description}`, async () => {
       const diff = generateDiff(before, after);
       expect(diff).toStrictEqual(expected);
     });
