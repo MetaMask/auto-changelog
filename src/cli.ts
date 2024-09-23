@@ -305,7 +305,7 @@ async function main() {
             type: 'string',
           })
           .option('prettier', {
-            default: false,
+            default: true,
             description: `Expect the changelog to be formatted with Prettier.`,
             type: 'boolean',
           })
