@@ -101,7 +101,7 @@ import { updateChangelog } from '@metamask/auto-changelog';
 const oldChangelog = await fs.readFile('CHANGELOG.md', {
   encoding: 'utf8',
 });
-const updatedChangelog = updateChangelog({
+const updatedChangelog = await updateChangelog({
   changelogContent: oldChangelog,
   currentVersion: '1.0.0',
   repoUrl: 'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
@@ -122,7 +122,7 @@ const oldChangelog = await fs.readFile('CHANGELOG.md', {
   encoding: 'utf8',
 });
 try {
-  validateChangelog({
+  await validateChangelog({
     changelogContent: oldChangelog,
     currentVersion: '1.0.0',
     repoUrl:
@@ -139,7 +139,7 @@ try {
 
 ### Setup
 
-- Install [Node.js](https://nodejs.org) version 14
+- Install [Node.js](https://nodejs.org) version 18
   - If you are using [nvm](https://github.com/creationix/nvm#installation) (recommended) running `nvm use` will automatically choose the right node version for you.
 - Install [Yarn v3](https://yarnpkg.com/getting-started/install)
 - Run `yarn install` to install dependencies and run any required post-install scripts
