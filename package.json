@@ -2,39 +2,31 @@
   "name": "@metamask/auto-changelog",
   "version": "3.4.4",
   "description": "Utilities for validating and updating \"Keep a Changelog\" formatted changelogs",
-  "publishConfig": {
-    "registry": "https://registry.npmjs.org/",
-    "access": "public"
-  },
-  "main": "dist/index.js",
-  "bin": "dist/cli.js",
-  "engines": {
-    "node": "^18.18 || >=20"
-  },
-  "files": [
-    "dist/"
-  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/MetaMask/auto-changelog.git"
   },
   "license": "(MIT OR Apache-2.0)",
+  "main": "dist/index.js",
+  "bin": "dist/cli.js",
+  "files": [
+    "dist/"
+  ],
   "scripts": {
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "prepack": "./scripts/prepack.sh",
-    "lint:eslint": "eslint . --cache --ext js,ts",
-    "lint:misc": "prettier '**/*.json' '**/*.md' '!CHANGELOG.md' '**/*.yml' '!.yarnrc.yml' --ignore-path .gitignore",
-    "lint": "yarn lint:eslint && yarn lint:misc --check",
-    "lint:fix": "yarn lint:eslint --fix && yarn lint:misc --write",
-    "build:clean": "rimraf dist && yarn build",
     "build": "tsc --project tsconfig.build.json",
-    "changelog": "node dist/cli.js"
+    "build:clean": "rimraf dist && yarn build",
+    "changelog": "node dist/cli.js",
+    "lint": "yarn lint:eslint && yarn lint:misc --check",
+    "lint:eslint": "eslint . --cache --ext js,ts",
+    "lint:fix": "yarn lint:eslint --fix && yarn lint:misc --write",
+    "lint:misc": "prettier '**/*.json' '**/*.md' '!CHANGELOG.md' '**/*.yml' '!.yarnrc.yml' --ignore-path .gitignore",
+    "prepack": "./scripts/prepack.sh",
+    "test": "jest",
+    "test:watch": "jest --watch"
   },
   "dependencies": {
     "diff": "^5.0.0",
     "execa": "^5.1.1",
-    "prettier": "^2.8.8",
     "semver": "^7.3.5",
     "yargs": "^17.0.1"
   },
@@ -60,14 +52,26 @@
     "eslint-plugin-prettier": "^4.2.1",
     "jest": "^26.4.2",
     "outdent": "^0.8.0",
+    "prettier": "^3.3.3",
+    "prettier-plugin-packagejson": "^2.5.2",
     "rimraf": "^3.0.2",
     "ts-jest": "^26.5.6",
     "typescript": "~4.8.4"
+  },
+  "peerDependencies": {
+    "prettier": "^3.3.3"
+  },
+  "packageManager": "yarn@3.2.4",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   },
   "lavamoat": {
     "allowScripts": {
       "@lavamoat/preinstall-always-fail": false
     }
-  },
-  "packageManager": "yarn@3.2.4"
+  }
 }
