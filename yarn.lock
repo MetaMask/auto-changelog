@@ -822,7 +822,7 @@ __metadata:
     typescript: ~4.8.4
     yargs: ^17.0.1
   peerDependencies:
-    prettier: ^3.3.3
+    prettier: ">=3.0.0"
   bin:
     auto-changelog: dist/cli.js
   languageName: unknown
