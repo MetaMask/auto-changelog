@@ -63,7 +63,7 @@
   },
   "packageManager": "yarn@3.2.4",
   "engines": {
-    "node": ">=14.0.0"
+    "node": "^18.18 || >=20"
   },
   "publishConfig": {
     "access": "public",
