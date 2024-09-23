@@ -6,6 +6,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.0]
+### Uncategorized
+- BREAKING: Make Prettier the default option ([#204](https://github.com/MetaMask/auto-changelog/pull/204))
+- Update README to reflect latest changes ([#205](https://github.com/MetaMask/auto-changelog/pull/205))
+- BREAKING: Bump `prettier` to `^3.3.3` ([#202](https://github.com/MetaMask/auto-changelog/pull/202))
+- BREAKING: Drop support for Node.js <18.18 ([#203](https://github.com/MetaMask/auto-changelog/pull/203))
+- Update CODEOWNERS ([#193](https://github.com/MetaMask/auto-changelog/pull/193))
+- Enabling MetaMask security code scanner ([#189](https://github.com/MetaMask/auto-changelog/pull/189))
+- Fix bug introduced to `updateChangelog` in #158 ([#181](https://github.com/MetaMask/auto-changelog/pull/181))
+- Add Shared Libraries team in codeowners file ([#186](https://github.com/MetaMask/auto-changelog/pull/186))
+
 ## [3.4.4]
 ### Added
 - Retain tag history on update command for renamed packages with new options ([#182](https://github.com/MetaMask/auto-changelog/pull/182))
@@ -126,7 +137,8 @@ Includes the following features:
   - Monorepo support ([#41](https://github.com/MetaMask/auto-changelog/pull/41))
   - Configurable repository URL, version, and changelog file path ([#33](https://github.com/MetaMask/auto-changelog/pull/33), [#31](https://github.com/MetaMask/auto-changelog/pull/31), [#30](https://github.com/MetaMask/auto-changelog/pull/30))
 
-[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v3.4.4...HEAD
+[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v4.0.0...HEAD
+[4.0.0]: https://github.com/MetaMask/auto-changelog/compare/v3.4.4...v4.0.0
 [3.4.4]: https://github.com/MetaMask/auto-changelog/compare/v3.4.3...v3.4.4
 [3.4.3]: https://github.com/MetaMask/auto-changelog/compare/v3.4.2...v3.4.3
 [3.4.2]: https://github.com/MetaMask/auto-changelog/compare/v3.4.1...v3.4.2
