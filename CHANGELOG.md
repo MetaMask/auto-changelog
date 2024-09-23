@@ -7,15 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [4.0.0]
-### Uncategorized
-- BREAKING: Make Prettier the default option ([#204](https://github.com/MetaMask/auto-changelog/pull/204))
-- Update README to reflect latest changes ([#205](https://github.com/MetaMask/auto-changelog/pull/205))
-- BREAKING: Bump `prettier` to `^3.3.3` ([#202](https://github.com/MetaMask/auto-changelog/pull/202))
-- BREAKING: Drop support for Node.js <18.18 ([#203](https://github.com/MetaMask/auto-changelog/pull/203))
-- Update CODEOWNERS ([#193](https://github.com/MetaMask/auto-changelog/pull/193))
-- Enabling MetaMask security code scanner ([#189](https://github.com/MetaMask/auto-changelog/pull/189))
-- Fix bug introduced to `updateChangelog` in #158 ([#181](https://github.com/MetaMask/auto-changelog/pull/181))
-- Add Shared Libraries team in codeowners file ([#186](https://github.com/MetaMask/auto-changelog/pull/186))
+### Changed
+- **BREAKING:** Drop support for Node.js <18.18 ([#203](https://github.com/MetaMask/auto-changelog/pull/203))
+- **BREAKING:** Require `prettier@>=3.0.0` ([#202](https://github.com/MetaMask/auto-changelog/pull/202))
+  - Prettier is now a peer dependency of this package.
+- **BREAKING:** Enable Prettier formatting by default ([#204](https://github.com/MetaMask/auto-changelog/pull/204))
+  - Changelogs are now formatted with Prettier by default when using the CLI.
+  - You can opt-out of this change by specifying `--no-prettier`.
 
 ## [3.4.4]
 ### Added
