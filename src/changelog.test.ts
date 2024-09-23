@@ -12,18 +12,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 `;
 
 describe('Changelog', () => {
-  it('should allow creating an empty changelog', () => {
+  it('should allow creating an empty changelog', async () => {
     const changelog = new Changelog({
       repoUrl: 'fake://metamask.io',
     });
-    expect(changelog.toString()).toStrictEqual(emptyChangelog);
+
+    expect(await changelog.toString()).toStrictEqual(emptyChangelog);
   });
 
-  it('should allow creating an empty changelog with a custom tag prefix', () => {
+  it('should allow creating an empty changelog with a custom tag prefix', async () => {
     const changelog = new Changelog({
       repoUrl: 'fake://metamask.io',
       tagPrefix: 'example@v',
     });
-    expect(changelog.toString()).toStrictEqual(emptyChangelog);
+
+    expect(await changelog.toString()).toStrictEqual(emptyChangelog);
   });
 });
