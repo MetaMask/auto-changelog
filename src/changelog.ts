@@ -1,3 +1,5 @@
+import * as markdown from 'prettier/plugins/markdown';
+import { format as formatWithPrettier } from 'prettier/standalone';
 import semver from 'semver';
 
 import {
@@ -7,6 +9,19 @@ import {
   Version,
 } from './constants';
 import { PackageRename } from './shared-types';
+
+/**
+ * Format a Markdown changelog string.
+ *
+ * @param changelog - The changelog string to format.
+ * @returns The formatted changelog string.
+ */
+export async function format(changelog: string): Promise<string> {
+  return formatWithPrettier(changelog, {
+    parser: 'markdown',
+    plugins: [markdown],
+  });
+}
 
 /**
  * `Object.getOwnPropertyNames()` is intentionally generic: it returns the
@@ -37,7 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 /**
  * Formatter function that formats a Markdown changelog string.
  */
-export type Formatter = (changelog: string) => string;
+export type Formatter = (changelog: string) => string | Promise<string>;
 
 type ReleaseMetadata = {
   /**
@@ -571,7 +586,7 @@ export default class Changelog {
    *
    * @returns The stringified changelog.
    */
-  toString(): string {
+  async toString(): Promise<string> {
     const changelog = `${changelogTitle}
 ${changelogDescription}
 
@@ -584,6 +599,6 @@ ${stringifyLinkReferenceDefinitions(
   this.#packageRename,
 )}`;
 
-    return this.#formatter(changelog);
+    return await this.#formatter(changelog);
   }
 }

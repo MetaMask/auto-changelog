@@ -2,13 +2,12 @@
 
 import { promises as fs, constants as fsConstants } from 'fs';
 import path from 'path';
-import prettier from 'prettier';
 import semver from 'semver';
 import type { Argv } from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import yargs from 'yargs/yargs';
 
-import { Formatter } from './changelog';
+import { format, Formatter } from './changelog';
 import { unreleased, Version } from './constants';
 import { generateDiff } from './generate-diff';
 import { createEmptyChangelog } from './init';
@@ -184,7 +183,7 @@ async function validate({
   const changelogContent = await readChangelog(changelogPath);
 
   try {
-    validateChangelog({
+    await validateChangelog({
       changelogContent,
       currentVersion,
       repoUrl,
@@ -239,7 +238,7 @@ type InitOptions = {
  * @param options.tagPrefix - The prefix used in tags before the version number.
  */
 async function init({ changelogPath, repoUrl, tagPrefix }: InitOptions) {
-  const changelogContent = createEmptyChangelog({ repoUrl, tagPrefix });
+  const changelogContent = await createEmptyChangelog({ repoUrl, tagPrefix });
   await saveChangelog(changelogPath, changelogContent);
 }
 
@@ -466,10 +465,8 @@ async function main() {
     }
   }
 
-  const formatter = (changelog: string) => {
-    return usePrettier
-      ? prettier.format(changelog, { parser: 'markdown' })
-      : changelog;
+  const formatter = async (changelog: string) => {
+    return usePrettier ? await format(changelog) : changelog;
   };
 
   if (command === 'update') {
