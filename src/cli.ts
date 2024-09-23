@@ -306,7 +306,7 @@ async function main() {
             type: 'string',
           })
           .option('prettier', {
-            default: false,
+            default: true,
             description: `Expect the changelog to be formatted with Prettier.`,
             type: 'boolean',
           })
@@ -466,7 +466,7 @@ async function main() {
     }
   }
 
-  const formatter = (changelog: string) => {
+  const formatter = async (changelog: string) => {
     return usePrettier
       ? prettier.format(changelog, { parser: 'markdown' })
       : changelog;
