@@ -35,6 +35,8 @@ function isValidChangeCategory(category: string): category is ChangeCategory {
  * @param options.formatter - A custom Markdown formatter to use.
  * @param options.packageRename - The package rename properties
  * An optional, which is required only in case of package renamed.
+ * @param options.includePrLinks - When true, look for and parse pull request
+ * links at the end of change entries.
  * @returns A changelog instance that reflects the changelog text provided.
  */
 export function parseChangelog({
@@ -43,12 +45,14 @@ export function parseChangelog({
   tagPrefix = 'v',
   formatter = undefined,
   packageRename,
+  includePrLinks = false,
 }: {
   changelogContent: string;
   repoUrl: string;
   tagPrefix?: string;
   formatter?: Formatter;
   packageRename?: PackageRename;
+  includePrLinks?: boolean;
 }) {
   const changelogLines = changelogContent.split('\n');
   const changelog = new Changelog({
@@ -110,11 +114,19 @@ export function parseChangelog({
       );
     }
 
+    const { description, prNumbers } = includePrLinks
+      ? extractPrLinks(currentChangeEntry)
+      : {
+          description: currentChangeEntry,
+          prNumbers: [],
+        };
+
     changelog.addChange({
       addToStart: false,
       category: mostRecentCategory,
-      description: currentChangeEntry,
+      description,
       version: mostRecentRelease,
+      prNumbers,
     });
     currentChangeEntry = undefined;
   }
@@ -183,4 +195,60 @@ export function parseChangelog({
   finalizePreviousChange({ removeTrailingNewline: true });
 
   return changelog;
+}
+
+/**
+ * Looks for potential links to pull requests from the end of the first line of
+ * a change entry and pulls them off.
+ *
+ * Note that the pattern to look for potential links is intentionally naive,
+ * so that we can offer better error messaging in case URLs do not match the
+ * repo URL (such an error would appear when attempting to stringify the
+ * changelog).
+ *
+ * @param changeEntry - The text of the change entry.
+ * @returns The list of pull request numbers referenced by the change entry, and
+ * the change entry without the links to those pull requests.
+ */
+function extractPrLinks(changeEntry: string): {
+  description: string;
+  prNumbers: number[];
+} {
+  const [firstLine, ...otherLines] = changeEntry.split('\n');
+  const parenthenticalMatch = firstLine.match(/\((\[.+?\]\(.+?\))\)$/u);
+
+  if (parenthenticalMatch === null) {
+    return {
+      description: changeEntry,
+      prNumbers: [],
+    };
+  }
+
+  const parts = parenthenticalMatch[0].split(/,[ ]?/u);
+
+  const prNumbers = parts.reduce<number[]>((workingPrNumbers, part) => {
+    const regexp = /\[#(\d+)\]\(.+?\)/u;
+    const match = part.match(regexp);
+    if (match === null) {
+      return workingPrNumbers;
+    }
+    const prNumber = parseInt(match[1], 10);
+    return [...workingPrNumbers, prNumber];
+  }, []);
+
+  if (prNumbers.length > 0) {
+    const firstLineWithoutPrLinks = firstLine
+      .slice(0, parenthenticalMatch.index)
+      .trim();
+
+    return {
+      description: [firstLineWithoutPrLinks, ...otherLines].join('\n'),
+      prNumbers,
+    };
+  }
+
+  return {
+    description: changeEntry,
+    prNumbers: [],
+  };
 }

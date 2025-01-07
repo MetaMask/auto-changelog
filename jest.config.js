@@ -23,6 +23,7 @@ module.exports = {
   // modules.
   restoreMocks: true,
   testEnvironment: 'node',
-  testRegex: ['\\.test\\.(ts|js)$'],
+  // testRegex: ['\\.test\\.(ts|js)$'],
   testTimeout: 2500,
+  watchPathIgnorePatterns: ['/tmp/'],
 };
