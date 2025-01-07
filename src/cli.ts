@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 import { promises as fs, constants as fsConstants } from 'fs';
 import path from 'path';
 import semver from 'semver';
@@ -158,6 +156,11 @@ type ValidateOptions = {
    * The package rename properties, used in case of package is renamed
    */
   packageRename?: PackageRename;
+  /**
+   * Whether to validate that each changelog entry has one or more links to
+   * associated pull requests within the repository (true) or not (false).
+   */
+  ensureValidPrLinksPresent: boolean;
 };
 
 /**
@@ -172,7 +175,9 @@ type ValidateOptions = {
  * @param options.fix - Whether to attempt to fix the changelog or not.
  * @param options.formatter - A custom Markdown formatter to use.
  * @param options.packageRename - The package rename properties.
- * An optional, which is required only in case of package renamed.
+ * @param options.ensureValidPrLinksPresent - Whether to validate that each
+ * changelog entry has one or more links to associated pull requests within the
+ * repository (true) or not (false).
  */
 async function validate({
   changelogPath,
@@ -183,6 +188,7 @@ async function validate({
   fix,
   formatter,
   packageRename,
+  ensureValidPrLinksPresent,
 }: ValidateOptions) {
   const changelogContent = await readChangelog(changelogPath);
 
@@ -195,6 +201,7 @@ async function validate({
       tagPrefix,
       formatter,
       packageRename,
+      ensureValidPrLinksPresent,
     });
     return undefined;
   } catch (error) {
@@ -351,6 +358,12 @@ async function main() {
             description: `Expect the changelog to be formatted with Prettier.`,
             type: 'boolean',
           })
+          .option('prLinks', {
+            default: false,
+            description:
+              'Verify that each changelog entry has one or more links to associated pull requests within the repository',
+            type: 'boolean',
+          })
           .epilog(validateEpilog),
     )
     .command('init', 'Initialize a new empty changelog', (_yargs) => {
@@ -374,6 +387,7 @@ async function main() {
     versionBeforePackageRename,
     tagPrefixBeforePackageRename,
     autoCategorize,
+    prLinks,
   } = argv;
   let { currentVersion } = argv;
 
@@ -521,6 +535,7 @@ async function main() {
       fix,
       formatter,
       packageRename,
+      ensureValidPrLinksPresent: prLinks,
     });
   } else if (command === 'init') {
     await init({

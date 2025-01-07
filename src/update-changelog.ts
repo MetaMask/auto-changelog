@@ -50,22 +50,20 @@ async function getMostRecentTag({
 }
 
 /**
- * Get all change descriptions from a changelog.
+ * Get all changes from a changelog.
  *
  * @param changelog - The changelog.
  * @returns All commit descriptions included in the given changelog.
  */
-function getAllChangeDescriptions(changelog: Changelog) {
+function getAllChanges(changelog: Changelog) {
   const releases = changelog.getReleases();
-  const changeDescriptions = Object.values(
-    changelog.getUnreleasedChanges(),
-  ).flat();
+  const changes = Object.values(changelog.getUnreleasedChanges()).flat();
   for (const release of releases) {
-    changeDescriptions.push(
+    changes.push(
       ...Object.values(changelog.getReleaseChanges(release.version)).flat(),
     );
   }
-  return changeDescriptions;
+  return changes;
 }
 
 /**
@@ -75,19 +73,7 @@ function getAllChangeDescriptions(changelog: Changelog) {
  * @returns All pull request numbers included in the given changelog.
  */
 function getAllLoggedPrNumbers(changelog: Changelog) {
-  const changeDescriptions = getAllChangeDescriptions(changelog);
-
-  const prNumbersWithChangelogEntries = [];
-  for (const description of changeDescriptions) {
-    if (!description) {
-      continue;
-    }
-    const matchResults = description.matchAll(/\[#(\d+)\]/gu);
-    const prNumbers = Array.from(matchResults, (result) => result[1]);
-    prNumbersWithChangelogEntries.push(...prNumbers);
-  }
-
-  return prNumbersWithChangelogEntries;
+  return getAllChanges(changelog).flatMap((change) => change.prNumbers);
 }
 
 export type UpdateChangelogOptions = {
