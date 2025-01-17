@@ -215,6 +215,7 @@ export type UpdateChangelogOptions = {
   projectRootDirectory?: string;
   tagPrefixes?: [string, ...string[]];
   formatter?: Formatter;
+  autoCategorize: boolean;
   /**
    * The package rename properties, used in case of package is renamed
    */
@@ -254,7 +255,12 @@ export async function updateChangelog({
   tagPrefixes = ['v'],
   formatter = undefined,
   packageRename,
+  autoCategorize,
 }: UpdateChangelogOptions): Promise<string | undefined> {
+
+  console.log('Inside of update changelog function');
+  console.log(`autoCategorize: ${autoCategorize}`);
+
   const changelog = parseChangelog({
     changelogContent,
     repoUrl,
@@ -303,6 +309,10 @@ export async function updateChangelog({
   });
 
   for (const description of newChangeEntries.reverse()) {
+
+    console.log(`description ${description}`);
+
+
     changelog.addChange({
       version: isReleaseCandidate ? currentVersion : undefined,
       category: ChangeCategory.Uncategorized,

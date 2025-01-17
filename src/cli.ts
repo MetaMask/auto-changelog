@@ -91,6 +91,7 @@ type UpdateOptions = {
   projectRootDirectory?: string;
   tagPrefix: string;
   formatter: Formatter;
+  autoCategorize: boolean;
   /**
    * The package rename properties, used in case of package is renamed
    */
@@ -109,6 +110,7 @@ type UpdateOptions = {
  * @param options.tagPrefix - The prefix used in tags before the version number.
  * @param options.formatter - A custom Markdown formatter to use.
  * @param options.packageRename - The package rename properties.
+ * @param options.autoCategorize - automatically categorize commits based on their messages.
  * An optional, which is required only in case of package renamed.
  */
 async function update({
@@ -120,6 +122,7 @@ async function update({
   tagPrefix,
   formatter,
   packageRename,
+  autoCategorize
 }: UpdateOptions) {
   const changelogContent = await readChangelog(changelogPath);
 
@@ -132,6 +135,7 @@ async function update({
     tagPrefixes: [tagPrefix],
     formatter,
     packageRename,
+    autoCategorize
   });
 
   if (newChangelogContent) {
@@ -278,6 +282,11 @@ function configureCommonCommandOptions(_yargs: Argv) {
       description: 'A version of the package before being renamed.',
       type: 'string',
     })
+    .option('autoCategorize', {
+      default: false,
+      description: 'Automatically categorize commits based on their messages.',
+      type: 'boolean'
+    })
     .option('tagPrefixBeforePackageRename', {
       description: 'A tag prefix of the package before being renamed.',
       type: 'string',
@@ -303,6 +312,10 @@ async function main() {
             description:
               'The current version of the project that the changelog belongs to.',
             type: 'string',
+          })
+          .option('autoCategorize', {
+            default: false,
+            description: 'Automatically categorize commits based on their messages.',
           })
           .option('prettier', {
             default: true,
@@ -358,6 +371,7 @@ async function main() {
     prettier: usePrettier,
     versionBeforePackageRename,
     tagPrefixBeforePackageRename,
+    autoCategorize
   } = argv;
   let { currentVersion } = argv;
 
@@ -486,6 +500,7 @@ async function main() {
       tagPrefix,
       formatter,
       packageRename,
+      autoCategorize,
     });
   } else if (command === 'validate') {
     let packageRename: PackageRename | undefined;
