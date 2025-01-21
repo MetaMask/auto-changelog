@@ -314,7 +314,7 @@ export async function updateChangelog({
 
 
 
-    const category = getCategory(description); getCategory(description);
+    const category = getCategory(description);
 
     console.log(`assigned category ${category}`);
 
@@ -351,12 +351,13 @@ function getCategory(description: string): ChangeCategory {
   if (description.includes(':')) {
     const [prefix] = description.split(':').map(part => part.trim());
     switch (prefix) {
-      case ChangeCategory.Added:
+      case "feat":
         return ChangeCategory.Added;
-      case ChangeCategory.Fixed:
+      case "fix":
         return ChangeCategory.Fixed;
     }
   }
+  
   // Return 'Uncategorized' if no colon is found or prefix doesn't match
   return ChangeCategory.Uncategorized;
 }
