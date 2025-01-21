@@ -6,10 +6,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [4.1.0]
-### Added
-- Add autoCategorize CLI flag to map conventional commits to keep a change log format.
-
 ## [4.0.0]
 ### Changed
 - **BREAKING:** Drop support for Node.js <18.18 ([#203](https://github.com/MetaMask/auto-changelog/pull/203))
