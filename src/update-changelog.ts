@@ -313,9 +313,14 @@ export async function updateChangelog({
     console.log(`description ${description}`);
 
 
+
+    const category = getCategory(description); getCategory(description);
+
+    console.log(`assigned category ${category}`);
+
     changelog.addChange({
       version: isReleaseCandidate ? currentVersion : undefined,
-      category: ChangeCategory.Uncategorized,
+      category: category,
       description,
     });
   }
@@ -338,4 +343,20 @@ async function runCommand(command: string, args: string[]): Promise<string[]> {
     .trim()
     .split('\n')
     .filter((line) => line !== '');
+}
+
+// Function to determine the category based on the commit prefix
+function getCategory(description: string): ChangeCategory {
+  // Check if description contains a colon
+  if (description.includes(':')) {
+    const [prefix] = description.split(':').map(part => part.trim());
+    switch (prefix) {
+      case ChangeCategory.Added:
+        return ChangeCategory.Added;
+      case ChangeCategory.Fixed:
+        return ChangeCategory.Fixed;
+    }
+  }
+  // Return 'Uncategorized' if no colon is found or prefix doesn't match
+  return ChangeCategory.Uncategorized;
 }
