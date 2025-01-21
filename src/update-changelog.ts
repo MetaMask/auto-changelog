@@ -258,9 +258,6 @@ export async function updateChangelog({
   autoCategorize,
 }: UpdateChangelogOptions): Promise<string | undefined> {
 
-  console.log('Inside of update changelog function');
-  console.log(`autoCategorize: ${autoCategorize}`);
-
   const changelog = parseChangelog({
     changelogContent,
     repoUrl,
