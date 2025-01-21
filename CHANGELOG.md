@@ -9,12 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [v4.1.0]
 
-### Uncategorized
+### Added
 
-- feat: categorize conventional commits
-- feat: categorize conventional commits
-- feat: categorize conventional commits
-- feat: categorize conventional commits
+- feat: add new flag autoCategorize to support mapping conventional commits to keep a changelog format
 
 ## [4.0.0]
 

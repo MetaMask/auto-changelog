@@ -310,13 +310,7 @@ export async function updateChangelog({
 
   for (const description of newChangeEntries.reverse()) {
 
-    console.log(`description ${description}`);
-
-
-
-    const category = getCategory(description);
-
-    console.log(`assigned category ${category}`);
+    const category = autoCategorize ? getCategory(description) : ChangeCategory.Uncategorized;
 
     changelog.addChange({
       version: isReleaseCandidate ? currentVersion : undefined,
