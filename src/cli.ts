@@ -110,7 +110,7 @@ type UpdateOptions = {
  * @param options.tagPrefix - The prefix used in tags before the version number.
  * @param options.formatter - A custom Markdown formatter to use.
  * @param options.packageRename - The package rename properties.
- * @param options.autoCategorize - automatically categorize commits based on their messages.
+ * @param options.autoCategorize - Whether to categorize commits automatically based on their messages.
  * An optional, which is required only in case of package renamed.
  */
 async function update({
@@ -122,7 +122,7 @@ async function update({
   tagPrefix,
   formatter,
   packageRename,
-  autoCategorize
+  autoCategorize,
 }: UpdateOptions) {
   const changelogContent = await readChangelog(changelogPath);
 
@@ -135,7 +135,7 @@ async function update({
     tagPrefixes: [tagPrefix],
     formatter,
     packageRename,
-    autoCategorize
+    autoCategorize,
   });
 
   if (newChangelogContent) {
@@ -285,7 +285,7 @@ function configureCommonCommandOptions(_yargs: Argv) {
     .option('autoCategorize', {
       default: false,
       description: 'Automatically categorize commits based on their messages.',
-      type: 'boolean'
+      type: 'boolean',
     })
     .option('tagPrefixBeforePackageRename', {
       description: 'A tag prefix of the package before being renamed.',
@@ -315,7 +315,8 @@ async function main() {
           })
           .option('autoCategorize', {
             default: false,
-            description: 'Automatically categorize commits based on their messages.',
+            description:
+              'Automatically categorize commits based on their messages.',
           })
           .option('prettier', {
             default: true,
@@ -371,7 +372,7 @@ async function main() {
     prettier: usePrettier,
     versionBeforePackageRename,
     tagPrefixBeforePackageRename,
-    autoCategorize
+    autoCategorize,
   } = argv;
   let { currentVersion } = argv;
 

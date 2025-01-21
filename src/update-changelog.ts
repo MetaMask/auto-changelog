@@ -244,6 +244,8 @@ export type UpdateChangelogOptions = {
  * @param options.formatter - A custom Markdown formatter to use.
  * @param options.packageRename - The package rename properties.
  * An optional, which is required only in case of package renamed.
+ * @param options.autoCategorize - A flag indicating whether changes should be auto-categorized
+ * based on commit message prefixes.
  * @returns The updated changelog text.
  */
 export async function updateChangelog({
@@ -257,7 +259,6 @@ export async function updateChangelog({
   packageRename,
   autoCategorize,
 }: UpdateChangelogOptions): Promise<string | undefined> {
-
   const changelog = parseChangelog({
     changelogContent,
     repoUrl,
@@ -306,12 +307,13 @@ export async function updateChangelog({
   });
 
   for (const description of newChangeEntries.reverse()) {
-
-    const category = autoCategorize ? getCategory(description) : ChangeCategory.Uncategorized;
+    const category = autoCategorize
+      ? getCategory(description)
+      : ChangeCategory.Uncategorized;
 
     changelog.addChange({
       version: isReleaseCandidate ? currentVersion : undefined,
-      category: category,
+      category,
       description,
     });
   }
@@ -336,19 +338,26 @@ async function runCommand(command: string, args: string[]): Promise<string[]> {
     .filter((line) => line !== '');
 }
 
-// Function to determine the category based on the commit prefix
+/**
+ * Determine the category of a change based on the commit message prefix.
+ *
+ * @param description - The commit message description.
+ * @returns The category of the change.
+ */
 function getCategory(description: string): ChangeCategory {
   // Check if description contains a colon
   if (description.includes(':')) {
-    const [prefix] = description.split(':').map(part => part.trim());
+    const [prefix] = description.split(':').map((part) => part.trim());
     switch (prefix) {
-      case "feat":
+      case 'feat':
         return ChangeCategory.Added;
-      case "fix":
+      case 'fix':
         return ChangeCategory.Fixed;
+      default:
+        return ChangeCategory.Uncategorized;
     }
   }
-  
+
   // Return 'Uncategorized' if no colon is found or prefix doesn't match
   return ChangeCategory.Uncategorized;
 }
