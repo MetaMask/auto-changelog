@@ -284,7 +284,7 @@ function configureCommonCommandOptions(_yargs: Argv) {
     })
     .option('autoCategorize', {
       default: false,
-      description: 'Automatically categorize commits based on their messages.',
+      description: 'Automatically categorize commits based on Conventional Commits prefixes.',
       type: 'boolean',
     })
     .option('tagPrefixBeforePackageRename', {
