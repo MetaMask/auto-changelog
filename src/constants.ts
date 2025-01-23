@@ -3,7 +3,6 @@
  */
 export type Version = string;
 
-
 /**
  * A [Conventional Commit](https://www.conventionalcommits.org/en/v1.0.0/) type.
  */

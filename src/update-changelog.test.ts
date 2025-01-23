@@ -16,36 +16,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/
 `;
-  
 
 describe('updateChangelog', () => {
-    it('should contain conventional support mappings categorization', async () => {
-            // Call updateChangelog, which internally calls the mocked getNewChangeEntries
-            const result = await ChangeLogManager.updateChangelog({
-                changelogContent: uncategorizedChangelog,
-                currentVersion: '1.0.0',
-                repoUrl: 'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
-                isReleaseCandidate: true,
-                autoCategorize: true
-            });
-
-            // Verify that some of the commits are included in the result
-            expect(result).toContain('### Added');
-            expect(result).toContain('### Fixed');
+  it('should contain conventional support mappings categorization', async () => {
+    // Call updateChangelog, which internally calls the mocked getNewChangeEntries
+    const result = await ChangeLogManager.updateChangelog({
+      changelogContent: uncategorizedChangelog,
+      currentVersion: '1.0.0',
+      repoUrl:
+        'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+      isReleaseCandidate: true,
+      autoCategorize: true,
     });
 
-    it('should not contain conventional support mappings categorization', async () => {
-        // Call updateChangelog, which internally calls the mocked getNewChangeEntries
-        const result = await ChangeLogManager.updateChangelog({
-            changelogContent: uncategorizedChangelog,
-            currentVersion: '1.0.0',
-            repoUrl: 'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
-            isReleaseCandidate: true,
-            autoCategorize: false
-        });
+    // Verify that some of the commits are included in the result
+    expect(result).toContain('### Added');
+    expect(result).toContain('### Fixed');
+  });
 
-        // Verify that some of the commits are included in the result
-        expect(result).toContain('### Uncategorized');
-        expect(result).not.toContain('### Fixed');
-});
+  it('should not contain conventional support mappings categorization', async () => {
+    // Call updateChangelog, which internally calls the mocked getNewChangeEntries
+    const result = await ChangeLogManager.updateChangelog({
+      changelogContent: uncategorizedChangelog,
+      currentVersion: '1.0.0',
+      repoUrl:
+        'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+      isReleaseCandidate: true,
+      autoCategorize: false,
+    });
+
+    // Verify that some of the commits are included in the result
+    expect(result).toContain('### Uncategorized');
+    expect(result).not.toContain('### Fixed');
+  });
 });
