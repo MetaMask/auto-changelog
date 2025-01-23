@@ -180,7 +180,7 @@ type AddNewCommitsOptions = {
  * current git repository.
  * @returns A list of new change entries to add to the changelog, based on commits made since the last release.
  */
-async function getNewChangeEntries({
+export async function getNewChangeEntries({
   mostRecentTag,
   repoUrl,
   loggedPrNumbers,
