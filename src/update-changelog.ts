@@ -3,7 +3,7 @@ import execa from 'execa';
 
 import type Changelog from './changelog';
 import { Formatter, getKnownPropertyNames } from './changelog';
-import { ChangeCategory, Version } from './constants';
+import { ChangeCategory, Version, ConventionalCommitType } from './constants';
 import { parseChangelog } from './parse-changelog';
 import { PackageRename } from './shared-types';
 
@@ -215,7 +215,7 @@ export type UpdateChangelogOptions = {
   projectRootDirectory?: string;
   tagPrefixes?: [string, ...string[]];
   formatter?: Formatter;
-  autoCategorize: boolean;
+  autoCategorize?: boolean;
   /**
    * The package rename properties, used in case of package is renamed
    */
@@ -349,9 +349,9 @@ function getCategory(description: string): ChangeCategory {
   if (description.includes(':')) {
     const [prefix] = description.split(':').map((part) => part.trim());
     switch (prefix) {
-      case 'feat':
+      case ConventionalCommitType.Feat:
         return ChangeCategory.Added;
-      case 'fix':
+      case ConventionalCommitType.Fix:
         return ChangeCategory.Fixed;
       default:
         return ChangeCategory.Uncategorized;
