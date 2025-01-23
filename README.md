@@ -24,7 +24,7 @@ or
 
 `npm run auto-changelog update`
 
-#### Generate Categorized sections of the changelog
+#### Use Conventional Commits prefixes to auto-categorize changes
 
 `yarn run auto-changelog update --autoCategorize`
 
