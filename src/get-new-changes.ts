@@ -97,7 +97,6 @@ export async function getNewChangeEntries({
   loggedPrNumbers,
   projectRootDirectory,
 }: AddNewCommitsOptions) {
-  console.log(`inside real getNewChangeEntries`);
   const commitRange =
     mostRecentTag === null ? 'HEAD' : `${mostRecentTag}..HEAD`;
   const commitsHashesSinceLastRelease = await getCommitHashesInRange(

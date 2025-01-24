@@ -189,8 +189,6 @@ export async function updateChangelog({
     projectRootDirectory,
   });
 
-  console.log(`new entries count: ${newChangeEntries.length}`);
-
   for (const description of newChangeEntries.reverse()) {
     const category = autoCategorize
       ? getCategory(description)
