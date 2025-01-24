@@ -1,5 +1,5 @@
+import * as ChangeLogUtils from './get-new-changes';
 import * as ChangeLogManager from './update-changelog';
-
 
 const emptyChangelog = `# Changelog
 All notable changes to this project will be documented in this file.
@@ -13,29 +13,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 `;
 
 describe('updateChangelog', () => {
-  let getNewChangeEntriesSpy: jest.SpyInstance;
-
-  beforeEach(() => {
-    // Setup the spy and mock before each test
-    // Assuming getNewChangeEntries returns a Promise<string[]>
-    getNewChangeEntriesSpy = jest.spyOn(ChangeLogManager, 'getNewChangeEntries')
-      .mockResolvedValue([
-        'fix: fixed a major bug',
-        'feat: introduced a new feature',
-        'unknown: some non-conventional commit'
-      ]);
-  });
-
-  afterEach(() => {
-    // Restore the original function after each test
-    getNewChangeEntriesSpy.mockRestore();
-  });
-
   it('should contain conventional support mappings categorization when autoCategorize is true', async () => {
+    // Set up the spy and mock the implementation if needed
+    jest
+      .spyOn(ChangeLogUtils, 'getNewChangeEntries')
+      .mockResolvedValue([
+        'fix: Fixed a critical bug',
+        'feat: Added new feature [PR#123](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/123)',
+      ]);
+
     const result = await ChangeLogManager.updateChangelog({
       changelogContent: emptyChangelog,
       currentVersion: '1.0.0',
-      repoUrl: 'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+      repoUrl:
+        'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
       isReleaseCandidate: true,
       autoCategorize: true,
     });
@@ -46,10 +37,19 @@ describe('updateChangelog', () => {
   });
 
   it('should not contain conventional support mappings categorization when autoCategorize is false', async () => {
+    // Set up the spy and mock the implementation if needed
+    jest
+      .spyOn(ChangeLogUtils, 'getNewChangeEntries')
+      .mockResolvedValue([
+        'fix: Fixed a critical bug',
+        'feat: Added new feature [PR#123](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/123)',
+      ]);
+
     const result = await ChangeLogManager.updateChangelog({
       changelogContent: emptyChangelog,
       currentVersion: '1.0.0',
-      repoUrl: 'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+      repoUrl:
+        'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
       isReleaseCandidate: true,
       autoCategorize: false,
     });
