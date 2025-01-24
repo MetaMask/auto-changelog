@@ -308,6 +308,8 @@ export async function updateChangelog({
     projectRootDirectory,
   });
 
+  console.log(`count of newChangeEntries: ${newChangeEntries.length}`);
+
   for (const description of newChangeEntries.reverse()) {
     const category = autoCategorize
       ? getCategory(description)
@@ -347,19 +349,24 @@ async function runCommand(command: string, args: string[]): Promise<string[]> {
  * @returns The category of the change.
  */
 function getCategory(description: string): ChangeCategory {
+  console.log(`description: ${description}`);
   // Check if description contains a colon
   if (description.includes(':')) {
     const [prefix] = description.split(':').map((part) => part.trim());
     switch (prefix) {
       case ConventionalCommitType.Feat:
+        console.log(`mapping feat to Added`);
         return ChangeCategory.Added;
       case ConventionalCommitType.Fix:
+        console.log(`mapping fix to Fixed`);
         return ChangeCategory.Fixed;
       default:
+        console.log(`mapping ${prefix} to Uncategorized`);
         return ChangeCategory.Uncategorized;
     }
   }
 
+  console.log(`mapping as desc didn't contain : Uncategorized`);
   // Return 'Uncategorized' if no colon is found or prefix doesn't match
   return ChangeCategory.Uncategorized;
 }
