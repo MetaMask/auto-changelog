@@ -1,3 +1,15 @@
+// Place this at the very top of your test file
+jest.mock('./update-changelog', () => {
+  const originalModule = jest.requireActual('./update-changelog'); // Get the actual module
+  return {
+    ...originalModule, // spread all actual exports
+    getNewChangeEntries: jest.fn().mockResolvedValue([
+      'fix: Fixed a critical bug',
+      'feat: Added new feature [PR#123](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/123)'
+    ])
+  };
+});
+
 import * as ChangeLogManager from './update-changelog';
 
 
@@ -13,25 +25,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 `;
 
 describe('updateChangelog', () => {
-  let getNewChangeEntriesSpy: jest.SpyInstance;
-
-  beforeEach(() => {
-    // Setup the spy and mock before each test
-    // Assuming getNewChangeEntries returns a Promise<string[]>
-    getNewChangeEntriesSpy = jest.spyOn(ChangeLogManager, 'getNewChangeEntries')
-      .mockResolvedValue([
-        'fix: fixed a major bug',
-        'feat: introduced a new feature',
-        'unknown: some non-conventional commit'
-      ]);
-  });
-
-  afterEach(() => {
-    // Restore the original function after each test
-    getNewChangeEntriesSpy.mockRestore();
-  });
 
   it('should contain conventional support mappings categorization when autoCategorize is true', async () => {
+
+    // TRIED WITH AND WITHOUT THIS LINE
+    jest.spyOn(ChangeLogManager, 'getNewChangeEntries').mockResolvedValue([
+      'fix: Fixed a critical bug',
+'feat: Added new feature [PR#123](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/123)'
+]);
+
     const result = await ChangeLogManager.updateChangelog({
       changelogContent: emptyChangelog,
       currentVersion: '1.0.0',
@@ -46,6 +48,13 @@ describe('updateChangelog', () => {
   });
 
   it('should not contain conventional support mappings categorization when autoCategorize is false', async () => {
+    
+    // TRIED WITH AND WITHOUT THIS LINE
+    jest.spyOn(ChangeLogManager, 'getNewChangeEntries').mockResolvedValue([
+            'fix: Fixed a critical bug',
+      'feat: Added new feature [PR#123](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/123)'
+    ]);
+
     const result = await ChangeLogManager.updateChangelog({
       changelogContent: emptyChangelog,
       currentVersion: '1.0.0',
