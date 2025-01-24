@@ -267,6 +267,8 @@ export async function updateChangelog({
     packageRename,
   });
 
+  console.log(`autoCategorize: ${autoCategorize}`);
+
   const mostRecentTag = await getMostRecentTag({
     tagPrefixes,
   });
