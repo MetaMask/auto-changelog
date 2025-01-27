@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.1.0]
+### Added
+- Add `--autoCategorize` flag to `update` command ([#212](https://github.com/MetaMask/auto-changelog/pull/212))
+  - When populating the Unreleased section, the tool will look for [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) prefixes in commit message subjects and place matching commits in corresponding categories automatically.
+  - Supported prefixes are `feat` (which routes to "Added") and `fix` (which routes to "Fixed").
+
 ## [4.0.0]
 ### Changed
 - **BREAKING:** Drop support for Node.js <18.18 ([#203](https://github.com/MetaMask/auto-changelog/pull/203))
@@ -135,7 +141,8 @@ Includes the following features:
   - Monorepo support ([#41](https://github.com/MetaMask/auto-changelog/pull/41))
   - Configurable repository URL, version, and changelog file path ([#33](https://github.com/MetaMask/auto-changelog/pull/33), [#31](https://github.com/MetaMask/auto-changelog/pull/31), [#30](https://github.com/MetaMask/auto-changelog/pull/30))
 
-[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v4.0.0...HEAD
+[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v4.1.0...HEAD
+[4.1.0]: https://github.com/MetaMask/auto-changelog/compare/v4.0.0...v4.1.0
 [4.0.0]: https://github.com/MetaMask/auto-changelog/compare/v3.4.4...v4.0.0
 [3.4.4]: https://github.com/MetaMask/auto-changelog/compare/v3.4.3...v3.4.4
 [3.4.3]: https://github.com/MetaMask/auto-changelog/compare/v3.4.2...v3.4.3
