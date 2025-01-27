@@ -24,6 +24,10 @@ or
 
 `npm run auto-changelog update`
 
+#### Use Conventional Commits prefixes to auto-categorize changes
+
+`yarn run auto-changelog update --autoCategorize`
+
 #### Update the current release section of the changelog
 
 `yarn run auto-changelog update --rc`

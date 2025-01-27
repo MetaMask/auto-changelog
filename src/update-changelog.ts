@@ -1,9 +1,9 @@
-import { strict as assert } from 'assert';
 import execa from 'execa';
 
 import type Changelog from './changelog';
 import { Formatter, getKnownPropertyNames } from './changelog';
-import { ChangeCategory, Version } from './constants';
+import { ChangeCategory, Version, ConventionalCommitType } from './constants';
+import { getNewChangeEntries } from './get-new-changes';
 import { parseChangelog } from './parse-changelog';
 import { PackageRename } from './shared-types';
 
@@ -50,58 +50,6 @@ async function getMostRecentTag({
 }
 
 /**
- * Get commit details for each given commit hash.
- *
- * @param commitHashes - The list of commit hashes.
- * @returns Commit details for each commit, including description and PR number (if present).
- */
-async function getCommits(commitHashes: string[]) {
-  const commits: { prNumber?: string; description: string }[] = [];
-  for (const commitHash of commitHashes) {
-    const [subject] = await runCommand('git', [
-      'show',
-      '-s',
-      '--format=%s',
-      commitHash,
-    ]);
-    assert.ok(
-      Boolean(subject),
-      `"git show" returned empty subject for commit "${commitHash}".`,
-    );
-
-    let matchResults = subject.match(/\(#(\d+)\)/u);
-    let prNumber: string | undefined;
-    let description = subject;
-
-    if (matchResults) {
-      // Squash & Merge: the commit subject is parsed as `<description> (#<PR ID>)`
-      prNumber = matchResults[1];
-      description = subject.match(/^(.+)\s\(#\d+\)/u)?.[1] ?? '';
-    } else {
-      // Merge: the PR ID is parsed from the git subject (which is of the form `Merge pull request
-      // #<PR ID> from <branch>`, and the description is assumed to be the first line of the body.
-      // If no body is found, the description is set to the commit subject
-      matchResults = subject.match(/#(\d+)\sfrom/u);
-      if (matchResults) {
-        prNumber = matchResults[1];
-        const [firstLineOfBody] = await runCommand('git', [
-          'show',
-          '-s',
-          '--format=%b',
-          commitHash,
-        ]);
-        description = firstLineOfBody || subject;
-      }
-    }
-    // Otherwise:
-    // Normal commits: The commit subject is the description, and the PR ID is omitted.
-
-    commits.push({ prNumber, description });
-  }
-  return commits;
-}
-
-/**
  * Get all change descriptions from a changelog.
  *
  * @param changelog - The changelog.
@@ -142,71 +90,6 @@ function getAllLoggedPrNumbers(changelog: Changelog) {
   return prNumbersWithChangelogEntries;
 }
 
-/**
- * Get all commit hashes included in the given commit range.
- *
- * @param commitRange - The commit range.
- * @param rootDirectory - The project root directory.
- * @returns A list of commit hashes for the given range.
- */
-async function getCommitHashesInRange(
-  commitRange: string,
-  rootDirectory?: string,
-) {
-  const revListArgs = ['rev-list', commitRange];
-  if (rootDirectory) {
-    revListArgs.push(rootDirectory);
-  }
-  return await runCommand('git', revListArgs);
-}
-
-type AddNewCommitsOptions = {
-  mostRecentTag: string | null;
-  repoUrl: string;
-  loggedPrNumbers: string[];
-  projectRootDirectory?: string;
-};
-
-/**
- * Get the list of new change entries to add to a changelog.
- *
- * @param options - Options.
- * @param options.mostRecentTag - The most recent tag.
- * @param options.repoUrl - The GitHub repository URL for the current project.
- * @param options.loggedPrNumbers - A list of all pull request numbers included in the relevant parsed changelog.
- * @param options.projectRootDirectory - The root project directory, used to
- * filter results from various git commands. This path is assumed to be either
- * absolute, or relative to the current directory. Defaults to the root of the
- * current git repository.
- * @returns A list of new change entries to add to the changelog, based on commits made since the last release.
- */
-async function getNewChangeEntries({
-  mostRecentTag,
-  repoUrl,
-  loggedPrNumbers,
-  projectRootDirectory,
-}: AddNewCommitsOptions) {
-  const commitRange =
-    mostRecentTag === null ? 'HEAD' : `${mostRecentTag}..HEAD`;
-  const commitsHashesSinceLastRelease = await getCommitHashesInRange(
-    commitRange,
-    projectRootDirectory,
-  );
-  const commits = await getCommits(commitsHashesSinceLastRelease);
-
-  const newCommits = commits.filter(
-    ({ prNumber }) => !prNumber || !loggedPrNumbers.includes(prNumber),
-  );
-
-  return newCommits.map(({ prNumber, description }) => {
-    if (prNumber) {
-      const suffix = `([#${prNumber}](${repoUrl}/pull/${prNumber}))`;
-      return `${description} ${suffix}`;
-    }
-    return description;
-  });
-}
-
 export type UpdateChangelogOptions = {
   changelogContent: string;
   currentVersion?: Version;
@@ -215,6 +98,7 @@ export type UpdateChangelogOptions = {
   projectRootDirectory?: string;
   tagPrefixes?: [string, ...string[]];
   formatter?: Formatter;
+  autoCategorize?: boolean;
   /**
    * The package rename properties, used in case of package is renamed
    */
@@ -243,6 +127,8 @@ export type UpdateChangelogOptions = {
  * @param options.formatter - A custom Markdown formatter to use.
  * @param options.packageRename - The package rename properties.
  * An optional, which is required only in case of package renamed.
+ * @param options.autoCategorize - A flag indicating whether changes should be auto-categorized
+ * based on commit message prefixes.
  * @returns The updated changelog text.
  */
 export async function updateChangelog({
@@ -254,6 +140,7 @@ export async function updateChangelog({
   tagPrefixes = ['v'],
   formatter = undefined,
   packageRename,
+  autoCategorize,
 }: UpdateChangelogOptions): Promise<string | undefined> {
   const changelog = parseChangelog({
     changelogContent,
@@ -303,9 +190,13 @@ export async function updateChangelog({
   });
 
   for (const description of newChangeEntries.reverse()) {
+    const category = autoCategorize
+      ? getCategory(description)
+      : ChangeCategory.Uncategorized;
+
     changelog.addChange({
       version: isReleaseCandidate ? currentVersion : undefined,
-      category: ChangeCategory.Uncategorized,
+      category,
       description,
     });
   }
@@ -328,4 +219,27 @@ async function runCommand(command: string, args: string[]): Promise<string[]> {
     .trim()
     .split('\n')
     .filter((line) => line !== '');
+}
+
+/**
+ * Determine the category of a change based on the commit message prefix.
+ *
+ * @param description - The commit message description.
+ * @returns The category of the change.
+ */
+function getCategory(description: string): ChangeCategory {
+  // Check if description contains a colon
+  if (description.includes(':')) {
+    const [prefix] = description.split(':').map((part) => part.trim());
+    switch (prefix) {
+      case ConventionalCommitType.Feat:
+        return ChangeCategory.Added;
+      case ConventionalCommitType.Fix:
+        return ChangeCategory.Fixed;
+      default:
+        return ChangeCategory.Uncategorized;
+    }
+  }
+  // Return 'Uncategorized' if no colon is found or prefix doesn't match
+  return ChangeCategory.Uncategorized;
 }
