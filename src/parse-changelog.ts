@@ -35,6 +35,8 @@ function isValidChangeCategory(category: string): category is ChangeCategory {
  * @param options.formatter - A custom Markdown formatter to use.
  * @param options.packageRename - The package rename properties
  * An optional, which is required only in case of package renamed.
+ * @param options.shouldExtractPrLinks - When true, look for and parse pull
+ * request links at the end of change entries.
  * @returns A changelog instance that reflects the changelog text provided.
  */
 export function parseChangelog({
@@ -43,12 +45,14 @@ export function parseChangelog({
   tagPrefix = 'v',
   formatter = undefined,
   packageRename,
+  shouldExtractPrLinks = false,
 }: {
   changelogContent: string;
   repoUrl: string;
   tagPrefix?: string;
   formatter?: Formatter;
   packageRename?: PackageRename;
+  shouldExtractPrLinks?: boolean;
 }) {
   const changelogLines = changelogContent.split('\n');
   const changelog = new Changelog({
@@ -110,11 +114,19 @@ export function parseChangelog({
       );
     }
 
+    const { description, prNumbers } = shouldExtractPrLinks
+      ? extractPrLinks(currentChangeEntry)
+      : {
+          description: currentChangeEntry,
+          prNumbers: [],
+        };
+
     changelog.addChange({
       addToStart: false,
       category: mostRecentCategory,
-      description: currentChangeEntry,
+      description,
       version: mostRecentRelease,
+      prNumbers,
     });
     currentChangeEntry = undefined;
   }
@@ -183,4 +195,72 @@ export function parseChangelog({
   finalizePreviousChange({ removeTrailingNewline: true });
 
   return changelog;
+}
+
+/**
+ * Looks for potential links to pull requests from the end of the first line of
+ * a change entry and pulls them off.
+ *
+ * Note that the pattern to look for potential links is intentionally naive,
+ * so that we can offer better error messaging in case URLs do not match the
+ * repo URL (such an error would appear when attempting to stringify the
+ * changelog).
+ *
+ * @param changeEntry - The text of the change entry.
+ * @returns The list of pull request numbers referenced by the change entry, and
+ * the change entry without the links to those pull requests.
+ */
+function extractPrLinks(changeEntry: string): {
+  description: string;
+  prNumbers: string[];
+} {
+  const [firstLine, ...otherLines] = changeEntry.split('\n');
+  const parentheticalMatches = firstLine.matchAll(/[ ]\((\[.+?\]\(.+?\))\)/gu);
+  const prNumbers: string[] = [];
+  let startIndex = Infinity;
+  let endIndex = 0;
+
+  for (const parentheticalMatch of parentheticalMatches) {
+    const { index } = parentheticalMatch;
+    const wholeMatch = parentheticalMatch[0];
+    const parts = wholeMatch.split(/,[ ]?/u);
+
+    for (const part of parts) {
+      const regexp = /\[#(\d+)\]\([^()]+\)/u;
+      const match = part.match(regexp);
+      if (match !== null) {
+        const prNumber = match[1];
+        prNumbers.push(prNumber);
+      }
+    }
+
+    if (index === undefined) {
+      throw new Error('Could not find index. This should not happen.');
+    }
+
+    if (index < startIndex) {
+      startIndex = index;
+    }
+
+    if (index + wholeMatch.length > endIndex) {
+      endIndex = index + wholeMatch.length;
+    }
+  }
+
+  const uniquePrNumbers = [...new Set(prNumbers)];
+
+  if (prNumbers.length > 0) {
+    const firstLineWithoutPrLinks =
+      firstLine.slice(0, startIndex) + firstLine.slice(endIndex);
+
+    return {
+      description: [firstLineWithoutPrLinks, ...otherLines].join('\n'),
+      prNumbers: uniquePrNumbers,
+    };
+  }
+
+  return {
+    description: changeEntry,
+    prNumbers: [],
+  };
 }

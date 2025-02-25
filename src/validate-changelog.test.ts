@@ -1,7 +1,11 @@
 /* eslint-disable jest/no-restricted-matchers */
 
+import _outdent from 'outdent';
+
 import { format } from './changelog';
 import { validateChangelog } from './validate-changelog';
+
+const outdent = _outdent({ trimTrailingNewline: false });
 
 const emptyChangelog = `# Changelog
 All notable changes to this project will be documented in this file.
@@ -729,5 +733,171 @@ describe('validateChangelog', () => {
         },
       }),
     ).resolves.not.toThrow();
+  });
+
+  describe('if ensureValidPrLinksPresent is true', () => {
+    it('should throw if some entries in the changelog have no PR links', async () => {
+      const changelogContent = outdent`
+        # Changelog
+        All notable changes to this project will be documented in this file.
+
+        The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+        and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+        ## [Unreleased]
+
+        ## [1.0.0]
+        ### Changed
+        - Change something else ([#123](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/123))
+
+        ## [0.0.2]
+        ### Fixed
+        - Fix something
+
+        ## [0.0.1]
+        ### Added
+        - Initial release ([#123](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/123))
+
+        [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
+        [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.2...v1.0.0
+        [0.0.2]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.1...v0.0.2
+        [0.0.1]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/v0.0.1
+      `;
+
+      await expect(
+        validateChangelog({
+          changelogContent,
+          currentVersion: '1.0.0',
+          repoUrl:
+            'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+          isReleaseCandidate: false,
+          ensureValidPrLinksPresent: true,
+        }),
+      ).rejects.toThrow(
+        "Pull request link(s) missing for change: 'Fix something' (in 0.0.2)",
+      );
+    });
+
+    it('should throw if some entries in the changelog have PR links to the wrong repo', async () => {
+      const changelogContent = outdent`
+        # Changelog
+        All notable changes to this project will be documented in this file.
+
+        The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+        and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+        ## [Unreleased]
+
+        ## [1.0.0]
+        ### Changed
+        - Change something else ([#123](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/123))
+
+        ## [0.0.2]
+        ### Fixed
+        - Fix something ([#123](https://github.com/foo/bar/pull/123))
+
+        ## [0.0.1]
+        ### Added
+        - Initial release ([#123](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/123))
+
+        [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
+        [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.2...v1.0.0
+        [0.0.2]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.1...v0.0.2
+        [0.0.1]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/v0.0.1
+      `;
+
+      await expect(
+        validateChangelog({
+          changelogContent,
+          currentVersion: '1.0.0',
+          repoUrl:
+            'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+          isReleaseCandidate: false,
+          ensureValidPrLinksPresent: true,
+        }),
+      ).rejects.toThrow('Changelog is not well-formatted');
+    });
+  });
+
+  describe('if ensureValidPrLinksPresent is false', () => {
+    it('should not throw if some entries in the changelog have no PR links', async () => {
+      const changelogContent = outdent`
+        # Changelog
+        All notable changes to this project will be documented in this file.
+
+        The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+        and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+        ## [Unreleased]
+
+        ## [1.0.0]
+        ### Changed
+        - Change something else ([#123](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/123))
+
+        ## [0.0.2]
+        ### Fixed
+        - Fix something
+
+        ## [0.0.1]
+        ### Added
+        - Initial release ([#123](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/123))
+
+        [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
+        [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.2...v1.0.0
+        [0.0.2]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.1...v0.0.2
+        [0.0.1]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/v0.0.1
+      `;
+
+      await expect(
+        validateChangelog({
+          changelogContent,
+          currentVersion: '1.0.0',
+          repoUrl:
+            'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+          isReleaseCandidate: false,
+          ensureValidPrLinksPresent: false,
+        }),
+      ).resolves.not.toThrow();
+    });
+
+    it('should not throw if some entries in the changelog have PR links to the wrong repo', async () => {
+      const changelogContent = outdent`
+        # Changelog
+        All notable changes to this project will be documented in this file.
+
+        The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+        and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+        ## [Unreleased]
+
+        ## [1.0.0]
+        ### Changed
+        - Change something else ([#123](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/123))
+
+        ## [0.0.2]
+        ### Fixed
+        - Fix something ([#123](https://github.com/foo/bar/pull/123))
+
+        ## [0.0.1]
+        ### Added
+        - Initial release ([#123](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/123))
+
+        [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
+        [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.2...v1.0.0
+        [0.0.2]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.1...v0.0.2
+        [0.0.1]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/v0.0.1
+      `;
+
+      await expect(
+        validateChangelog({
+          changelogContent,
+          currentVersion: '1.0.0',
+          repoUrl:
+            'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+          isReleaseCandidate: false,
+          ensureValidPrLinksPresent: false,
+        }),
+      ).resolves.not.toThrow();
+    });
   });
 });

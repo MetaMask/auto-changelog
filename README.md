@@ -90,6 +90,14 @@ or
 
 `npm run auto-changelog validate --tag-prefix-before-package-rename "polling-controller@" --version-before-package-name 0.2.3 --tag-prefix "@metamask/polling-controller@"`
 
+#### Validate that each changelog entry has one or more associated pull requests
+
+`yarn run auto-changelog validate --pr-links`
+
+or
+
+`npm run auto-changelog validate --pr-links`
+
 ## API Usage
 
 Each supported command is a separate named export.
@@ -116,7 +124,7 @@ await fs.writeFile('CHANGELOG.md', updatedChangelog);
 
 ### `validateChangelog`
 
-This command validates the changelog
+This command validates the changelog.
 
 ```javascript
 import { promises as fs } from 'fs';
@@ -132,6 +140,7 @@ try {
     repoUrl:
       'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
     isReleaseCandidate: false,
+    ensureValidPrLinksPresent: true,
   });
   // changelog is valid!
 } catch (error) {
