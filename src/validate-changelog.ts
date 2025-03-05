@@ -1,4 +1,4 @@
-import { Formatter } from './changelog';
+import { Change, Formatter } from './changelog';
 import { Version, ChangeCategory } from './constants';
 import { parseChangelog } from './parse-changelog';
 import { PackageRename } from './shared-types';
@@ -34,6 +34,17 @@ export class MissingCurrentVersionError extends InvalidChangelogError {
    */
   constructor(currentVersion: Version) {
     super(`Current version missing from changelog: '${currentVersion}'`);
+  }
+}
+
+/**
+ * Indicates that pull request links are missing for a change entry.
+ */
+export class MissingPullRequestLinksError extends InvalidChangelogError {
+  constructor(change: Change, releaseVersion: Version) {
+    super(
+      `Pull request link(s) missing for change: '${change.description}' (in ${releaseVersion})`,
+    );
   }
 }
 
@@ -78,6 +89,11 @@ type ValidateChangelogOptions = {
    * The package rename properties, used in case of package is renamed
    */
   packageRename?: PackageRename;
+  /**
+   * Whether to validate that each changelog entry has one or more links to
+   * associated pull requests within the repository (true) or not (false).
+   */
+  ensureValidPrLinksPresent?: boolean;
 };
 
 /**
@@ -97,6 +113,9 @@ type ValidateChangelogOptions = {
  * @param options.formatter - A custom Markdown formatter to use.
  * @param options.packageRename - The package rename properties.
  * An optional, which is required only in case of package renamed.
+ * @param options.ensureValidPrLinksPresent - Whether to validate that each
+ * changelog entry has one or more links to associated pull requests within the
+ * repository (true) or not (false).
  * @throws `InvalidChangelogError` - Will throw if the changelog is invalid
  * @throws `MissingCurrentVersionError` - Will throw if `isReleaseCandidate` is
  * `true` and the changelog is missing the release header for the current
@@ -106,6 +125,8 @@ type ValidateChangelogOptions = {
  * @throws `UnreleasedChangesError` - Will throw if `isReleaseCandidate` is
  * `true` and the changelog contains uncategorized changes.
  * @throws `ChangelogFormattingError` - Will throw if there is a formatting error.
+ * @throws `MissingPullRequestLinkError` if a changelog entry is missing a pull
+ * request link.
  */
 export async function validateChangelog({
   changelogContent,
@@ -115,6 +136,7 @@ export async function validateChangelog({
   tagPrefix = 'v',
   formatter = undefined,
   packageRename,
+  ensureValidPrLinksPresent,
 }: ValidateChangelogOptions) {
   const changelog = parseChangelog({
     changelogContent,
@@ -122,6 +144,7 @@ export async function validateChangelog({
     tagPrefix,
     formatter,
     packageRename,
+    shouldExtractPrLinks: ensureValidPrLinksPresent,
   });
   const hasUnreleasedChanges =
     Object.keys(changelog.getUnreleasedChanges()).length !== 0;
@@ -147,6 +170,21 @@ export async function validateChangelog({
       releaseChanges?.[ChangeCategory.Uncategorized]?.length !== 0
     ) {
       throw new UncategorizedChangesError();
+    }
+  }
+
+  if (ensureValidPrLinksPresent) {
+    for (const release of changelog.getReleases()) {
+      const releaseChangesForVersion = changelog.getReleaseChanges(
+        release.version,
+      );
+      for (const changes of Object.values(releaseChangesForVersion)) {
+        for (const change of changes) {
+          if (change.prNumbers.length === 0) {
+            throw new MissingPullRequestLinksError(change, release.version);
+          }
+        }
+      }
     }
   }
 
