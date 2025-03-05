@@ -7,21 +7,35 @@
     "url": "https://github.com/MetaMask/auto-changelog.git"
   },
   "license": "(MIT OR Apache-2.0)",
-  "main": "dist/index.js",
-  "bin": "dist/cli.js",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
   "files": [
-    "dist/"
+    "dist"
   ],
   "scripts": {
-    "build": "tsc --project tsconfig.build.json",
-    "build:clean": "rimraf dist && yarn build",
+    "build": "ts-bridge --project tsconfig.build.json --clean",
     "changelog": "node dist/cli.js",
     "lint": "yarn lint:eslint && yarn lint:misc --check",
     "lint:eslint": "eslint . --cache --ext js,ts",
     "lint:fix": "yarn lint:eslint --fix && yarn lint:misc --write",
     "lint:misc": "prettier '**/*.json' '**/*.md' '!CHANGELOG.md' '**/*.yml' '!.yarnrc.yml' --ignore-path .gitignore",
     "prepack": "./scripts/prepack.sh",
-    "test": "jest",
+    "test": "jest && attw --pack",
     "test:watch": "jest --watch"
   },
   "dependencies": {
@@ -31,11 +45,13 @@
     "yargs": "^17.0.1"
   },
   "devDependencies": {
+    "@arethetypeswrong/cli": "^0.15.3",
     "@lavamoat/allow-scripts": "^2.1.0",
     "@metamask/eslint-config": "^11.1.0",
     "@metamask/eslint-config-jest": "^11.1.0",
     "@metamask/eslint-config-nodejs": "^11.1.0",
     "@metamask/eslint-config-typescript": "^11.1.0",
+    "@ts-bridge/cli": "^0.6.3",
     "@types/cross-spawn": "^6.0.2",
     "@types/diff": "^5.0.0",
     "@types/jest": "^26.0.23",
