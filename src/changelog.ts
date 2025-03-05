@@ -73,9 +73,24 @@ type ReleaseMetadata = {
 };
 
 /**
+ * A single change in the changelog.
+ */
+export type Change = {
+  /**
+   * The description of the change.
+   */
+  description: string;
+
+  /**
+   * Pull requests within the repo that are associated with this change.
+   */
+  prNumbers: string[];
+};
+
+/**
  * Release changes, organized by category.
  */
-type ReleaseChanges = Partial<Record<ChangeCategory, string[]>>;
+type ReleaseChanges = Partial<Record<ChangeCategory, Change[]>>;
 
 /**
  * Changelog changes, organized by release and by category.
@@ -91,15 +106,30 @@ type ChangelogChanges = Record<Version, ReleaseChanges> & {
  *
  * @param category - The title of the changelog category.
  * @param changes - The changes included in this category.
+ * @param repoUrl - The URL of the repository.
  * @returns The stringified category section.
  */
-function stringifyCategory(category: ChangeCategory, changes: string[]) {
+function stringifyCategory(
+  category: ChangeCategory,
+  changes: Change[],
+  repoUrl: string,
+) {
   const categoryHeader = `### ${category}`;
   if (changes.length === 0) {
     return categoryHeader;
   }
   const changeDescriptions = changes
-    .map((description) => `- ${description}`)
+    .map(({ description, prNumbers }) => {
+      const [firstLine, ...otherLines] = description.split('\n');
+      const stringifiedPrLinks = prNumbers
+        .map((prNumber) => `[#${prNumber}](${repoUrl}/pull/${prNumber})`)
+        .join(', ');
+      const parenthesizedPrLinks =
+        stringifiedPrLinks.length > 0 ? ` (${stringifiedPrLinks})` : '';
+      return [`- ${firstLine}${parenthesizedPrLinks}`, ...otherLines].join(
+        '\n',
+      );
+    })
     .join('\n');
   return `${categoryHeader}\n${changeDescriptions}`;
 }
@@ -109,6 +139,7 @@ function stringifyCategory(category: ChangeCategory, changes: string[]) {
  *
  * @param version - The release version.
  * @param categories - The categories of changes included in this release.
+ * @param repoUrl - The URL of the repository.
  * @param options - Additional release options.
  * @param options.date - The date of the release.
  * @param options.status - The status of the release (e.g., "DEPRECATED").
@@ -117,6 +148,7 @@ function stringifyCategory(category: ChangeCategory, changes: string[]) {
 function stringifyRelease(
   version: Version | typeof unreleased,
   categories: ReleaseChanges,
+  repoUrl: string,
   { date, status }: Partial<ReleaseMetadata> = {},
 ) {
   const releaseHeader = `## [${version}]${date ? ` - ${date}` : ''}${
@@ -126,7 +158,7 @@ function stringifyRelease(
     .filter((category) => categories[category])
     .map((category) => {
       const changes = categories[category] ?? [];
-      return stringifyCategory(category, changes);
+      return stringifyCategory(category, changes, repoUrl);
     })
     .join('\n\n');
   if (categorizedChanges === '') {
@@ -140,19 +172,22 @@ function stringifyRelease(
  *
  * @param releases - The releases to stringify.
  * @param changes - The set of changes to include, organized by release.
+ * @param repoUrl - The URL of the repository.
  * @returns The stringified set of release sections.
  */
 function stringifyReleases(
   releases: ReleaseMetadata[],
   changes: ChangelogChanges,
+  repoUrl: string,
 ) {
   const stringifiedUnreleased = stringifyRelease(
     unreleased,
     changes[unreleased],
+    repoUrl,
   );
   const stringifiedReleases = releases.map(({ version, date, status }) => {
     const categories = changes[version];
-    return stringifyRelease(version, categories, { date, status });
+    return stringifyRelease(version, categories, repoUrl, { date, status });
   });
 
   return [stringifiedUnreleased, ...stringifiedReleases].join('\n\n');
@@ -364,6 +399,7 @@ type AddChangeOptions = {
   category: ChangeCategory;
   description: string;
   version?: Version;
+  prNumbers?: string[];
 };
 
 /**
@@ -462,12 +498,15 @@ export default class Changelog {
    * @param options.description - The description of the change.
    * @param options.version - The version this change was released in. If this
    * is not given, the change is assumed to be unreleased.
+   * @param options.prNumbers - The pull request numbers associated with the
+   * change.
    */
   addChange({
     addToStart = true,
     category,
     description,
     version,
+    prNumbers = [],
   }: AddChangeOptions) {
     if (!category) {
       throw new Error('Category required');
@@ -482,18 +521,14 @@ export default class Changelog {
     const release = version
       ? this.#changes[version]
       : this.#changes[unreleased];
+    const releaseCategory = release[category] ?? [];
 
-    if (!release[category]) {
-      release[category] = [];
-    }
+    releaseCategory[addToStart ? 'unshift' : 'push']({
+      description,
+      prNumbers,
+    });
 
-    if (addToStart) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      release[category]!.unshift(description);
-    } else {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      release[category]!.push(description);
-    }
+    release[category] = releaseCategory;
   }
 
   /**
@@ -559,7 +594,7 @@ export default class Changelog {
       throw new Error(`Specified release version does not exist: '${version}'`);
     }
     const releaseChanges = this.getReleaseChanges(version);
-    return stringifyRelease(version, releaseChanges, release);
+    return stringifyRelease(version, releaseChanges, this.#repoUrl, release);
   }
 
   /**
@@ -590,7 +625,7 @@ export default class Changelog {
     const changelog = `${changelogTitle}
 ${changelogDescription}
 
-${stringifyReleases(this.#releases, this.#changes)}
+${stringifyReleases(this.#releases, this.#changes, this.#repoUrl)}
 
 ${stringifyLinkReferenceDefinitions(
   this.#repoUrl,
