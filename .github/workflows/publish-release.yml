@@ -77,16 +77,3 @@ jobs:
           npm-token: ${{ secrets.NPM_TOKEN }}
         env:
           SKIP_PREPACK: true
-
-  get-release-version:
-    needs: publish-npm
-    runs-on: ubuntu-latest
-    outputs:
-      RELEASE_VERSION: ${{ steps.get-release-version.outputs.RELEASE_VERSION }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.sha }}
-      - id: get-release-version
-        shell: bash
-        run: ./scripts/get.sh ".version" "RELEASE_VERSION"
