@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.0.0]
+### Uncategorized
+- Sync supported Node versions w/ module template ([#227](https://github.com/MetaMask/auto-changelog/pull/227))
+- chore: add workflow_dispatch to security-code-scanner ([#223](https://github.com/MetaMask/auto-changelog/pull/223))
+- Add way to verify each change has associated PRs ([#222](https://github.com/MetaMask/auto-changelog/pull/222))
+
 ## [4.1.0]
 ### Added
 - Add `--autoCategorize` flag to `update` command ([#212](https://github.com/MetaMask/auto-changelog/pull/212))
@@ -141,7 +147,8 @@ Includes the following features:
   - Monorepo support ([#41](https://github.com/MetaMask/auto-changelog/pull/41))
   - Configurable repository URL, version, and changelog file path ([#33](https://github.com/MetaMask/auto-changelog/pull/33), [#31](https://github.com/MetaMask/auto-changelog/pull/31), [#30](https://github.com/MetaMask/auto-changelog/pull/30))
 
-[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v4.1.0...HEAD
+[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v5.0.0...HEAD
+[5.0.0]: https://github.com/MetaMask/auto-changelog/compare/v4.1.0...v5.0.0
 [4.1.0]: https://github.com/MetaMask/auto-changelog/compare/v4.0.0...v4.1.0
 [4.0.0]: https://github.com/MetaMask/auto-changelog/compare/v3.4.4...v4.0.0
 [3.4.4]: https://github.com/MetaMask/auto-changelog/compare/v3.4.3...v3.4.4
