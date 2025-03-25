@@ -7,6 +7,7 @@
     "url": "https://github.com/MetaMask/auto-changelog.git"
   },
   "license": "(MIT OR Apache-2.0)",
+  "bin": "dist/cli.js",
   "sideEffects": false,
   "exports": {
     ".": {
