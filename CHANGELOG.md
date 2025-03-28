@@ -6,6 +6,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.0.0]
+### Added
+- JavaScript sources and TypeScript declarations are now available in both CommonJS- and ESM-compatible variants ([#226](https://github.com/MetaMask/auto-changelog/pull/226))
+- Add option to changelog validation to ensure that each entry in the changelog links to one or more originating PRs ([#222](https://github.com/MetaMask/auto-changelog/pull/222))
+  - Pass `--pr-links` to the CLI, or pass `ensureValidPrLinksPresent` to `validateChangelog` to enable this behavior, ideally in your `lint` package script or CI workflow
+- Add an optional `shouldExtractPrLinks` option to `parseChangelog` ([#222](https://github.com/MetaMask/auto-changelog/pull/222))
+  - When true, this will extract pull request links from the text of each entry, identify the pull numbers, and keep them in a separate array
+  - See note on `Changelog.getReleaseChanges` below for more
+
+### Changed
+- **BREAKING:** `Changelog.getReleaseChanges` now returns an object whose values are objects of shape `{ description: string; prNumbers: string[] }` rather than simply `string` (the description) ([#222](https://github.com/MetaMask/auto-changelog/pull/222))
+  - This affects `parseChangelog` as well, since it returns an instance of `Changelog`
+- **BREAKING:** Bump minimum Node version to 18.20 ([#227](https://github.com/MetaMask/auto-changelog/pull/227))
+- **BREAKING:** Custom subpath imports are no longer supported ([#226](https://github.com/MetaMask/auto-changelog/pull/226))
+  - You may now only import `@metamask/auto-changelog` and `@metamask/auto-changelog/package.json`
+
 ## [4.1.0]
 ### Added
 - Add `--autoCategorize` flag to `update` command ([#212](https://github.com/MetaMask/auto-changelog/pull/212))
@@ -141,7 +157,8 @@ Includes the following features:
   - Monorepo support ([#41](https://github.com/MetaMask/auto-changelog/pull/41))
   - Configurable repository URL, version, and changelog file path ([#33](https://github.com/MetaMask/auto-changelog/pull/33), [#31](https://github.com/MetaMask/auto-changelog/pull/31), [#30](https://github.com/MetaMask/auto-changelog/pull/30))
 
-[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v4.1.0...HEAD
+[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v5.0.0...HEAD
+[5.0.0]: https://github.com/MetaMask/auto-changelog/compare/v4.1.0...v5.0.0
 [4.1.0]: https://github.com/MetaMask/auto-changelog/compare/v4.0.0...v4.1.0
 [4.0.0]: https://github.com/MetaMask/auto-changelog/compare/v3.4.4...v4.0.0
 [3.4.4]: https://github.com/MetaMask/auto-changelog/compare/v3.4.3...v3.4.4
