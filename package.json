@@ -1,6 +1,6 @@
 {
   "name": "@metamask/auto-changelog",
-  "version": "5.0.0",
+  "version": "5.0.1",
   "description": "Utilities for validating and updating \"Keep a Changelog\" formatted changelogs",
   "repository": {
     "type": "git",

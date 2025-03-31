@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.0.1]
+### Fixed
+- Fix CLI path ([#235](https://github.com/MetaMask/auto-changelog/pull/235))
+
 ## [5.0.0]
 ### Added
 - JavaScript sources and TypeScript declarations are now available in both CommonJS- and ESM-compatible variants ([#226](https://github.com/MetaMask/auto-changelog/pull/226))
@@ -157,7 +161,8 @@ Includes the following features:
   - Monorepo support ([#41](https://github.com/MetaMask/auto-changelog/pull/41))
   - Configurable repository URL, version, and changelog file path ([#33](https://github.com/MetaMask/auto-changelog/pull/33), [#31](https://github.com/MetaMask/auto-changelog/pull/31), [#30](https://github.com/MetaMask/auto-changelog/pull/30))
 
-[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v5.0.0...HEAD
+[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v5.0.1...HEAD
+[5.0.1]: https://github.com/MetaMask/auto-changelog/compare/v5.0.0...v5.0.1
 [5.0.0]: https://github.com/MetaMask/auto-changelog/compare/v4.1.0...v5.0.0
 [4.1.0]: https://github.com/MetaMask/auto-changelog/compare/v4.0.0...v4.1.0
 [4.0.0]: https://github.com/MetaMask/auto-changelog/compare/v3.4.4...v4.0.0
