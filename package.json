@@ -1,6 +1,6 @@
 {
   "name": "@metamask/auto-changelog",
-  "version": "5.0.0",
+  "version": "5.0.1",
   "description": "Utilities for validating and updating \"Keep a Changelog\" formatted changelogs",
   "repository": {
     "type": "git",
@@ -24,7 +24,7 @@
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.cts",
-  "bin": "dist/cli.js",
+  "bin": "dist/cli.mjs",
   "files": [
     "dist"
   ],
