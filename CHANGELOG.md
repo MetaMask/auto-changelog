@@ -154,8 +154,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.0]
 ### Added
-- The initial `auto-changelog` implementation, adapted from the original `auto-changelog.js` script in `metamask-extension` ([#8](https://github.com/MetaMask/auto-changelog/pull/8)).
-  Includes the following features:
+- The initial `auto-changelog` implementation, adapted from the original `auto-changelog.js` script in  `metamask-extension` ([#8](https://github.com/MetaMask/auto-changelog/pull/8)).
+Includes the following features:
   - An `update` command ([#26](https://github.com/MetaMask/auto-changelog/pull/26))
   - A `validate` command ([#28](https://github.com/MetaMask/auto-changelog/pull/28))
   - Monorepo support ([#41](https://github.com/MetaMask/auto-changelog/pull/41))
