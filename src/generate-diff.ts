@@ -5,8 +5,9 @@ type Change = diff.Change & { noNewline?: boolean };
 /**
  * Splits string into lines, excluding the newline at the end of each
  * line. The trailing newline is optional.
- * @param value - The string value to split into lines
- * @returns The lines, without trailing newlines
+ *
+ * @param value - The string value to split into lines.
+ * @returns The lines, without trailing newlines.
  */
 function getTrimmedLines(value: string): string[] {
   const trimmedValue = value.endsWith('\n')
@@ -20,9 +21,10 @@ function getTrimmedLines(value: string): string[] {
  * shows any changes using '-' and '+' to indicate the "old" and "new" version
  * respectively, and includes 2 lines of unchanged content around each changed
  * section where possible.
+ *
  * @param before - The string representing the base for the comparison.
  * @param after - The string representing the changes being compared.
- * @returns The genereated text diff
+ * @returns The genereated text diff.
  */
 export function generateDiff(before: string, after: string): string {
   const diffResult: Change[] = diff.diffLines(before, after);
@@ -34,6 +36,7 @@ export function generateDiff(before: string, after: string): string {
   if (!lastDiffResult.value.endsWith('\n')) {
     lastDiffResult.noNewline = true;
   }
+
   // If the last change is an addition and the penultimate change is a
   // removal, then the last line of the file is also in the penultimate change.
   // That's why we're checking to see if the newline notice is needed here as
@@ -73,6 +76,7 @@ export function generateDiff(before: string, after: string): string {
             changedLines.push(...previousTwoLines);
           }
         }
+
         changedLines.push(
           ...lines.map((line) => `${added ? '+' : '-'}${line}`),
         );
@@ -81,6 +85,7 @@ export function generateDiff(before: string, after: string): string {
         const nextTwoLines = lines.slice(0, 2).map((line) => ` ${line}`);
         changedLines.push(...nextTwoLines);
       }
+
       if (noNewline) {
         changedLines.push('\\ No newline at end of file');
       }

@@ -1,5 +1,7 @@
+import { Change, Formatter } from './changelog';
 import { Version, ChangeCategory } from './constants';
 import { parseChangelog } from './parse-changelog';
+import { PackageRename } from './shared-types';
 
 /**
  * Indicates that the changelog is invalid.
@@ -26,10 +28,23 @@ export class UncategorizedChangesError extends InvalidChangelogError {
  */
 export class MissingCurrentVersionError extends InvalidChangelogError {
   /**
-   * @param currentVersion - The current version
+   * Construct a changelog missing version error.
+   *
+   * @param currentVersion - The current version.
    */
   constructor(currentVersion: Version) {
     super(`Current version missing from changelog: '${currentVersion}'`);
+  }
+}
+
+/**
+ * Indicates that pull request links are missing for a change entry.
+ */
+export class MissingPullRequestLinksError extends InvalidChangelogError {
+  constructor(change: Change, releaseVersion: Version) {
+    super(
+      `Pull request link(s) missing for change: '${change.description}' (in ${releaseVersion})`,
+    );
   }
 }
 
@@ -40,7 +55,9 @@ export class ChangelogFormattingError extends InvalidChangelogError {
   public data: Record<string, string>;
 
   /**
-   * @param options
+   * Construct a changelog formatting error.
+   *
+   * @param options - Error options.
    * @param options.validChangelog - The string contents of the well-formatted
    * changelog.
    * @param options.invalidChangelog - The string contents of the malformed
@@ -61,18 +78,29 @@ export class ChangelogFormattingError extends InvalidChangelogError {
   }
 }
 
-interface ValidateChangelogOptions {
+type ValidateChangelogOptions = {
   changelogContent: string;
   currentVersion?: Version;
   repoUrl: string;
   isReleaseCandidate: boolean;
-}
+  tagPrefix?: string;
+  formatter?: Formatter;
+  /**
+   * The package rename properties, used in case of package is renamed
+   */
+  packageRename?: PackageRename;
+  /**
+   * Whether to validate that each changelog entry has one or more links to
+   * associated pull requests within the repository (true) or not (false).
+   */
+  ensureValidPrLinksPresent?: boolean;
+};
 
 /**
  * Validates that a changelog is well-formatted.
  *
- * @param options
- * @param options.changelogContent - The current changelog
+ * @param options - Validation options.
+ * @param options.changelogContent - The current changelog.
  * @param options.currentVersion - The current version. Required if
  * `isReleaseCandidate` is set, but optional otherwise.
  * @param options.repoUrl - The GitHub repository URL for the current
@@ -81,6 +109,13 @@ interface ValidateChangelogOptions {
  * the midst of release preparation or not. If this is set, this command will
  * also ensure the current version is represented in the changelog with a
  * header, and that there are no unreleased changes present.
+ * @param options.tagPrefix - The prefix used in tags before the version number.
+ * @param options.formatter - A custom Markdown formatter to use.
+ * @param options.packageRename - The package rename properties.
+ * An optional, which is required only in case of package renamed.
+ * @param options.ensureValidPrLinksPresent - Whether to validate that each
+ * changelog entry has one or more links to associated pull requests within the
+ * repository (true) or not (false).
  * @throws `InvalidChangelogError` - Will throw if the changelog is invalid
  * @throws `MissingCurrentVersionError` - Will throw if `isReleaseCandidate` is
  * `true` and the changelog is missing the release header for the current
@@ -90,14 +125,27 @@ interface ValidateChangelogOptions {
  * @throws `UnreleasedChangesError` - Will throw if `isReleaseCandidate` is
  * `true` and the changelog contains uncategorized changes.
  * @throws `ChangelogFormattingError` - Will throw if there is a formatting error.
+ * @throws `MissingPullRequestLinkError` if a changelog entry is missing a pull
+ * request link.
  */
-export function validateChangelog({
+export async function validateChangelog({
   changelogContent,
   currentVersion,
   repoUrl,
   isReleaseCandidate,
+  tagPrefix = 'v',
+  formatter = undefined,
+  packageRename,
+  ensureValidPrLinksPresent,
 }: ValidateChangelogOptions) {
-  const changelog = parseChangelog({ changelogContent, repoUrl });
+  const changelog = parseChangelog({
+    changelogContent,
+    repoUrl,
+    tagPrefix,
+    formatter,
+    packageRename,
+    shouldExtractPrLinks: ensureValidPrLinksPresent,
+  });
   const hasUnreleasedChanges =
     Object.keys(changelog.getUnreleasedChanges()).length !== 0;
   const releaseChanges = currentVersion
@@ -125,7 +173,22 @@ export function validateChangelog({
     }
   }
 
-  const validChangelog = changelog.toString();
+  if (ensureValidPrLinksPresent) {
+    for (const release of changelog.getReleases()) {
+      const releaseChangesForVersion = changelog.getReleaseChanges(
+        release.version,
+      );
+      for (const changes of Object.values(releaseChangesForVersion)) {
+        for (const change of changes) {
+          if (change.prNumbers.length === 0) {
+            throw new MissingPullRequestLinksError(change, release.version);
+          }
+        }
+      }
+    }
+  }
+
+  const validChangelog = await changelog.toString();
   if (validChangelog !== changelogContent) {
     throw new ChangelogFormattingError({
       validChangelog,
