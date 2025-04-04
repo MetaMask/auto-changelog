@@ -1,16 +1,21 @@
 /* eslint-disable node/no-process-env, node/no-sync */
 
-import path from 'path';
 import fs from 'fs';
+import path from 'path';
 
-interface PackageJson {
+type PackageJson = {
   repository:
     | string
     | {
         url: string;
       };
-}
+};
 
+/**
+ * Return the current project repository URL.
+ *
+ * @returns The repository URL.
+ */
 export function getRepositoryUrl(): string | null {
   // Set automatically by NPM or Yarn 1.x
   const npmPackageRepositoryUrl = process.env.npm_package_repository_url;

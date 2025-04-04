@@ -1,122 +1,102 @@
-import { strict as assert } from 'assert';
 import execa from 'execa';
-import { parseChangelog } from './parse-changelog';
-import { ChangeCategory, Version } from './constants';
-import type Changelog from './changelog';
 
-async function getMostRecentTag() {
-  const revListArgs = ['rev-list', '--tags', '--max-count=1', '--date-order'];
-  const results = await runCommand('git', revListArgs);
-  if (results.length === 0) {
+import type Changelog from './changelog';
+import { Formatter, getKnownPropertyNames } from './changelog';
+import { ChangeCategory, Version, ConventionalCommitType } from './constants';
+import { getNewChangeEntries } from './get-new-changes';
+import { parseChangelog } from './parse-changelog';
+import { PackageRename } from './shared-types';
+
+/**
+ * Get the most recent tag for a project.
+ *
+ * @param options - Options.
+ * @param options.tagPrefixes - A list of tag prefixes to look for, where the first is the intended
+ * prefix and each subsequent prefix is a fallback in case the previous tag prefixes are not found.
+ * @returns The most recent tag.
+ */
+async function getMostRecentTag({
+  tagPrefixes,
+}: {
+  tagPrefixes: [string, ...string[]];
+}) {
+  // Ensure we have all tags on remote
+  await runCommand('git', ['fetch', '--tags']);
+
+  let mostRecentTagCommitHash: string | null = null;
+  for (const tagPrefix of tagPrefixes) {
+    const revListArgs = [
+      'rev-list',
+      `--tags=${tagPrefix}*`,
+      '--max-count=1',
+      '--date-order',
+    ];
+    const results = await runCommand('git', revListArgs);
+    if (results.length) {
+      mostRecentTagCommitHash = results[0];
+      break;
+    }
+  }
+
+  if (mostRecentTagCommitHash === null) {
     return null;
   }
-  const [mostRecentTagCommitHash] = results;
   const [mostRecentTag] = await runCommand('git', [
     'describe',
     '--tags',
     mostRecentTagCommitHash,
   ]);
-  assert.equal(mostRecentTag?.[0], 'v', 'Most recent tag should start with v');
   return mostRecentTag;
 }
 
-async function getCommits(commitHashes: string[]) {
-  const commits: { prNumber?: string; description: string }[] = [];
-  for (const commitHash of commitHashes) {
-    const [subject] = await runCommand('git', [
-      'show',
-      '-s',
-      '--format=%s',
-      commitHash,
-    ]);
-    assert.ok(
-      Boolean(subject),
-      `"git show" returned empty subject for commit "${commitHash}".`,
-    );
-
-    let matchResults = subject.match(/\(#(\d+)\)/u);
-    let prNumber: string | undefined;
-    let description = subject;
-
-    if (matchResults) {
-      // Squash & Merge: the commit subject is parsed as `<description> (#<PR ID>)`
-      prNumber = matchResults[1];
-      description = subject.match(/^(.+)\s\(#\d+\)/u)?.[1] || '';
-    } else {
-      // Merge: the PR ID is parsed from the git subject (which is of the form `Merge pull request
-      // #<PR ID> from <branch>`, and the description is assumed to be the first line of the body.
-      // If no body is found, the description is set to the commit subject
-      matchResults = subject.match(/#(\d+)\sfrom/u);
-      if (matchResults) {
-        prNumber = matchResults[1];
-        const [firstLineOfBody] = await runCommand('git', [
-          'show',
-          '-s',
-          '--format=%b',
-          commitHash,
-        ]);
-        description = firstLineOfBody || subject;
-      }
-    }
-    // Otherwise:
-    // Normal commits: The commit subject is the description, and the PR ID is omitted.
-
-    commits.push({ prNumber, description });
-  }
-  return commits;
-}
-
-function getAllChangeDescriptions(changelog: Changelog) {
+/**
+ * Get all changes from a changelog.
+ *
+ * @param changelog - The changelog.
+ * @returns All commit descriptions included in the given changelog.
+ */
+function getAllChanges(changelog: Changelog) {
   const releases = changelog.getReleases();
-  const changeDescriptions = Object.values(
-    changelog.getUnreleasedChanges(),
-  ).flat();
+  const changes = Object.values(changelog.getUnreleasedChanges()).flat();
   for (const release of releases) {
-    changeDescriptions.push(
+    changes.push(
       ...Object.values(changelog.getReleaseChanges(release.version)).flat(),
     );
   }
-  return changeDescriptions;
+  return changes;
 }
 
+/**
+ * Get all pull request numbers included in the given changelog.
+ *
+ * @param changelog - The changelog.
+ * @returns All pull request numbers included in the given changelog.
+ */
 function getAllLoggedPrNumbers(changelog: Changelog) {
-  const changeDescriptions = getAllChangeDescriptions(changelog);
-
-  const prNumbersWithChangelogEntries = [];
-  for (const description of changeDescriptions) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const matchResults = description!.matchAll(/\[#(\d+)\]/gu);
-    const prNumbers = Array.from(matchResults, (result) => result[1]);
-    prNumbersWithChangelogEntries.push(...prNumbers);
-  }
-
-  return prNumbersWithChangelogEntries;
+  return getAllChanges(changelog).flatMap((change) => change.prNumbers);
 }
 
-async function getCommitHashesInRange(
-  commitRange: string,
-  rootDirectory?: string,
-) {
-  const revListArgs = ['rev-list', commitRange];
-  if (rootDirectory) {
-    revListArgs.push(rootDirectory);
-  }
-  return await runCommand('git', revListArgs);
-}
-
-export interface UpdateChangelogOptions {
+export type UpdateChangelogOptions = {
   changelogContent: string;
   currentVersion?: Version;
   repoUrl: string;
   isReleaseCandidate: boolean;
   projectRootDirectory?: string;
-}
+  tagPrefixes?: [string, ...string[]];
+  formatter?: Formatter;
+  autoCategorize?: boolean;
+  /**
+   * The package rename properties, used in case of package is renamed
+   */
+  packageRename?: PackageRename;
+};
 
 /**
  * Update a changelog with any commits made since the last release. Commits for
  * PRs that are already included in the changelog are omitted.
- * @param options
- * @param options.changelogContent - The current changelog
+ *
+ * @param options - Update options.
+ * @param options.changelogContent - The current changelog.
  * @param options.currentVersion - The current version. Required if
  * `isReleaseCandidate` is set, but optional otherwise.
  * @param options.repoUrl - The GitHub repository URL for the current project.
@@ -128,7 +108,14 @@ export interface UpdateChangelogOptions {
  * filter results from various git commands. This path is assumed to be either
  * absolute, or relative to the current directory. Defaults to the root of the
  * current git repository.
- * @returns The updated changelog text
+ * @param options.tagPrefixes - A list of tag prefixes to look for, where the first is the intended
+ * prefix and each subsequent prefix is a fallback in case the previous tag prefixes are not found.
+ * @param options.formatter - A custom Markdown formatter to use.
+ * @param options.packageRename - The package rename properties.
+ * An optional, which is required only in case of package renamed.
+ * @param options.autoCategorize - A flag indicating whether changes should be auto-categorized
+ * based on commit message prefixes.
+ * @returns The updated changelog text.
  */
 export async function updateChangelog({
   changelogContent,
@@ -136,82 +123,73 @@ export async function updateChangelog({
   repoUrl,
   isReleaseCandidate,
   projectRootDirectory,
-}: UpdateChangelogOptions) {
-  if (isReleaseCandidate && !currentVersion) {
-    throw new Error(
-      `A version must be specified if 'isReleaseCandidate' is set.`,
-    );
-  }
-  const changelog = parseChangelog({ changelogContent, repoUrl });
+  tagPrefixes = ['v'],
+  formatter = undefined,
+  packageRename,
+  autoCategorize,
+}: UpdateChangelogOptions): Promise<string | undefined> {
+  const changelog = parseChangelog({
+    changelogContent,
+    repoUrl,
+    tagPrefix: tagPrefixes[0],
+    formatter,
+    packageRename,
+  });
 
-  // Ensure we have all tags on remote
-  await runCommand('git', ['fetch', '--tags']);
-  const mostRecentTag = await getMostRecentTag();
+  const mostRecentTag = await getMostRecentTag({
+    tagPrefixes,
+  });
 
-  if (isReleaseCandidate && mostRecentTag === `v${currentVersion}`) {
-    throw new Error(
-      `Current version already has tag, which is unexpected for a release candidate.`,
-    );
-  }
-
-  const commitRange =
-    mostRecentTag === null ? 'HEAD' : `${mostRecentTag}..HEAD`;
-  const commitsHashesSinceLastRelease = await getCommitHashesInRange(
-    commitRange,
-    projectRootDirectory,
-  );
-  const commits = await getCommits(commitsHashesSinceLastRelease);
-
-  const loggedPrNumbers = getAllLoggedPrNumbers(changelog);
-  const newCommits = commits.filter(
-    ({ prNumber }) =>
-      prNumber === undefined || !loggedPrNumbers.includes(prNumber),
-  );
-
-  const hasUnreleasedChanges =
-    Object.keys(changelog.getUnreleasedChanges()).length !== 0;
-  if (
-    newCommits.length === 0 &&
-    (!isReleaseCandidate || hasUnreleasedChanges)
-  ) {
-    return undefined;
-  }
-
-  // Ensure release header exists, if necessary
-  if (
-    isReleaseCandidate &&
-    !changelog
-      .getReleases()
-      .find((release) => release.version === currentVersion)
-  ) {
-    // Typecast: currentVersion will be defined here due to type guard at the
-    // top of this function.
-    changelog.addRelease({ version: currentVersion as Version });
-  }
-
-  if (isReleaseCandidate && hasUnreleasedChanges) {
-    // Typecast: currentVersion will be defined here due to type guard at the
-    // top of this function.
-    changelog.migrateUnreleasedChangesToRelease(currentVersion as Version);
-  }
-
-  const newChangeEntries = newCommits.map(({ prNumber, description }) => {
-    if (prNumber) {
-      const suffix = `([#${prNumber}](${repoUrl}/pull/${prNumber}))`;
-      return `${description} ${suffix}`;
+  if (isReleaseCandidate) {
+    if (!currentVersion) {
+      throw new Error(
+        `A version must be specified if 'isReleaseCandidate' is set.`,
+      );
     }
-    return description;
+    if (mostRecentTag === `${tagPrefixes[0]}${currentVersion}`) {
+      throw new Error(
+        `Current version already has a tag ('${mostRecentTag}'), which is unexpected for a release candidate.`,
+      );
+    }
+
+    // Ensure release header exists, if necessary
+    if (
+      !changelog
+        .getReleases()
+        .find((release) => release.version === currentVersion)
+    ) {
+      changelog.addRelease({ version: currentVersion });
+    }
+
+    const hasUnreleasedChangesToRelease =
+      getKnownPropertyNames(changelog.getUnreleasedChanges()).length > 0;
+    if (hasUnreleasedChangesToRelease) {
+      changelog.migrateUnreleasedChangesToRelease(currentVersion);
+    }
+  }
+
+  const newChangeEntries = await getNewChangeEntries({
+    mostRecentTag,
+    repoUrl,
+    loggedPrNumbers: getAllLoggedPrNumbers(changelog),
+    projectRootDirectory,
   });
 
   for (const description of newChangeEntries.reverse()) {
+    const category = autoCategorize
+      ? getCategory(description)
+      : ChangeCategory.Uncategorized;
+
     changelog.addChange({
       version: isReleaseCandidate ? currentVersion : undefined,
-      category: ChangeCategory.Uncategorized,
+      category,
       description,
     });
   }
 
-  return changelog.toString();
+  const newChangelogContent = await changelog.toString();
+  const isChangelogUpdated = changelogContent !== newChangelogContent;
+  return isChangelogUpdated ? newChangelogContent : undefined;
 }
 
 /**
@@ -227,4 +205,27 @@ async function runCommand(command: string, args: string[]): Promise<string[]> {
     .trim()
     .split('\n')
     .filter((line) => line !== '');
+}
+
+/**
+ * Determine the category of a change based on the commit message prefix.
+ *
+ * @param description - The commit message description.
+ * @returns The category of the change.
+ */
+function getCategory(description: string): ChangeCategory {
+  // Check if description contains a colon
+  if (description.includes(':')) {
+    const [prefix] = description.split(':').map((part) => part.trim());
+    switch (prefix) {
+      case ConventionalCommitType.Feat:
+        return ChangeCategory.Added;
+      case ConventionalCommitType.Fix:
+        return ChangeCategory.Fixed;
+      default:
+        return ChangeCategory.Uncategorized;
+    }
+  }
+  // Return 'Uncategorized' if no colon is found or prefix doesn't match
+  return ChangeCategory.Uncategorized;
 }

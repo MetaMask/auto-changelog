@@ -6,6 +6,85 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.0.1]
+### Fixed
+- Fix CLI path ([#235](https://github.com/MetaMask/auto-changelog/pull/235))
+
+## [5.0.0]
+### Added
+- JavaScript sources and TypeScript declarations are now available in both CommonJS- and ESM-compatible variants ([#226](https://github.com/MetaMask/auto-changelog/pull/226))
+- Add option to changelog validation to ensure that each entry in the changelog links to one or more originating PRs ([#222](https://github.com/MetaMask/auto-changelog/pull/222))
+  - Pass `--pr-links` to the CLI, or pass `ensureValidPrLinksPresent` to `validateChangelog` to enable this behavior, ideally in your `lint` package script or CI workflow
+- Add an optional `shouldExtractPrLinks` option to `parseChangelog` ([#222](https://github.com/MetaMask/auto-changelog/pull/222))
+  - When true, this will extract pull request links from the text of each entry, identify the pull numbers, and keep them in a separate array
+  - See note on `Changelog.getReleaseChanges` below for more
+
+### Changed
+- **BREAKING:** `Changelog.getReleaseChanges` now returns an object whose values are objects of shape `{ description: string; prNumbers: string[] }` rather than simply `string` (the description) ([#222](https://github.com/MetaMask/auto-changelog/pull/222))
+  - This affects `parseChangelog` as well, since it returns an instance of `Changelog`
+- **BREAKING:** Bump minimum Node version to 18.20 ([#227](https://github.com/MetaMask/auto-changelog/pull/227))
+- **BREAKING:** Custom subpath imports are no longer supported ([#226](https://github.com/MetaMask/auto-changelog/pull/226))
+  - You may now only import `@metamask/auto-changelog` and `@metamask/auto-changelog/package.json`
+
+## [4.1.0]
+### Added
+- Add `--autoCategorize` flag to `update` command ([#212](https://github.com/MetaMask/auto-changelog/pull/212))
+  - When populating the Unreleased section, the tool will look for [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) prefixes in commit message subjects and place matching commits in corresponding categories automatically.
+  - Supported prefixes are `feat` (which routes to "Added") and `fix` (which routes to "Fixed").
+
+## [4.0.0]
+### Changed
+- **BREAKING:** Drop support for Node.js <18.18 ([#203](https://github.com/MetaMask/auto-changelog/pull/203))
+- **BREAKING:** Require `prettier@>=3.0.0` ([#202](https://github.com/MetaMask/auto-changelog/pull/202))
+  - Prettier is now a peer dependency of this package.
+- **BREAKING:** Enable Prettier formatting by default ([#204](https://github.com/MetaMask/auto-changelog/pull/204))
+  - Changelogs are now formatted with Prettier by default when using the CLI.
+  - You can opt-out of this change by specifying `--no-prettier`.
+
+## [3.4.4]
+### Added
+- Retain tag history on update command for renamed packages with new options ([#182](https://github.com/MetaMask/auto-changelog/pull/182))
+
+  - Introduced --version-before-package-rename and --tag-prefix-before-package-rename options for update command.
+
+## [3.4.3]
+### Changed
+- Place this library under the MIT / Apache 2.0 dual license ([#175](https://github.com/MetaMask/auto-changelog/pull/175))
+
+## [3.4.2]
+### Fixed
+- Remove circular dependency on `@metamask/utils` ([#170](https://github.com/MetaMask/auto-changelog/pull/170))
+
+## [3.4.1]
+### Fixed
+- Add missing dependency `@metamask/utils` ([#168](https://github.com/MetaMask/auto-changelog/pull/168))
+
+## [3.4.0]
+### Added
+- Retain tag history for renamed packages with new validation options ([#157](https://github.com/MetaMask/auto-changelog/pull/157))
+
+  - Introduced --version-before-package-rename and --tag-prefix-before-package-rename options for validate command.
+
+## [3.3.0]
+### Added
+- Add `--prettier` option for Prettier-formatted changelogs ([#155](https://github.com/MetaMask/auto-changelog/pull/155))
+
+## [3.2.0]
+### Added
+- Add `--fix` option to validate command ([#148](https://github.com/MetaMask/auto-changelog/pull/148))
+
+## [3.1.0]
+### Added
+- Allow prerelease versions in release headers ([#130](https://github.com/MetaMask/auto-changelog/pull/130))
+
+## [3.0.0]
+### Added
+- Support alternate tag prefixes ([#120](https://github.com/MetaMask/auto-changelog/pull/120))
+
+### Changed
+- **BREAKING:** Update minimum Node.js version to v14 ([#117](https://github.com/MetaMask/auto-changelog/pull/117))
+- Get package version from manifest ([#121](https://github.com/MetaMask/auto-changelog/pull/121))
+
 ## [2.6.1]
 ### Fixed
 - When fetching remote tags, order by date to account for miniscule time differences between tags created within automated tests ([#113](https://github.com/MetaMask/auto-changelog/pull/113))
@@ -82,7 +161,20 @@ Includes the following features:
   - Monorepo support ([#41](https://github.com/MetaMask/auto-changelog/pull/41))
   - Configurable repository URL, version, and changelog file path ([#33](https://github.com/MetaMask/auto-changelog/pull/33), [#31](https://github.com/MetaMask/auto-changelog/pull/31), [#30](https://github.com/MetaMask/auto-changelog/pull/30))
 
-[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v2.6.1...HEAD
+[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v5.0.1...HEAD
+[5.0.1]: https://github.com/MetaMask/auto-changelog/compare/v5.0.0...v5.0.1
+[5.0.0]: https://github.com/MetaMask/auto-changelog/compare/v4.1.0...v5.0.0
+[4.1.0]: https://github.com/MetaMask/auto-changelog/compare/v4.0.0...v4.1.0
+[4.0.0]: https://github.com/MetaMask/auto-changelog/compare/v3.4.4...v4.0.0
+[3.4.4]: https://github.com/MetaMask/auto-changelog/compare/v3.4.3...v3.4.4
+[3.4.3]: https://github.com/MetaMask/auto-changelog/compare/v3.4.2...v3.4.3
+[3.4.2]: https://github.com/MetaMask/auto-changelog/compare/v3.4.1...v3.4.2
+[3.4.1]: https://github.com/MetaMask/auto-changelog/compare/v3.4.0...v3.4.1
+[3.4.0]: https://github.com/MetaMask/auto-changelog/compare/v3.3.0...v3.4.0
+[3.3.0]: https://github.com/MetaMask/auto-changelog/compare/v3.2.0...v3.3.0
+[3.2.0]: https://github.com/MetaMask/auto-changelog/compare/v3.1.0...v3.2.0
+[3.1.0]: https://github.com/MetaMask/auto-changelog/compare/v3.0.0...v3.1.0
+[3.0.0]: https://github.com/MetaMask/auto-changelog/compare/v2.6.1...v3.0.0
 [2.6.1]: https://github.com/MetaMask/auto-changelog/compare/v2.6.0...v2.6.1
 [2.6.0]: https://github.com/MetaMask/auto-changelog/compare/v2.5.0...v2.6.0
 [2.5.0]: https://github.com/MetaMask/auto-changelog/compare/v2.4.0...v2.5.0

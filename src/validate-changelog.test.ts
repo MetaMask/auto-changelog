@@ -1,4 +1,11 @@
+/* eslint-disable jest/no-restricted-matchers */
+
+import _outdent from 'outdent';
+
+import { format } from './changelog';
 import { validateChangelog } from './validate-changelog';
+
+const outdent = _outdent({ trimTrailingNewline: false });
 
 const emptyChangelog = `# Changelog
 All notable changes to this project will be documented in this file.
@@ -94,9 +101,71 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/v1.0.0
 `;
 
+const prettierChangelog = `# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+## [1.1.1] - 2023-03-05
+
+### Added
+
+- Feature A
+- Feature B
+
+### Changed
+
+- Feature D
+
+### Fixed
+
+- Bug C
+
+## [1.0.0] - 2017-06-20
+
+### Added
+
+- Feature A
+- Feature B
+
+[Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.1.1...HEAD
+[1.1.1]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...v1.1.1
+[1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/v1.0.0
+`;
+
+const changelogWithRenamedPackage = `# Changelog
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+## [1.0.0] - 2020-01-01
+### Changed
+- package renamed
+
+## [0.0.2] - 2020-01-01
+### Fixed
+- Something
+
+## [0.0.1] - 2020-01-01
+### Changed
+- Something
+
+[Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/@metamask/test@1.0.0...HEAD
+[1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/test@0.0.2...@metamask/test@1.0.0
+[0.0.2]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/test@0.0.1...test@0.0.2
+[0.0.1]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/test@0.0.1
+`;
+
 describe('validateChangelog', () => {
-  it('should not throw for any empty valid changelog', () => {
-    expect(() =>
+  it('should not throw for any empty valid changelog', async () => {
+    await expect(
       validateChangelog({
         changelogContent: emptyChangelog,
         currentVersion: '1.0.0',
@@ -104,11 +173,11 @@ describe('validateChangelog', () => {
           'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
         isReleaseCandidate: false,
       }),
-    ).not.toThrow();
+    ).resolves.not.toThrow();
   });
 
-  it('should not throw for a valid changelog with multiple releases', () => {
-    expect(() =>
+  it('should not throw for a valid changelog with multiple releases', async () => {
+    await expect(
       validateChangelog({
         changelogContent: changelogWithReleases,
         currentVersion: '1.0.0',
@@ -116,11 +185,11 @@ describe('validateChangelog', () => {
           'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
         isReleaseCandidate: false,
       }),
-    ).not.toThrow();
+    ).resolves.not.toThrow();
   });
 
-  it('should not throw for changelog with branching releases', () => {
-    expect(() =>
+  it('should not throw for changelog with branching releases', async () => {
+    await expect(
       validateChangelog({
         changelogContent: branchingChangelog,
         currentVersion: '1.0.0',
@@ -128,11 +197,11 @@ describe('validateChangelog', () => {
           'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
         isReleaseCandidate: false,
       }),
-    ).not.toThrow();
+    ).resolves.not.toThrow();
   });
 
-  it('should not throw when the first release is not the first numerically', () => {
-    expect(() =>
+  it('should not throw when the first release is not the first numerically', async () => {
+    await expect(
       validateChangelog({
         changelogContent: backportChangelog,
         currentVersion: '1.0.0',
@@ -140,11 +209,11 @@ describe('validateChangelog', () => {
           'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
         isReleaseCandidate: false,
       }),
-    ).not.toThrow();
+    ).resolves.not.toThrow();
   });
 
-  it('should throw for an empty string', () => {
-    expect(() =>
+  it('should throw for an empty string', async () => {
+    await expect(
       validateChangelog({
         changelogContent: '',
         currentVersion: '1.0.0',
@@ -152,15 +221,15 @@ describe('validateChangelog', () => {
           'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
         isReleaseCandidate: false,
       }),
-    ).toThrow('Failed to find Unreleased header');
+    ).rejects.toThrow('Failed to find Unreleased header');
   });
 
-  it('should throw when the title is different', () => {
+  it('should throw when the title is different', async () => {
     const changelogWithDifferentTitle = changelogWithReleases.replace(
       '# Changelog',
       '# Custom Title',
     );
-    expect(() =>
+    await expect(
       validateChangelog({
         changelogContent: changelogWithDifferentTitle,
         currentVersion: '1.0.0',
@@ -168,15 +237,15 @@ describe('validateChangelog', () => {
           'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
         isReleaseCandidate: false,
       }),
-    ).toThrow('Changelog is not well-formatted');
+    ).rejects.toThrow('Changelog is not well-formatted');
   });
 
-  it('should throw when the changelog description is different', () => {
+  it('should throw when the changelog description is different', async () => {
     const changelogWithDifferentDescription = changelogWithReleases.replace(
       'All notable changes',
       'A random assortment of changes',
     );
-    expect(() =>
+    await expect(
       validateChangelog({
         changelogContent: changelogWithDifferentDescription,
         currentVersion: '1.0.0',
@@ -184,12 +253,12 @@ describe('validateChangelog', () => {
           'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
         isReleaseCandidate: false,
       }),
-    ).toThrow('Changelog is not well-formatted');
+    ).rejects.toThrow('Changelog is not well-formatted');
   });
 
-  it('should throw when there are whitespace changes', () => {
+  it('should throw when there are whitespace changes', async () => {
     const changelogWithExtraWhitespace = `${changelogWithReleases}\n`;
-    expect(() =>
+    await expect(
       validateChangelog({
         changelogContent: changelogWithExtraWhitespace,
         currentVersion: '1.0.0',
@@ -197,15 +266,15 @@ describe('validateChangelog', () => {
           'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
         isReleaseCandidate: false,
       }),
-    ).toThrow('Changelog is not well-formatted');
+    ).rejects.toThrow('Changelog is not well-formatted');
   });
 
-  it('should throw when a release header is malformed', () => {
+  it('should throw when a release header is malformed', async () => {
     const changelogWithMalformedReleaseHeader = changelogWithReleases.replace(
       '[1.0.0] - 2020-01-01',
       '1.0.0 - 2020-01-01',
     );
-    expect(() =>
+    await expect(
       validateChangelog({
         changelogContent: changelogWithMalformedReleaseHeader,
         currentVersion: '1.0.0',
@@ -213,15 +282,15 @@ describe('validateChangelog', () => {
           'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
         isReleaseCandidate: false,
       }),
-    ).toThrow(`Unrecognized line: '## 1.0.0 - 2020-01-01'`);
+    ).rejects.toThrow(`Unrecognized line: '## 1.0.0 - 2020-01-01'`);
   });
 
-  it('should throw when there are extraneous header contents', () => {
+  it('should throw when there are extraneous header contents', async () => {
     const changelogWithExtraHeaderContents = changelogWithReleases.replace(
       '[1.0.0] - 2020-01-01',
       '[1.0.0] - 2020-01-01 [extra contents]',
     );
-    expect(() =>
+    await expect(
       validateChangelog({
         changelogContent: changelogWithExtraHeaderContents,
         currentVersion: '1.0.0',
@@ -229,15 +298,13 @@ describe('validateChangelog', () => {
           'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
         isReleaseCandidate: false,
       }),
-    ).toThrow('Changelog is not well-formatted');
+    ).rejects.toThrow('Changelog is not well-formatted');
   });
 
-  it('should throw when a change category is unrecognized', () => {
-    const changelogWithUnrecognizedChangeCategory = changelogWithReleases.replace(
-      '### Changed',
-      '### Updated',
-    );
-    expect(() =>
+  it('should throw when a change category is unrecognized', async () => {
+    const changelogWithUnrecognizedChangeCategory =
+      changelogWithReleases.replace('### Changed', '### Updated');
+    await expect(
       validateChangelog({
         changelogContent: changelogWithUnrecognizedChangeCategory,
         currentVersion: '1.0.0',
@@ -245,15 +312,15 @@ describe('validateChangelog', () => {
           'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
         isReleaseCandidate: false,
       }),
-    ).toThrow(`Invalid change category: 'Updated'`);
+    ).rejects.toThrow(`Invalid change category: 'Updated'`);
   });
 
-  it('should throw when the Unreleased section is missing', () => {
+  it('should throw when the Unreleased section is missing', async () => {
     const changelogWithoutUnreleased = changelogWithReleases.replace(
       /## \[Unreleased\]\n\n/u,
       '',
     );
-    expect(() =>
+    await expect(
       validateChangelog({
         changelogContent: changelogWithoutUnreleased,
         currentVersion: '1.0.0',
@@ -261,26 +328,26 @@ describe('validateChangelog', () => {
           'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
         isReleaseCandidate: false,
       }),
-    ).toThrow('Failed to find Unreleased header');
+    ).rejects.toThrow('Failed to find Unreleased header');
   });
 
-  it('should throw if the wrong repo URL is used', () => {
-    expect(() =>
+  it('should throw if the wrong repo URL is used', async () => {
+    await expect(
       validateChangelog({
         changelogContent: changelogWithReleases,
         currentVersion: '1.0.0',
         repoUrl: 'https://github.com/DifferentOrganization/DifferentRepository',
         isReleaseCandidate: false,
       }),
-    ).toThrow('Changelog is not well-formatted');
+    ).rejects.toThrow('Changelog is not well-formatted');
   });
 
-  it('should throw if a comparison release link is missing', () => {
+  it('should throw if a comparison release link is missing', async () => {
     const changelogWithoutReleaseLink = changelogWithReleases.replace(
       '[1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.2...v1.0.0\n',
       '',
     );
-    expect(() =>
+    await expect(
       validateChangelog({
         changelogContent: changelogWithoutReleaseLink,
         currentVersion: '1.0.0',
@@ -288,15 +355,15 @@ describe('validateChangelog', () => {
           'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
         isReleaseCandidate: false,
       }),
-    ).toThrow('Changelog is not well-formatted');
+    ).rejects.toThrow('Changelog is not well-formatted');
   });
 
-  it('should throw if the first release link is missing', () => {
+  it('should throw if the first release link is missing', async () => {
     const changelogWithoutFirstReleaseLink = changelogWithReleases.replace(
       '[0.0.1]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/v0.0.1\n',
       '',
     );
-    expect(() =>
+    await expect(
       validateChangelog({
         changelogContent: changelogWithoutFirstReleaseLink,
         currentVersion: '1.0.0',
@@ -304,10 +371,10 @@ describe('validateChangelog', () => {
           'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
         isReleaseCandidate: false,
       }),
-    ).toThrow('Changelog is not well-formatted');
+    ).rejects.toThrow('Changelog is not well-formatted');
   });
 
-  it('should throw if release links are in a different order than the release headers', () => {
+  it('should throw if release links are in a different order than the release headers', async () => {
     const thirdReleaseLink =
       '[1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.2...v1.0.0';
     const secondReleaseLink =
@@ -316,7 +383,7 @@ describe('validateChangelog', () => {
       `${thirdReleaseLink}\n${secondReleaseLink}`,
       `${secondReleaseLink}\n${thirdReleaseLink}`,
     );
-    expect(() =>
+    await expect(
       validateChangelog({
         changelogContent: changelogWithoutFirstReleaseLink,
         currentVersion: '1.0.0',
@@ -324,15 +391,15 @@ describe('validateChangelog', () => {
           'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
         isReleaseCandidate: false,
       }),
-    ).toThrow('Changelog is not well-formatted');
+    ).rejects.toThrow('Changelog is not well-formatted');
   });
 
-  it(`should throw if the highest version isn't compared with the Unreleased changes`, () => {
+  it(`should throw if the highest version isn't compared with the Unreleased changes`, async () => {
     const changelogWithInvalidUnreleasedComparison = branchingChangelog.replace(
       '[Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD',
       '[Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.3...HEAD',
     );
-    expect(() =>
+    await expect(
       validateChangelog({
         changelogContent: changelogWithInvalidUnreleasedComparison,
         currentVersion: '1.0.0',
@@ -340,15 +407,15 @@ describe('validateChangelog', () => {
           'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
         isReleaseCandidate: false,
       }),
-    ).toThrow('Changelog is not well-formatted');
+    ).rejects.toThrow('Changelog is not well-formatted');
   });
 
-  it('should throw if there are decreasing comparisons', () => {
+  it('should throw if there are decreasing comparisons', async () => {
     const changelogWithDecreasingComparison = branchingChangelog.replace(
       '[0.0.3]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.2...v0.0.3',
       '[0.0.3]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...v0.0.3',
     );
-    expect(() =>
+    await expect(
       validateChangelog({
         changelogContent: changelogWithDecreasingComparison,
         currentVersion: '1.0.0',
@@ -356,15 +423,15 @@ describe('validateChangelog', () => {
           'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
         isReleaseCandidate: false,
       }),
-    ).toThrow('Changelog is not well-formatted');
+    ).rejects.toThrow('Changelog is not well-formatted');
   });
 
-  it('should throw if the unreleased link points at anything other than the bare repository when there are no releases', () => {
+  it('should throw if the unreleased link points at anything other than the bare repository when there are no releases', async () => {
     const changelogWithIncorrectUnreleasedLink = emptyChangelog.replace(
       '[Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/',
       '[Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/v0.0.1',
     );
-    expect(() =>
+    await expect(
       validateChangelog({
         changelogContent: changelogWithIncorrectUnreleasedLink,
         currentVersion: '1.0.0',
@@ -372,15 +439,15 @@ describe('validateChangelog', () => {
           'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
         isReleaseCandidate: false,
       }),
-    ).toThrow('Changelog is not well-formatted');
+    ).rejects.toThrow('Changelog is not well-formatted');
   });
 
-  it('should throw if the bare unreleased link is missing a trailing slash', () => {
+  it('should throw if the bare unreleased link is missing a trailing slash', async () => {
     const changelogWithoutUnreleasedLinkTrailingSlash = emptyChangelog.replace(
       '[Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/',
       '[Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
     );
-    expect(() =>
+    await expect(
       validateChangelog({
         changelogContent: changelogWithoutUnreleasedLinkTrailingSlash,
         currentVersion: '1.0.0',
@@ -388,15 +455,15 @@ describe('validateChangelog', () => {
           'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
         isReleaseCandidate: false,
       }),
-    ).toThrow('Changelog is not well-formatted');
+    ).rejects.toThrow('Changelog is not well-formatted');
   });
 
-  it('should throw if a change category is missing', () => {
+  it('should throw if a change category is missing', async () => {
     const changelogWithoutChangeCategory = changelogWithReleases.replace(
       '### Changed\n',
       '',
     );
-    expect(() =>
+    await expect(
       validateChangelog({
         changelogContent: changelogWithoutChangeCategory,
         currentVersion: '1.0.0',
@@ -404,15 +471,15 @@ describe('validateChangelog', () => {
           'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
         isReleaseCandidate: false,
       }),
-    ).toThrow("Category missing for change: '- Something else'");
+    ).rejects.toThrow("Category missing for change: '- Something else'");
   });
 
-  it("should throw if a change isn't prefixed by '- '", () => {
+  it("should throw if a change isn't prefixed by '- '", async () => {
     const changelogWithInvalidChangePrefix = changelogWithReleases.replace(
       '- Something',
       'Something',
     );
-    expect(() =>
+    await expect(
       validateChangelog({
         changelogContent: changelogWithInvalidChangePrefix,
         currentVersion: '1.0.0',
@@ -420,12 +487,12 @@ describe('validateChangelog', () => {
           'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
         isReleaseCandidate: false,
       }),
-    ).toThrow(`Unrecognized line: 'Something else'`);
+    ).rejects.toThrow(`Unrecognized line: 'Something else'`);
   });
 
   describe('is not a release candidate', () => {
-    it('should not throw if the current version release header is missing', () => {
-      expect(() =>
+    it('should not throw if the current version release header is missing', async () => {
+      await expect(
         validateChangelog({
           changelogContent: changelogWithReleases,
           currentVersion: '1.0.1',
@@ -433,11 +500,11 @@ describe('validateChangelog', () => {
             'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
           isReleaseCandidate: false,
         }),
-      ).not.toThrow();
+      ).resolves.not.toThrow();
     });
 
-    it('should not throw if the changelog is empty', () => {
-      expect(() =>
+    it('should not throw if the changelog is empty', async () => {
+      await expect(
         validateChangelog({
           changelogContent: emptyChangelog,
           currentVersion: '1.0.1',
@@ -445,15 +512,15 @@ describe('validateChangelog', () => {
             'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
           isReleaseCandidate: false,
         }),
-      ).not.toThrow();
+      ).resolves.not.toThrow();
     });
 
-    it('should not throw if the changelog has an empty release', () => {
+    it('should not throw if the changelog has an empty release', async () => {
       const changelogWithEmptyRelease = changelogWithReleases.replace(
         '## [1.0.0] - 2020-01-01\n### Changed\n- Something else\n',
         '## [1.0.0] - 2020-01-01\n',
       );
-      expect(() =>
+      await expect(
         validateChangelog({
           changelogContent: changelogWithEmptyRelease,
           currentVersion: '1.0.1',
@@ -461,15 +528,15 @@ describe('validateChangelog', () => {
             'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
           isReleaseCandidate: false,
         }),
-      ).not.toThrow();
+      ).resolves.not.toThrow();
     });
 
-    it('should throw if the changelog has an empty change category', () => {
+    it('should throw if the changelog has an empty change category', async () => {
       const changelogWithEmptyChangeCategory = changelogWithReleases.replace(
         '## [1.0.0] - 2020-01-01\n### Changed\n- Something else\n',
         '## [1.0.0] - 2020-01-01\n### Changed\n',
       );
-      expect(() =>
+      await expect(
         validateChangelog({
           changelogContent: changelogWithEmptyChangeCategory,
           currentVersion: '1.0.1',
@@ -477,15 +544,15 @@ describe('validateChangelog', () => {
             'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
           isReleaseCandidate: false,
         }),
-      ).toThrow('Changelog is not well-formatted');
+      ).rejects.toThrow('Changelog is not well-formatted');
     });
 
-    it('should not throw if there are unreleased changes', () => {
+    it('should not throw if there are unreleased changes', async () => {
       const changelogWithUnreleasedChanges = changelogWithReleases.replace(
         '## [Unreleased]',
         '## [Unreleased]\n### Changed\n- More changes',
       );
-      expect(() =>
+      await expect(
         validateChangelog({
           changelogContent: changelogWithUnreleasedChanges,
           currentVersion: '1.0.0',
@@ -493,15 +560,15 @@ describe('validateChangelog', () => {
             'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
           isReleaseCandidate: false,
         }),
-      ).not.toThrow();
+      ).resolves.not.toThrow();
     });
 
-    it('should not throw if there are uncategorized changes in the current release', () => {
+    it('should not throw if there are uncategorized changes in the current release', async () => {
       const changelogWithUnreleasedChanges = changelogWithReleases.replace(
         '## [1.0.0] - 2020-01-01',
         '## [1.0.0] - 2020-01-01\n### Uncategorized\n- More changes\n',
       );
-      expect(() =>
+      await expect(
         validateChangelog({
           changelogContent: changelogWithUnreleasedChanges,
           currentVersion: '1.0.0',
@@ -509,15 +576,15 @@ describe('validateChangelog', () => {
             'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
           isReleaseCandidate: false,
         }),
-      ).not.toThrow();
+      ).resolves.not.toThrow();
     });
 
-    it('should not throw if there are uncategorized changes in an older release', () => {
+    it('should not throw if there are uncategorized changes in an older release', async () => {
       const changelogWithUnreleasedChanges = changelogWithReleases.replace(
         '## [0.0.2] - 2020-01-01',
         '## [0.0.2] - 2020-01-01\n### Uncategorized\n- More changes\n',
       );
-      expect(() =>
+      await expect(
         validateChangelog({
           changelogContent: changelogWithUnreleasedChanges,
           currentVersion: '1.0.0',
@@ -525,13 +592,13 @@ describe('validateChangelog', () => {
             'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
           isReleaseCandidate: false,
         }),
-      ).not.toThrow();
+      ).resolves.not.toThrow();
     });
   });
 
   describe('is a release candidate', () => {
-    it('should not throw for a valid changelog with multiple releases', () => {
-      expect(() =>
+    it('should not throw for a valid changelog with multiple releases', async () => {
+      await expect(
         validateChangelog({
           changelogContent: changelogWithReleases,
           currentVersion: '1.0.0',
@@ -539,15 +606,15 @@ describe('validateChangelog', () => {
             'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
           isReleaseCandidate: true,
         }),
-      ).not.toThrow();
+      ).resolves.not.toThrow();
     });
 
-    it('should not throw if the changelog has an empty release', () => {
+    it('should not throw if the changelog has an empty release', async () => {
       const changelogWithEmptyRelease = changelogWithReleases.replace(
         '## [1.0.0] - 2020-01-01\n### Changed\n- Something else\n',
         '## [1.0.0] - 2020-01-01\n',
       );
-      expect(() =>
+      await expect(
         validateChangelog({
           changelogContent: changelogWithEmptyRelease,
           currentVersion: '1.0.0',
@@ -555,15 +622,15 @@ describe('validateChangelog', () => {
             'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
           isReleaseCandidate: true,
         }),
-      ).not.toThrow();
+      ).resolves.not.toThrow();
     });
 
-    it('should throw if the changelog has an empty change category', () => {
+    it('should throw if the changelog has an empty change category', async () => {
       const changelogWithEmptyChangeCategory = changelogWithReleases.replace(
         '## [1.0.0] - 2020-01-01\n### Changed\n- Something else\n',
         '## [1.0.0] - 2020-01-01\n### Changed\n',
       );
-      expect(() =>
+      await expect(
         validateChangelog({
           changelogContent: changelogWithEmptyChangeCategory,
           currentVersion: '1.0.1',
@@ -571,11 +638,11 @@ describe('validateChangelog', () => {
             'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
           isReleaseCandidate: false,
         }),
-      ).toThrow('Changelog is not well-formatted');
+      ).rejects.toThrow('Changelog is not well-formatted');
     });
 
-    it('should throw if the current version release header is missing', () => {
-      expect(() =>
+    it('should throw if the current version release header is missing', async () => {
+      await expect(
         validateChangelog({
           changelogContent: changelogWithReleases,
           currentVersion: '1.0.1',
@@ -583,15 +650,15 @@ describe('validateChangelog', () => {
             'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
           isReleaseCandidate: true,
         }),
-      ).toThrow(`Current version missing from changelog: '1.0.1'`);
+      ).rejects.toThrow(`Current version missing from changelog: '1.0.1'`);
     });
 
-    it('should throw if there are unreleased changes', () => {
+    it('should throw if there are unreleased changes', async () => {
       const changelogWithUnreleasedChanges = changelogWithReleases.replace(
         '## [Unreleased]',
         '## [Unreleased]\n### Changed\n- More changes',
       );
-      expect(() =>
+      await expect(
         validateChangelog({
           changelogContent: changelogWithUnreleasedChanges,
           currentVersion: '1.0.0',
@@ -599,15 +666,15 @@ describe('validateChangelog', () => {
             'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
           isReleaseCandidate: true,
         }),
-      ).toThrow('Unreleased changes present in the changelog');
+      ).rejects.toThrow('Unreleased changes present in the changelog');
     });
 
-    it('should throw if there are uncategorized changes in the current release', () => {
+    it('should throw if there are uncategorized changes in the current release', async () => {
       const changelogWithUnreleasedChanges = changelogWithReleases.replace(
         '## [1.0.0] - 2020-01-01',
         '## [1.0.0] - 2020-01-01\n### Uncategorized\n- More changes\n',
       );
-      expect(() =>
+      await expect(
         validateChangelog({
           changelogContent: changelogWithUnreleasedChanges,
           currentVersion: '1.0.0',
@@ -615,15 +682,15 @@ describe('validateChangelog', () => {
             'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
           isReleaseCandidate: true,
         }),
-      ).toThrow('Uncategorized changes present in the changelog');
+      ).rejects.toThrow('Uncategorized changes present in the changelog');
     });
 
-    it('should not throw if there are uncategorized changes in an older release', () => {
+    it('should not throw if there are uncategorized changes in an older release', async () => {
       const changelogWithUnreleasedChanges = changelogWithReleases.replace(
         '## [0.0.2] - 2020-01-01',
         '## [0.0.2] - 2020-01-01\n### Uncategorized\n- More changes\n',
       );
-      expect(() =>
+      await expect(
         validateChangelog({
           changelogContent: changelogWithUnreleasedChanges,
           currentVersion: '1.0.0',
@@ -631,7 +698,206 @@ describe('validateChangelog', () => {
             'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
           isReleaseCandidate: true,
         }),
-      ).not.toThrow();
+      ).resolves.not.toThrow();
+    });
+  });
+
+  describe('formatted changelog', () => {
+    it("doesn't throw if the changelog is formatted with prettier", async () => {
+      await expect(
+        validateChangelog({
+          changelogContent: prettierChangelog,
+          currentVersion: '1.1.1',
+          repoUrl:
+            'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+          isReleaseCandidate: false,
+          formatter: format,
+        }),
+      ).resolves.not.toThrow();
+    });
+  });
+
+  // when the package has been renamed from `test` to `@metamast/test`
+  it('should not throw for a valid changelog with renamed package', async () => {
+    await expect(
+      validateChangelog({
+        changelogContent: changelogWithRenamedPackage,
+        currentVersion: '1.0.0',
+        repoUrl:
+          'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+        isReleaseCandidate: false,
+        tagPrefix: '@metamask/test@',
+        packageRename: {
+          versionBeforeRename: '0.0.2',
+          tagPrefixBeforeRename: 'test@',
+        },
+      }),
+    ).resolves.not.toThrow();
+  });
+
+  describe('if ensureValidPrLinksPresent is true', () => {
+    it('should throw if some entries in the changelog have no PR links', async () => {
+      const changelogContent = outdent`
+        # Changelog
+        All notable changes to this project will be documented in this file.
+
+        The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+        and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+        ## [Unreleased]
+
+        ## [1.0.0]
+        ### Changed
+        - Change something else ([#123](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/123))
+
+        ## [0.0.2]
+        ### Fixed
+        - Fix something
+
+        ## [0.0.1]
+        ### Added
+        - Initial release ([#123](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/123))
+
+        [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
+        [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.2...v1.0.0
+        [0.0.2]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.1...v0.0.2
+        [0.0.1]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/v0.0.1
+      `;
+
+      await expect(
+        validateChangelog({
+          changelogContent,
+          currentVersion: '1.0.0',
+          repoUrl:
+            'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+          isReleaseCandidate: false,
+          ensureValidPrLinksPresent: true,
+        }),
+      ).rejects.toThrow(
+        "Pull request link(s) missing for change: 'Fix something' (in 0.0.2)",
+      );
+    });
+
+    it('should throw if some entries in the changelog have PR links to the wrong repo', async () => {
+      const changelogContent = outdent`
+        # Changelog
+        All notable changes to this project will be documented in this file.
+
+        The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+        and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+        ## [Unreleased]
+
+        ## [1.0.0]
+        ### Changed
+        - Change something else ([#123](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/123))
+
+        ## [0.0.2]
+        ### Fixed
+        - Fix something ([#123](https://github.com/foo/bar/pull/123))
+
+        ## [0.0.1]
+        ### Added
+        - Initial release ([#123](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/123))
+
+        [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
+        [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.2...v1.0.0
+        [0.0.2]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.1...v0.0.2
+        [0.0.1]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/v0.0.1
+      `;
+
+      await expect(
+        validateChangelog({
+          changelogContent,
+          currentVersion: '1.0.0',
+          repoUrl:
+            'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+          isReleaseCandidate: false,
+          ensureValidPrLinksPresent: true,
+        }),
+      ).rejects.toThrow('Changelog is not well-formatted');
+    });
+  });
+
+  describe('if ensureValidPrLinksPresent is false', () => {
+    it('should not throw if some entries in the changelog have no PR links', async () => {
+      const changelogContent = outdent`
+        # Changelog
+        All notable changes to this project will be documented in this file.
+
+        The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+        and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+        ## [Unreleased]
+
+        ## [1.0.0]
+        ### Changed
+        - Change something else ([#123](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/123))
+
+        ## [0.0.2]
+        ### Fixed
+        - Fix something
+
+        ## [0.0.1]
+        ### Added
+        - Initial release ([#123](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/123))
+
+        [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
+        [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.2...v1.0.0
+        [0.0.2]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.1...v0.0.2
+        [0.0.1]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/v0.0.1
+      `;
+
+      await expect(
+        validateChangelog({
+          changelogContent,
+          currentVersion: '1.0.0',
+          repoUrl:
+            'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+          isReleaseCandidate: false,
+          ensureValidPrLinksPresent: false,
+        }),
+      ).resolves.not.toThrow();
+    });
+
+    it('should not throw if some entries in the changelog have PR links to the wrong repo', async () => {
+      const changelogContent = outdent`
+        # Changelog
+        All notable changes to this project will be documented in this file.
+
+        The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+        and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+        ## [Unreleased]
+
+        ## [1.0.0]
+        ### Changed
+        - Change something else ([#123](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/123))
+
+        ## [0.0.2]
+        ### Fixed
+        - Fix something ([#123](https://github.com/foo/bar/pull/123))
+
+        ## [0.0.1]
+        ### Added
+        - Initial release ([#123](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/123))
+
+        [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
+        [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.2...v1.0.0
+        [0.0.2]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.1...v0.0.2
+        [0.0.1]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/v0.0.1
+      `;
+
+      await expect(
+        validateChangelog({
+          changelogContent,
+          currentVersion: '1.0.0',
+          repoUrl:
+            'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+          isReleaseCandidate: false,
+          ensureValidPrLinksPresent: false,
+        }),
+      ).resolves.not.toThrow();
     });
   });
 });

@@ -4,6 +4,19 @@
 export type Version = string;
 
 /**
+ * A [Conventional Commit](https://www.conventionalcommits.org/en/v1.0.0/) type.
+ */
+export enum ConventionalCommitType {
+  /**
+   * fix: a commit of the type fix patches a bug in your codebase
+   */
+  Fix = 'fix',
+  /**
+   * a commit of the type feat introduces a new feature to the codebase
+   */
+  Feat = 'feat',
+}
+/**
  * Change categories.
  *
  * Most of these categories are from [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).

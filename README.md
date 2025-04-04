@@ -16,23 +16,87 @@ or
 
 ### Update
 
-To update the 'Unreleased' section of the changelog:
+#### Update the "Unreleased" section of the changelog
 
-`npx @metamask/auto-changelog update`
+`yarn run auto-changelog update`
 
-To update the current release section of the changelog:
+or
 
-`npx @metamask/auto-changelog update --rc`
+`npm run auto-changelog update`
+
+#### Use Conventional Commits prefixes to auto-categorize changes
+
+`yarn run auto-changelog update --autoCategorize`
+
+#### Update the current release section of the changelog
+
+`yarn run auto-changelog update --rc`
+
+or
+
+`npm run auto-changelog update --rc`
+
+#### Update the changelog for a renamed package
+
+This option is designed to be used for packages that live in a monorepo.
+
+For instance, if your package is called `polling-controller` and was renamed to `@metamask/polling-controller` at version 0.2.3, and thus the Git tags followed suit:
+
+`yarn run auto-changelog update --tag-prefix-before-package-rename "polling-controller@" --version-before-package-name 0.2.3 --tag-prefix "@metamask/polling-controller@"`
+
+or
+
+`npm run auto-changelog update --tag-prefix-before-package-rename "polling-controller@" --version-before-package-name 0.2.3 --tag-prefix "@metamask/polling-controller@"`
 
 ### Validate
 
-To validate the changelog:
+#### Validate the changelog simply
 
-`npx @metamask/auto-changelog validate`
+`yarn run auto-changelog validate`
 
-To validate the changelog in a release candidate environment:
+or
 
-`npx @metamask/auto-changelog validate --rc`
+`npm run auto-changelog validate`
+
+#### Validate the changelog for a release candidate
+
+`yarn run auto-changelog validate --rc`
+
+or
+
+`npm run auto-changelog validate --rc`
+
+#### Validate the changelog with package-specific Git tags
+
+This option is designed to be used for packages that live in a monorepo.
+
+For instance, if your package is called `@metamask/polling-controller` and thus all Git tags for this package are prefixed with `@metamask/polling-controller@`:
+
+`yarn run auto-changelog validate --tag-prefix "@metamask/polling-controller@"`
+
+or
+
+`npm run auto-changelog validate --tag-prefix "@metamask/polling-controller@"`
+
+#### Validate the changelog for a renamed package
+
+This option is designed to be used for packages that live in a monorepo.
+
+For instance, if your package is called `polling-controller` and was renamed to `@metamask/polling-controller` at version 0.2.3, and thus the Git tags followed suit:
+
+`yarn run auto-changelog validate --tag-prefix-before-package-rename "polling-controller@" --version-before-package-name 0.2.3 --tag-prefix "@metamask/polling-controller@"`
+
+or
+
+`npm run auto-changelog validate --tag-prefix-before-package-rename "polling-controller@" --version-before-package-name 0.2.3 --tag-prefix "@metamask/polling-controller@"`
+
+#### Validate that each changelog entry has one or more associated pull requests
+
+`yarn run auto-changelog validate --pr-links`
+
+or
+
+`npm run auto-changelog validate --pr-links`
 
 ## API Usage
 
@@ -49,7 +113,7 @@ import { updateChangelog } from '@metamask/auto-changelog';
 const oldChangelog = await fs.readFile('CHANGELOG.md', {
   encoding: 'utf8',
 });
-const updatedChangelog = updateChangelog({
+const updatedChangelog = await updateChangelog({
   changelogContent: oldChangelog,
   currentVersion: '1.0.0',
   repoUrl: 'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
@@ -60,7 +124,7 @@ await fs.writeFile('CHANGELOG.md', updatedChangelog);
 
 ### `validateChangelog`
 
-This command validates the changelog
+This command validates the changelog.
 
 ```javascript
 import { promises as fs } from 'fs';
@@ -70,12 +134,13 @@ const oldChangelog = await fs.readFile('CHANGELOG.md', {
   encoding: 'utf8',
 });
 try {
-  validateChangelog({
+  await validateChangelog({
     changelogContent: oldChangelog,
     currentVersion: '1.0.0',
     repoUrl:
       'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
     isReleaseCandidate: false,
+    ensureValidPrLinksPresent: true,
   });
   // changelog is valid!
 } catch (error) {
@@ -87,11 +152,10 @@ try {
 
 ### Setup
 
-- Install [Node.js](https://nodejs.org) version 12
+- Install [Node.js](https://nodejs.org) version 18
   - If you are using [nvm](https://github.com/creationix/nvm#installation) (recommended) running `nvm use` will automatically choose the right node version for you.
-- Install [Yarn v1](https://yarnpkg.com/en/docs/install)
-- Run `yarn setup` to install dependencies and run any requried post-install scripts
-  - **Warning**: Do not use the `yarn` / `yarn install` command directly. Use `yarn setup` instead. The normal install command will skip required post-install scripts, leaving your development environment in an invalid state.
+- Install [Yarn v3](https://yarnpkg.com/getting-started/install)
+- Run `yarn install` to install dependencies and run any required post-install scripts
 
 ### Testing and Linting
 
@@ -133,6 +197,6 @@ The project follows the same release process as the other libraries in the MetaM
 
 7. Publish the release on npm.
 
-   - Be very careful to use a clean local environment to publish the release, and follow exactly the same steps used during CI.
-   - Use `npm publish --dry-run` to examine the release contents to ensure the correct files are included. Compare to previous releases if necessary (e.g. using `https://unpkg.com/browse/[package name]@[package version]/`).
-   - Once you are confident the release contents are correct, publish the release using `npm publish`.
+   - Wait for the `publish-release` GitHub Action workflow to finish. This should trigger a second job (`publish-npm`), which will wait for a run approval by the [`npm publishers`](https://github.com/orgs/MetaMask/teams/npm-publishers) team.
+   - Approve the `publish-npm` job (or ask somebody on the npm publishers team to approve it for you).
+   - Once the `publish-npm` job has finished, check npm to verify that it has been published.
