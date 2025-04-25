@@ -213,10 +213,12 @@ async function runCommand(command: string, args: string[]): Promise<string[]> {
  * @param description - The commit message description.
  * @returns The category of the change.
  */
-function getCategory(description: string): ChangeCategory {
-  // Check if description contains a colon
-  if (description.includes(':')) {
-    const [prefix] = description.split(':').map((part) => part.trim());
+export function getCategory(description: string): ChangeCategory {
+  const conventionalCommitPattern = /^(feat|fix)(?:\([^)]*\))?\s*:\s*/u;
+  const match = description.match(conventionalCommitPattern);
+
+  if (match) {
+    const prefix = match ? match[1] : undefined;
     switch (prefix) {
       case ConventionalCommitType.Feat:
         return ChangeCategory.Added;
