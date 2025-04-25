@@ -214,11 +214,11 @@ async function runCommand(command: string, args: string[]): Promise<string[]> {
  * @returns The category of the change.
  */
 export function getCategory(description: string): ChangeCategory {
-  const conventionalCommitPattern = /^(feat|fix)(?:\([^)]*\))?\s*:\s*/u;
+  const conventionalCommitPattern = /^(feat|fix)(?:\([^)]+\))?\s*:\s*/u;
   const match = description.match(conventionalCommitPattern);
 
   if (match) {
-    const prefix = match ? match[1] : undefined;
+    const prefix = match.length > 1 ? match[1] : undefined;
     switch (prefix) {
       case ConventionalCommitType.Feat:
         return ChangeCategory.Added;
