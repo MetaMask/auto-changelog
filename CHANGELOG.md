@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [5.0.2]
 
-### Uncategorized
+### Fixed
 
 - fix: allow category extraction when scope is used ([#240](https://github.com/MetaMask/auto-changelog/pull/240))
 - chore: update security-code-scanner@main to action-security-code-scanner@v1 ([#234](https://github.com/MetaMask/auto-changelog/pull/234))
