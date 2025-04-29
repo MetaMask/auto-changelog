@@ -1,4 +1,5 @@
 # Changelog
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
@@ -6,12 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.0.2]
+
+### Uncategorized
+
+- fix: allow category extraction when scope is used ([#240](https://github.com/MetaMask/auto-changelog/pull/240))
+- chore: update security-code-scanner@main to action-security-code-scanner@v1 ([#234](https://github.com/MetaMask/auto-changelog/pull/234))
+
 ## [5.0.1]
+
 ### Fixed
+
 - Fix CLI path ([#235](https://github.com/MetaMask/auto-changelog/pull/235))
 
 ## [5.0.0]
+
 ### Added
+
 - JavaScript sources and TypeScript declarations are now available in both CommonJS- and ESM-compatible variants ([#226](https://github.com/MetaMask/auto-changelog/pull/226))
 - Add option to changelog validation to ensure that each entry in the changelog links to one or more originating PRs ([#222](https://github.com/MetaMask/auto-changelog/pull/222))
   - Pass `--pr-links` to the CLI, or pass `ensureValidPrLinksPresent` to `validateChangelog` to enable this behavior, ideally in your `lint` package script or CI workflow
@@ -20,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - See note on `Changelog.getReleaseChanges` below for more
 
 ### Changed
+
 - **BREAKING:** `Changelog.getReleaseChanges` now returns an object whose values are objects of shape `{ description: string; prNumbers: string[] }` rather than simply `string` (the description) ([#222](https://github.com/MetaMask/auto-changelog/pull/222))
   - This affects `parseChangelog` as well, since it returns an instance of `Changelog`
 - **BREAKING:** Bump minimum Node version to 18.20 ([#227](https://github.com/MetaMask/auto-changelog/pull/227))
@@ -27,13 +40,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - You may now only import `@metamask/auto-changelog` and `@metamask/auto-changelog/package.json`
 
 ## [4.1.0]
+
 ### Added
+
 - Add `--autoCategorize` flag to `update` command ([#212](https://github.com/MetaMask/auto-changelog/pull/212))
   - When populating the Unreleased section, the tool will look for [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) prefixes in commit message subjects and place matching commits in corresponding categories automatically.
   - Supported prefixes are `feat` (which routes to "Added") and `fix` (which routes to "Fixed").
 
 ## [4.0.0]
+
 ### Changed
+
 - **BREAKING:** Drop support for Node.js <18.18 ([#203](https://github.com/MetaMask/auto-changelog/pull/203))
 - **BREAKING:** Require `prettier@>=3.0.0` ([#202](https://github.com/MetaMask/auto-changelog/pull/202))
   - Prettier is now a peer dependency of this package.
@@ -42,105 +59,147 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - You can opt-out of this change by specifying `--no-prettier`.
 
 ## [3.4.4]
+
 ### Added
+
 - Retain tag history on update command for renamed packages with new options ([#182](https://github.com/MetaMask/auto-changelog/pull/182))
 
   - Introduced --version-before-package-rename and --tag-prefix-before-package-rename options for update command.
 
 ## [3.4.3]
+
 ### Changed
+
 - Place this library under the MIT / Apache 2.0 dual license ([#175](https://github.com/MetaMask/auto-changelog/pull/175))
 
 ## [3.4.2]
+
 ### Fixed
+
 - Remove circular dependency on `@metamask/utils` ([#170](https://github.com/MetaMask/auto-changelog/pull/170))
 
 ## [3.4.1]
+
 ### Fixed
+
 - Add missing dependency `@metamask/utils` ([#168](https://github.com/MetaMask/auto-changelog/pull/168))
 
 ## [3.4.0]
+
 ### Added
+
 - Retain tag history for renamed packages with new validation options ([#157](https://github.com/MetaMask/auto-changelog/pull/157))
 
   - Introduced --version-before-package-rename and --tag-prefix-before-package-rename options for validate command.
 
 ## [3.3.0]
+
 ### Added
+
 - Add `--prettier` option for Prettier-formatted changelogs ([#155](https://github.com/MetaMask/auto-changelog/pull/155))
 
 ## [3.2.0]
+
 ### Added
+
 - Add `--fix` option to validate command ([#148](https://github.com/MetaMask/auto-changelog/pull/148))
 
 ## [3.1.0]
+
 ### Added
+
 - Allow prerelease versions in release headers ([#130](https://github.com/MetaMask/auto-changelog/pull/130))
 
 ## [3.0.0]
+
 ### Added
+
 - Support alternate tag prefixes ([#120](https://github.com/MetaMask/auto-changelog/pull/120))
 
 ### Changed
+
 - **BREAKING:** Update minimum Node.js version to v14 ([#117](https://github.com/MetaMask/auto-changelog/pull/117))
 - Get package version from manifest ([#121](https://github.com/MetaMask/auto-changelog/pull/121))
 
 ## [2.6.1]
+
 ### Fixed
+
 - When fetching remote tags, order by date to account for miniscule time differences between tags created within automated tests ([#113](https://github.com/MetaMask/auto-changelog/pull/113))
 
 ## [2.6.0]
+
 ### Changed
+
 - Read repository URL from package.json if `npm_package_repository_url` is not set ([#111](https://github.com/MetaMask/auto-changelog/pull/111))
   - This makes this package compatible with Yarn >1.
 
 ## [2.5.0]
+
 ### Added
+
 - The `validate --rc` command now ensures there are no uncategorized changes in the current release entry ([#102](https://github.com/MetaMask/auto-changelog/pull/102), [#106](https://github.com/MetaMask/auto-changelog/pull/106))
 
 ## [2.4.0]
+
 ### Changed
+
 - Permit missing separating space in "Unreleased" link reference definition ([#92](https://github.com/MetaMask/auto-changelog/pull/92))
 - Use `execa` to execute git commands ([#94](https://github.com/MetaMask/auto-changelog/pull/94))
   - This may fix subtle bugs related to git command execution, especially in CI.
 
 ## [2.3.0]
+
 ### Added
+
 - More exports to index.ts ([#86](https://github.com/MetaMask/auto-changelog/pull/86))
   - Specifically, the `Changelog` class, `createEmptyChangelog`, and `parseChangelog`.
 
 ### Fixed
+
 - Correctly calculate the most recent git tag ([#87](https://github.com/MetaMask/auto-changelog/pull/87)) ([#87](https://github.com/MetaMask/auto-changelog/pull/87))
   - Previously, we passed the path to the project root directory as a parameter to an invocation of `git rev-list`. For all repositories, this caused most tags belonging to merge commits to be excluded. For monorepos, this also caused tags belonging to commits that didn't change any files belonging to the changelog's package / workspace to be excluded.
 
 ## [2.2.0]
+
 ### Added
+
 - Add `init` command ([#77](https://github.com/MetaMask/auto-changelog/pull/77))
 
 ### Changed
+
 - Add `@lavamoat/allow-scripts` and `setup` command ([#78](https://github.com/MetaMask/auto-changelog/pull/78))
 - Detect all PRs referenced in each change description, rather than just the first ([#84](https://github.com/MetaMask/auto-changelog/pull/84))
 
 ### Fixed
+
 - Fix broken validation and updating when the lowest SemVer release isn't the first chronological release ([#76](https://github.com/MetaMask/auto-changelog/pull/76))
 - Fix PR number detection in existing change entries ([#83](https://github.com/MetaMask/auto-changelog/pull/83))
 
 ## [2.1.0]
+
 ### Added
+
 - Add Changelog.getStringifiedRelease ([#73](https://github.com/MetaMask/auto-changelog/pull/73))
 
 ### Fixed
+
 - Remove trailing '.git' from default repo URL ([#74](https://github.com/MetaMask/auto-changelog/pull/74))
 
 ## [2.0.1]
+
 ### Fixed
+
 - Prevent old build files from being published ([#71](https://github.com/MetaMask/auto-changelog/pull/71))
 
 ## [2.0.0]
+
 ### Added
+
 - TypeScript types ([#59](https://github.com/MetaMask/auto-changelog/pull/59))
 
 ### Changed
+
 - **(BREAKING)** Move Pull Request links to end of change entries ([#66](https://github.com/MetaMask/auto-changelog/pull/66))
 - Rename files to use snake-case ([#64](https://github.com/MetaMask/auto-changelog/pull/64))
 - Validate change categories during parsing ([#62](https://github.com/MetaMask/auto-changelog/pull/62))
@@ -148,20 +207,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Migrate to TypeScript ([#59](https://github.com/MetaMask/auto-changelog/pull/59))
 
 ### Fixed
+
 - Release candidate tag validation ([#55](https://github.com/MetaMask/auto-changelog/pull/55))
   - The fixed check ensures that there are no existing tags for release candidates.
 - Typo in CLI error message ([#65](https://github.com/MetaMask/auto-changelog/pull/65))
 
 ## [1.0.0]
+
 ### Added
-- The initial `auto-changelog` implementation, adapted from the original `auto-changelog.js` script in  `metamask-extension` ([#8](https://github.com/MetaMask/auto-changelog/pull/8)).
-Includes the following features:
+
+- The initial `auto-changelog` implementation, adapted from the original `auto-changelog.js` script in `metamask-extension` ([#8](https://github.com/MetaMask/auto-changelog/pull/8)).
+  Includes the following features:
   - An `update` command ([#26](https://github.com/MetaMask/auto-changelog/pull/26))
   - A `validate` command ([#28](https://github.com/MetaMask/auto-changelog/pull/28))
   - Monorepo support ([#41](https://github.com/MetaMask/auto-changelog/pull/41))
   - Configurable repository URL, version, and changelog file path ([#33](https://github.com/MetaMask/auto-changelog/pull/33), [#31](https://github.com/MetaMask/auto-changelog/pull/31), [#30](https://github.com/MetaMask/auto-changelog/pull/30))
 
-[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v5.0.1...HEAD
+[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v5.0.2...HEAD
+[5.0.2]: https://github.com/MetaMask/auto-changelog/compare/v5.0.1...v5.0.2
 [5.0.1]: https://github.com/MetaMask/auto-changelog/compare/v5.0.0...v5.0.1
 [5.0.0]: https://github.com/MetaMask/auto-changelog/compare/v4.1.0...v5.0.0
 [4.1.0]: https://github.com/MetaMask/auto-changelog/compare/v4.0.0...v4.1.0
