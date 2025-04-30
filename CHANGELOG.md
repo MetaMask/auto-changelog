@@ -11,8 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- fix: allow category extraction when scope is used ([#240](https://github.com/MetaMask/auto-changelog/pull/240))
-- chore: update security-code-scanner@main to action-security-code-scanner@v1 ([#234](https://github.com/MetaMask/auto-changelog/pull/234))
+- Fix `--autoCategorize` so that commit messages with Conventional Commit prefixes are categorized correctly when the prefix contains a scope (e.g. `feat(scope): ...`) ([#240](https://github.com/MetaMask/auto-changelog/pull/240))
 
 ## [5.0.1]
 
