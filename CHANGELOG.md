@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.0.2]
+
+### Fixed
+
+- Fix `--autoCategorize` so that commit messages with Conventional Commit prefixes are categorized correctly when the prefix contains a scope (e.g. `feat(scope): ...`) ([#240](https://github.com/MetaMask/auto-changelog/pull/240))
+
 ## [5.0.1]
 
 ### Fixed
@@ -216,7 +222,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Monorepo support ([#41](https://github.com/MetaMask/auto-changelog/pull/41))
   - Configurable repository URL, version, and changelog file path ([#33](https://github.com/MetaMask/auto-changelog/pull/33), [#31](https://github.com/MetaMask/auto-changelog/pull/31), [#30](https://github.com/MetaMask/auto-changelog/pull/30))
 
-[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v5.0.1...HEAD
+[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v5.0.2...HEAD
+[5.0.2]: https://github.com/MetaMask/auto-changelog/compare/v5.0.1...v5.0.2
 [5.0.1]: https://github.com/MetaMask/auto-changelog/compare/v5.0.0...v5.0.1
 [5.0.0]: https://github.com/MetaMask/auto-changelog/compare/v4.1.0...v5.0.0
 [4.1.0]: https://github.com/MetaMask/auto-changelog/compare/v4.0.0...v4.1.0
