@@ -1,4 +1,4 @@
-# @metamask/auto-changelog
+tab# @metamask/auto-changelog
 
 Utilities for validating and updating \"Keep a Changelog\" formatted changelogs.
 
@@ -78,7 +78,7 @@ or
 
 `npm run auto-changelog validate --tag-prefix "@metamask/polling-controller@"`
 
-#### Validate the changelog for a renamed package
+esc#### Validate the changelog for a renamed package
 
 This option is designed to be used for packages that live in a monorepo.
 
@@ -163,7 +163,7 @@ Run `yarn test` to run the tests once. To run tests on file changes, run `yarn t
 
 Run `yarn lint` to run the linter, or run `yarn lint:fix` to run the linter and fix any automatically fixable issues.
 
-### Release & Publishing
+tab### Release & Publishing
 
 The project follows the same release process as the other libraries in the MetaMask organization. The GitHub Actions [`action-create-release-pr`](https://github.com/MetaMask/action-create-release-pr) and [`action-publish-release`](https://github.com/MetaMask/action-publish-release) are used to automate the release process; see those repositories for more information about how they work.
 
