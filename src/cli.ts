@@ -94,6 +94,14 @@ type UpdateOptions = {
    * The package rename properties, used in case of package is renamed
    */
   packageRename?: PackageRename;
+  /**
+   * Whether to use `CHANGELOG entry:` from the commit body
+   */
+  useChangelogEntry: boolean;
+  /**
+   * Whether to use short PR links in the changelog entries
+   */
+  useShortPrLink: boolean;
 };
 
 /**
@@ -109,7 +117,8 @@ type UpdateOptions = {
  * @param options.formatter - A custom Markdown formatter to use.
  * @param options.packageRename - The package rename properties.
  * @param options.autoCategorize - Whether to categorize commits automatically based on their messages.
- * An optional, which is required only in case of package renamed.
+ * @param options.useChangelogEntry - Whether to read `CHANGELOG entry:` from the commit body.
+ * @param options.useShortPrLink - Whether to use short PR links in the changelog entries.
  */
 async function update({
   changelogPath,
@@ -121,6 +130,8 @@ async function update({
   formatter,
   packageRename,
   autoCategorize,
+  useChangelogEntry,
+  useShortPrLink,
 }: UpdateOptions) {
   const changelogContent = await readChangelog(changelogPath);
 
@@ -134,6 +145,8 @@ async function update({
     formatter,
     packageRename,
     autoCategorize,
+    useChangelogEntry,
+    useShortPrLink,
   });
 
   if (newChangelogContent) {
@@ -331,6 +344,16 @@ async function main() {
             description: `Expect the changelog to be formatted with Prettier.`,
             type: 'boolean',
           })
+          .option('useChangelogEntry', {
+            default: false,
+            description: 'Read `CHANGELOG entry:` from the commit body',
+            type: 'boolean',
+          })
+          .option('useShortPrLink', {
+            default: false,
+            description: 'Use short PR links in the changelog entries',
+            type: 'boolean',
+          })
           .epilog(updateEpilog),
     )
     .command(
@@ -388,6 +411,8 @@ async function main() {
     tagPrefixBeforePackageRename,
     autoCategorize,
     prLinks,
+    useChangelogEntry,
+    useShortPrLink,
   } = argv;
   let { currentVersion } = argv;
 
@@ -517,6 +542,8 @@ async function main() {
       formatter,
       packageRename,
       autoCategorize,
+      useChangelogEntry: Boolean(useChangelogEntry),
+      useShortPrLink: Boolean(useShortPrLink),
     });
   } else if (command === 'validate') {
     let packageRename: PackageRename | undefined;

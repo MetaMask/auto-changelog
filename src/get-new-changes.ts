@@ -1,11 +1,14 @@
 import { strict as assert } from 'assert';
-import execa from 'execa';
+
+import { runCommand, runCommandAndSplit } from './run-command';
 
 export type AddNewCommitsOptions = {
   mostRecentTag: string | null;
   repoUrl: string;
   loggedPrNumbers: string[];
   projectRootDirectory?: string;
+  useChangelogEntry: boolean;
+  useShortPrLink: boolean;
 };
 
 /**
@@ -23,45 +26,71 @@ async function getCommitHashesInRange(
   if (rootDirectory) {
     revListArgs.push(rootDirectory);
   }
-  return await runCommand('git', revListArgs);
+  return await runCommandAndSplit('git', revListArgs);
 }
 
 /**
  * Get commit details for each given commit hash.
  *
  * @param commitHashes - The list of commit hashes.
+ * @param useChangelogEntry - Whether to use `CHANGELOG entry:` from the commit body.
  * @returns Commit details for each commit, including description and PR number (if present).
  */
-async function getCommits(commitHashes: string[]) {
-  const commits: { prNumber?: string; description: string }[] = [];
+async function getCommits(commitHashes: string[], useChangelogEntry: boolean) {
+  const commits: { prNumber?: string; subject: string; description: string }[] =
+    [];
   for (const commitHash of commitHashes) {
-    const [subject] = await runCommand('git', [
+    const subject = await runCommand('git', [
       'show',
       '-s',
       '--format=%s',
       commitHash,
     ]);
+
     assert.ok(
       Boolean(subject),
       `"git show" returned empty subject for commit "${commitHash}".`,
     );
 
-    let matchResults = subject.match(/\(#(\d+)\)/u);
+    // console.log({ commitHash, subject, body });
+
+    const subjectMatch = subject.match(/\(#(\d+)\)/u);
+
     let prNumber: string | undefined;
     let description = subject;
 
-    if (matchResults) {
+    if (subjectMatch) {
       // Squash & Merge: the commit subject is parsed as `<description> (#<PR ID>)`
-      prNumber = matchResults[1];
-      description = subject.match(/^(.+)\s\(#\d+\)/u)?.[1] ?? '';
+      prNumber = subjectMatch[1];
+
+      if (useChangelogEntry) {
+        const body = await runCommand('git', [
+          'show',
+          '-s',
+          '--format=%b',
+          commitHash,
+        ]);
+
+        const changelogMatch = body.match(/\nCHANGELOG entry:\s(\S.+?)\n\n/su);
+
+        if (changelogMatch) {
+          const changelogEntry = changelogMatch[1].replace('\n', ' ');
+
+          description = changelogEntry; // This may be string 'null' to indicate no description
+        } else {
+          description = subject.match(/^(.+)\s\(#\d+\)/u)?.[1] ?? '';
+        }
+      } else {
+        description = subject.match(/^(.+)\s\(#\d+\)/u)?.[1] ?? '';
+      }
     } else {
       // Merge: the PR ID is parsed from the git subject (which is of the form `Merge pull request
       // #<PR ID> from <branch>`, and the description is assumed to be the first line of the body.
       // If no body is found, the description is set to the commit subject
-      matchResults = subject.match(/#(\d+)\sfrom/u);
-      if (matchResults) {
-        prNumber = matchResults[1];
-        const [firstLineOfBody] = await runCommand('git', [
+      const mergeMatch = subject.match(/#(\d+)\sfrom/u);
+      if (mergeMatch) {
+        prNumber = mergeMatch[1];
+        const [firstLineOfBody] = await runCommandAndSplit('git', [
           'show',
           '-s',
           '--format=%b',
@@ -73,8 +102,12 @@ async function getCommits(commitHashes: string[]) {
     // Otherwise:
     // Normal commits: The commit subject is the description, and the PR ID is omitted.
 
-    commits.push({ prNumber, description });
+    if (description !== 'null') {
+      // String 'null' is used to indicate no description
+      commits.push({ prNumber, subject, description });
+    }
   }
+
   return commits;
 }
 
@@ -89,6 +122,8 @@ async function getCommits(commitHashes: string[]) {
  * filter results from various git commands. This path is assumed to be either
  * absolute, or relative to the current directory. Defaults to the root of the
  * current git repository.
+ * @param options.useChangelogEntry - Whether to use `CHANGELOG entry:` from the commit body.
+ * @param options.useShortPrLink - Whether to use short PR links in the changelog entries.
  * @returns A list of new change entries to add to the changelog, based on commits made since the last release.
  */
 export async function getNewChangeEntries({
@@ -96,6 +131,8 @@ export async function getNewChangeEntries({
   repoUrl,
   loggedPrNumbers,
   projectRootDirectory,
+  useChangelogEntry,
+  useShortPrLink,
 }: AddNewCommitsOptions) {
   const commitRange =
     mostRecentTag === null ? 'HEAD' : `${mostRecentTag}..HEAD`;
@@ -103,32 +140,26 @@ export async function getNewChangeEntries({
     commitRange,
     projectRootDirectory,
   );
-  const commits = await getCommits(commitsHashesSinceLastRelease);
+  const commits = await getCommits(
+    commitsHashesSinceLastRelease,
+    useChangelogEntry,
+  );
 
   const newCommits = commits.filter(
     ({ prNumber }) => !prNumber || !loggedPrNumbers.includes(prNumber),
   );
 
-  return newCommits.map(({ prNumber, description }) => {
-    if (prNumber) {
-      const suffix = `([#${prNumber}](${repoUrl}/pull/${prNumber}))`;
-      return `${description} ${suffix}`;
-    }
-    return description;
-  });
-}
+  return newCommits.map(({ prNumber, subject, description }) => {
+    let newDescription = description;
 
-/**
- * Executes a shell command in a child process and returns what it wrote to
- * stdout, or rejects if the process exited with an error.
- *
- * @param command - The command to run, e.g. "git".
- * @param args - The arguments to the command.
- * @returns An array of the non-empty lines returned by the command.
- */
-async function runCommand(command: string, args: string[]): Promise<string[]> {
-  return (await execa(command, [...args])).stdout
-    .trim()
-    .split('\n')
-    .filter((line) => line !== '');
+    if (prNumber) {
+      const suffix = useShortPrLink
+        ? `(#${prNumber})`
+        : `([#${prNumber}](${repoUrl}/pull/${prNumber}))`;
+
+      newDescription = `${description} ${suffix}`;
+    }
+
+    return { description: newDescription, subject };
+  });
 }

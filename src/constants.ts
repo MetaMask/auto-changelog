@@ -7,15 +7,23 @@ export type Version = string;
  * A [Conventional Commit](https://www.conventionalcommits.org/en/v1.0.0/) type.
  */
 export enum ConventionalCommitType {
-  /**
-   * fix: a commit of the type fix patches a bug in your codebase
-   */
-  Fix = 'fix',
-  /**
-   * a commit of the type feat introduces a new feature to the codebase
-   */
-  Feat = 'feat',
+  FEAT = 'feat', // A new feature
+  FIX = 'fix', // A bug fix
+  DOCS = 'docs', // Documentation only changes
+  STYLE = 'style', // Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc)
+  REFACTOR = 'refactor', // A code change that neither fixes a bug nor adds a feature
+  PERF = 'perf', // A code change that improves performance
+  TEST = 'test', // Adding missing tests or correcting existing tests
+  BUILD = 'build', // Changes that affect the build system or external dependencies (example scopes: gulp, broccoli, npm)
+  CI = 'ci', // Changes to our CI configuration files and scripts (example scopes: Travis, Circle, BrowserStack, SauceLabs)
+  CHORE = 'chore', // Other changes that don't modify src or test files (use this sparingly)
+  REVERT = 'revert', // Reverts a previous commit
+
+  // Custom types for MetaMask
+  BUMP = 'bump', // A version bump to dependencies
+  RELEASE = 'release', // A release commit, made on a release branch or to0 support the release process
 }
+
 /**
  * Change categories.
  *
@@ -58,6 +66,11 @@ export enum ChangeCategory {
    * For any changes that have yet to be categorized.
    */
   Uncategorized = 'Uncategorized',
+
+  /**
+   * For changes that should be excluded from the changelog.
+   */
+  Excluded = 'Excluded',
 }
 
 /**
