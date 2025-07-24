@@ -25,4 +25,9 @@ module.exports = {
   ],
 
   ignorePatterns: ['!.eslintrc.js', 'dist'],
+
+  rules: {
+    // This is necessary to run eslint on Windows and not get a thousand CRLF errors
+    'prettier/prettier': ['error', { endOfLine: 'auto' }],
+  },
 };
