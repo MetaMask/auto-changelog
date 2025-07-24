@@ -54,7 +54,7 @@ export function parseChangelog({
   packageRename?: PackageRename;
   shouldExtractPrLinks?: boolean;
 }) {
-  const changelogLines = changelogContent.split(/\r?\n/u); // Split on either Windows or Unix line endings
+  const changelogLines = changelogContent.split(/(\r)?\n/u); // Split on either Windows or Unix line endings
   const changelog = new Changelog({
     repoUrl,
     tagPrefix,
