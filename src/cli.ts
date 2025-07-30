@@ -95,7 +95,7 @@ type UpdateOptions = {
    */
   packageRename?: PackageRename;
   /**
-   * Whether to use `CHANGELOG entry:` from the commit body
+   * Whether to use `CHANGELOG entry:` from the commit body and the no-changelog label
    */
   useChangelogEntry: boolean;
   /**
@@ -117,7 +117,7 @@ type UpdateOptions = {
  * @param options.formatter - A custom Markdown formatter to use.
  * @param options.packageRename - The package rename properties.
  * @param options.autoCategorize - Whether to categorize commits automatically based on their messages.
- * @param options.useChangelogEntry - Whether to read `CHANGELOG entry:` from the commit body.
+ * @param options.useChangelogEntry - Whether to read `CHANGELOG entry:` from the commit body and the no-changelog label.
  * @param options.useShortPrLink - Whether to use short PR links in the changelog entries.
  */
 async function update({
@@ -346,7 +346,8 @@ async function main() {
           })
           .option('useChangelogEntry', {
             default: false,
-            description: 'Read `CHANGELOG entry:` from the commit body',
+            description:
+              'Read `CHANGELOG entry:` from the commit body and the no-changelog label',
             type: 'boolean',
           })
           .option('useShortPrLink', {

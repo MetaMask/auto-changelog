@@ -89,7 +89,7 @@ export type UpdateChangelogOptions = {
    */
   packageRename?: PackageRename;
   /**
-   * Whether to use `CHANGELOG entry:` from the commit body
+   * Whether to use `CHANGELOG entry:` from the commit body and the no-changelog label
    */
   useChangelogEntry: boolean;
   /**
@@ -122,7 +122,7 @@ export type UpdateChangelogOptions = {
  * An optional, which is required only in case of package renamed.
  * @param options.autoCategorize - A flag indicating whether changes should be auto-categorized
  * based on commit message prefixes.
- * @param options.useChangelogEntry - Whether to use `CHANGELOG entry:` from the commit body.
+ * @param options.useChangelogEntry - Whether to use `CHANGELOG entry:` from the commit body and the no-changelog label.
  * @param options.useShortPrLink - Whether to use short PR links in the changelog.
  * @returns The updated changelog text.
  */

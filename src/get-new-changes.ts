@@ -1,6 +1,11 @@
+/* eslint-disable node/no-process-env */
+
+import { Octokit } from '@octokit/rest';
 import { strict as assert } from 'assert';
 
 import { runCommand, runCommandAndSplit } from './run-command';
+
+let github: Octokit;
 
 export type AddNewCommitsOptions = {
   mostRecentTag: string | null;
@@ -33,10 +38,12 @@ async function getCommitHashesInRange(
  * Get commit details for each given commit hash.
  *
  * @param commitHashes - The list of commit hashes.
- * @param useChangelogEntry - Whether to use `CHANGELOG entry:` from the commit body.
+ * @param useChangelogEntry - Whether to use `CHANGELOG entry:` from the commit body and the no-changelog label.
  * @returns Commit details for each commit, including description and PR number (if present).
  */
 async function getCommits(commitHashes: string[], useChangelogEntry: boolean) {
+  initOctoKit();
+
   const commits: { prNumber?: string; subject: string; description: string }[] =
     [];
   for (const commitHash of commitHashes) {
@@ -51,8 +58,6 @@ async function getCommits(commitHashes: string[], useChangelogEntry: boolean) {
       Boolean(subject),
       `"git show" returned empty subject for commit "${commitHash}".`,
     );
-
-    // console.log({ commitHash, subject, body });
 
     const subjectMatch = subject.match(/\(#(\d+)\)/u);
 
@@ -79,6 +84,17 @@ async function getCommits(commitHashes: string[], useChangelogEntry: boolean) {
           description = changelogEntry; // This may be string 'null' to indicate no description
         } else {
           description = subject.match(/^(.+)\s\(#\d+\)/u)?.[1] ?? '';
+        }
+
+        if (description !== 'null') {
+          const prLabels = await getPrLabels(prNumber);
+
+          // TODO: eliminate this debug log
+          console.log(`PR #${prNumber} labels:`, prLabels);
+
+          if (prLabels.includes('no-changelog')) {
+            description = 'null'; // Has the no-changelog label, use string 'null' to indicate no description
+          }
         }
       } else {
         description = subject.match(/^(.+)\s\(#\d+\)/u)?.[1] ?? '';
@@ -122,7 +138,7 @@ async function getCommits(commitHashes: string[], useChangelogEntry: boolean) {
  * filter results from various git commands. This path is assumed to be either
  * absolute, or relative to the current directory. Defaults to the root of the
  * current git repository.
- * @param options.useChangelogEntry - Whether to use `CHANGELOG entry:` from the commit body.
+ * @param options.useChangelogEntry - Whether to use `CHANGELOG entry:` from the commit body and the no-changelog label.
  * @param options.useShortPrLink - Whether to use short PR links in the changelog entries.
  * @returns A list of new change entries to add to the changelog, based on commits made since the last release.
  */
@@ -162,4 +178,45 @@ export async function getNewChangeEntries({
 
     return { description: newDescription, subject };
   });
+}
+
+/**
+ * Initialize the Octokit GitHub client with authentication token.
+ */
+function initOctoKit() {
+  if (!process.env.GITHUB_TOKEN) {
+    throw new Error('GITHUB_TOKEN environment variable is not set');
+  }
+
+  github = new Octokit({ auth: process.env.GITHUB_TOKEN });
+}
+
+/**
+ * Fetch labels for a pull request.
+ *
+ * @param prNumber - The pull request number.
+ * @returns A list of label names for the PR (empty array if not found or invalid).
+ */
+async function getPrLabels(prNumber: string): Promise<string[]> {
+  if (!prNumber) {
+    return [];
+  }
+
+  if (!github) {
+    initOctoKit();
+  }
+
+  const { data: pullRequest } = await github.rest.pulls.get({
+    owner: 'MetaMask',
+    repo: 'metamask-extension',
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    pull_number: Number(prNumber),
+  });
+
+  if (pullRequest) {
+    const labels = pullRequest.labels.map((label: any) => label.name);
+    return labels;
+  }
+
+  return [];
 }
