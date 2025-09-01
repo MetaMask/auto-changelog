@@ -17,12 +17,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 describe('updateChangelog', () => {
   it('should contain conventional support mappings categorization when autoCategorize is true', async () => {
     // Set up the spy and mock the implementation if needed
-    jest
-      .spyOn(ChangeLogUtils, 'getNewChangeEntries')
-      .mockResolvedValue([
-        'fix: Fixed a critical bug',
-        'feat: Added new feature [PR#123](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/123)',
-      ]);
+    jest.spyOn(ChangeLogUtils, 'getNewChangeEntries').mockResolvedValue([
+      {
+        description: 'Fixed a critical bug (#123)',
+        subject: 'fix: Fixed a critical bug (#123)',
+      },
+      {
+        description: 'New cool feature (#124)',
+        subject: 'feat: New cool feature (#124)',
+      },
+    ]);
 
     const result = await ChangeLogManager.updateChangelog({
       changelogContent: emptyChangelog,
@@ -31,6 +35,8 @@ describe('updateChangelog', () => {
         'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
       isReleaseCandidate: true,
       autoCategorize: true,
+      useChangelogEntry: false,
+      useShortPrLink: false,
     });
 
     expect(result).toContain('### Fixed');
@@ -40,12 +46,16 @@ describe('updateChangelog', () => {
 
   it('should not contain conventional support mappings categorization when autoCategorize is false', async () => {
     // Set up the spy and mock the implementation if needed
-    jest
-      .spyOn(ChangeLogUtils, 'getNewChangeEntries')
-      .mockResolvedValue([
-        'fix: Fixed a critical bug',
-        'feat: Added new feature [PR#123](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/123)',
-      ]);
+    jest.spyOn(ChangeLogUtils, 'getNewChangeEntries').mockResolvedValue([
+      {
+        description: 'Fixed a critical bug (#123)',
+        subject: 'fix: Fixed a critical bug (#123)',
+      },
+      {
+        description: 'New cool feature (#124)',
+        subject: 'feat: New cool feature (#124)',
+      },
+    ]);
 
     const result = await ChangeLogManager.updateChangelog({
       changelogContent: emptyChangelog,
@@ -54,6 +64,8 @@ describe('updateChangelog', () => {
         'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
       isReleaseCandidate: true,
       autoCategorize: false,
+      useChangelogEntry: false,
+      useShortPrLink: false,
     });
 
     expect(result).toContain('### Uncategorized');
