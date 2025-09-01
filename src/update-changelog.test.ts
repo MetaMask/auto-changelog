@@ -14,29 +14,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/
 `;
 
+const getNewChangeEntriesMockData = [
+  {
+    description: 'Fixed a critical bug (#123)',
+    subject: 'fix: Fixed a critical bug (#123)',
+  },
+  {
+    description: 'New cool feature (#124)',
+    subject: 'feat: New cool feature (#124)',
+  },
+  {
+    description: 'Release thingy (#124)',
+    subject: 'release: Release thingy (#124)',
+  },
+];
+
+const changelogData = {
+  changelogContent: emptyChangelog,
+  currentVersion: '1.0.0',
+  repoUrl: 'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+  isReleaseCandidate: true,
+  autoCategorize: true,
+  useChangelogEntry: false,
+  useShortPrLink: true,
+};
+
 describe('updateChangelog', () => {
   it('should contain conventional support mappings categorization when autoCategorize is true', async () => {
-    // Set up the spy and mock the implementation if needed
-    jest.spyOn(ChangeLogUtils, 'getNewChangeEntries').mockResolvedValue([
-      {
-        description: 'Fixed a critical bug (#123)',
-        subject: 'fix: Fixed a critical bug (#123)',
-      },
-      {
-        description: 'New cool feature (#124)',
-        subject: 'feat: New cool feature (#124)',
-      },
-    ]);
+    jest
+      .spyOn(ChangeLogUtils, 'getNewChangeEntries')
+      .mockResolvedValue(getNewChangeEntriesMockData);
 
     const result = await ChangeLogManager.updateChangelog({
-      changelogContent: emptyChangelog,
-      currentVersion: '1.0.0',
-      repoUrl:
-        'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
-      isReleaseCandidate: true,
+      ...changelogData,
       autoCategorize: true,
-      useChangelogEntry: false,
-      useShortPrLink: false,
     });
 
     expect(result).toContain('### Fixed');
@@ -45,32 +56,32 @@ describe('updateChangelog', () => {
   });
 
   it('should not contain conventional support mappings categorization when autoCategorize is false', async () => {
-    // Set up the spy and mock the implementation if needed
-    jest.spyOn(ChangeLogUtils, 'getNewChangeEntries').mockResolvedValue([
-      {
-        description: 'Fixed a critical bug (#123)',
-        subject: 'fix: Fixed a critical bug (#123)',
-      },
-      {
-        description: 'New cool feature (#124)',
-        subject: 'feat: New cool feature (#124)',
-      },
-    ]);
+    jest
+      .spyOn(ChangeLogUtils, 'getNewChangeEntries')
+      .mockResolvedValue(getNewChangeEntriesMockData);
 
     const result = await ChangeLogManager.updateChangelog({
-      changelogContent: emptyChangelog,
-      currentVersion: '1.0.0',
-      repoUrl:
-        'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
-      isReleaseCandidate: true,
+      ...changelogData,
       autoCategorize: false,
-      useChangelogEntry: false,
-      useShortPrLink: false,
     });
 
     expect(result).toContain('### Uncategorized');
     expect(result).not.toContain('### Fixed');
     expect(result).not.toContain('### Added');
+  });
+
+  it('should support useChangelogEntry=true', async () => {
+    jest
+      .spyOn(ChangeLogUtils, 'getNewChangeEntries')
+      .mockResolvedValue(getNewChangeEntriesMockData);
+
+    const result = await ChangeLogManager.updateChangelog({
+      ...changelogData,
+      useChangelogEntry: true,
+    });
+
+    expect(result).toContain('### Added\n- New cool feature (#124)');
+    expect(result).toContain('### Fixed\n- Fixed a critical bug (#123)');
   });
 });
 
