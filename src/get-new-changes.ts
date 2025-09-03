@@ -88,6 +88,12 @@ async function getCommits(
           const changelogEntry = changelogMatch[1].replace('\n', ' ');
 
           description = changelogEntry; // This may be string 'null' to indicate no description
+
+          if (description !== 'null') {
+            // Make description coming from `CHANGELOG entry:` start with an uppercase letter
+            description =
+              description.charAt(0).toUpperCase() + description.slice(1);
+          }
         } else {
           description = subject.match(/^(.+)\s\(#\d+\)/u)?.[1] ?? '';
         }
@@ -100,6 +106,10 @@ async function getCommits(
 
           if (prLabels.includes('no-changelog')) {
             description = 'null'; // Has the no-changelog label, use string 'null' to indicate no description
+          } else {
+            // Make description start with an uppercase letter
+            description =
+              description.charAt(0).toUpperCase() + description.slice(1);
           }
         }
       } else {
@@ -124,8 +134,8 @@ async function getCommits(
     // Otherwise:
     // Normal commits: The commit subject is the description, and the PR ID is omitted.
 
+    // String 'null' is used to indicate no description
     if (description !== 'null') {
-      // String 'null' is used to indicate no description
       commits.push({ prNumber, subject, description });
     }
   }
