@@ -42,3 +42,27 @@ export function getRepositoryUrl(): string | null {
 
   return null;
 }
+
+/**
+ * Extract the owner and repository name from a GitHub repository URL.
+ *
+ * Supports HTTPS and SSH GitHub URLs and removes any trailing .git; throws if parsing fails.
+ *
+ * @param repoUrl - The full GitHub repository URL (e.g., https://github.com/owner/repo or git@github.com:owner/repo).
+ * @returns An object containing the owner and repo name.
+ * @throws If the URL cannot be parsed.
+ */
+export function getOwnerAndRepoFromUrl(repoUrl: string): {
+  owner: string;
+  repo: string;
+} {
+  const match = repoUrl.match(
+    /github\.com[:/](?<owner>[^/]+)\/(?<repo>[^/]+)$/iu,
+  );
+
+  if (!match?.groups) {
+    throw new Error(`Cannot parse owner/repo from repoUrl: ${repoUrl}`);
+  }
+
+  return { owner: match.groups.owner, repo: match.groups.repo };
+}

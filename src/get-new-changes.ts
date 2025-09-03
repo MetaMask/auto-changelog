@@ -3,6 +3,7 @@
 import { Octokit } from '@octokit/rest';
 import { strict as assert } from 'assert';
 
+import { getOwnerAndRepoFromUrl } from './repo';
 import { runCommand, runCommandAndSplit } from './run-command';
 
 let github: Octokit;
@@ -38,10 +39,15 @@ async function getCommitHashesInRange(
  * Get commit details for each given commit hash.
  *
  * @param commitHashes - The list of commit hashes.
+ * @param repoUrl - The repository URL.
  * @param useChangelogEntry - Whether to use `CHANGELOG entry:` from the commit body and the no-changelog label.
  * @returns Commit details for each commit, including description and PR number (if present).
  */
-async function getCommits(commitHashes: string[], useChangelogEntry: boolean) {
+async function getCommits(
+  commitHashes: string[],
+  repoUrl: string,
+  useChangelogEntry: boolean,
+) {
   initOctoKit();
 
   const commits: { prNumber?: string; subject: string; description: string }[] =
@@ -87,7 +93,7 @@ async function getCommits(commitHashes: string[], useChangelogEntry: boolean) {
         }
 
         if (description !== 'null') {
-          const prLabels = await getPrLabels(prNumber);
+          const prLabels = await getPrLabels(repoUrl, prNumber);
 
           // TODO: eliminate this debug log
           console.log(`PR #${prNumber} labels:`, prLabels);
@@ -158,6 +164,7 @@ export async function getNewChangeEntries({
   );
   const commits = await getCommits(
     commitsHashesSinceLastRelease,
+    repoUrl,
     useChangelogEntry,
   );
 
@@ -194,10 +201,14 @@ function initOctoKit() {
 /**
  * Fetch labels for a pull request.
  *
+ * @param repoUrl - The repository URL.
  * @param prNumber - The pull request number.
  * @returns A list of label names for the PR (empty array if not found or invalid).
  */
-async function getPrLabels(prNumber: string): Promise<string[]> {
+async function getPrLabels(
+  repoUrl: string,
+  prNumber: string,
+): Promise<string[]> {
   if (!prNumber) {
     return [];
   }
@@ -206,9 +217,11 @@ async function getPrLabels(prNumber: string): Promise<string[]> {
     initOctoKit();
   }
 
+  const { owner, repo } = getOwnerAndRepoFromUrl(repoUrl);
+
   const { data: pullRequest } = await github.rest.pulls.get({
-    owner: 'MetaMask',
-    repo: 'metamask-extension',
+    owner,
+    repo,
     // eslint-disable-next-line @typescript-eslint/naming-convention
     pull_number: Number(prNumber),
   });
