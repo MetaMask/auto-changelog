@@ -1,6 +1,11 @@
 import type Changelog from './changelog';
 import { Formatter, getKnownPropertyNames } from './changelog';
-import { ChangeCategory, ConventionalCommitType, Version } from './constants';
+import {
+  ChangeCategory,
+  ConventionalCommitType,
+  Version,
+  keywordsToIndicateExcluded,
+} from './constants';
 import { getNewChangeEntries } from './get-new-changes';
 import { parseChangelog } from './parse-changelog';
 import { runCommandAndSplit } from './run-command';
@@ -214,8 +219,8 @@ export async function updateChangelog({
  * @returns The category of the change.
  */
 export function getCategory(description: string): ChangeCategory {
-  // Don't include merge commits in the changelog
-  if (description.startsWith('Merge')) {
+  // Check whether the commit description includes exclusion keywords
+  if (checkIfDescriptionIndicatesExcluded(description)) {
     return ChangeCategory.Excluded;
   }
 
@@ -250,4 +255,16 @@ export function getCategory(description: string): ChangeCategory {
   }
   // Return 'Uncategorized' if no colon is found or prefix doesn't match
   return ChangeCategory.Uncategorized;
+}
+
+/**
+ * Check whether the commit description includes exclusion keywords.
+ *
+ * @param description - The raw or processed commit description.
+ * @returns True if the description contains any exclusion keywords; otherwise false.
+ */
+function checkIfDescriptionIndicatesExcluded(description: string): boolean {
+  const _description = description.toLowerCase();
+
+  return keywordsToIndicateExcluded.some((word) => _description.includes(word));
 }

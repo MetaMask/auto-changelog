@@ -91,3 +91,18 @@ export const orderedChangeCategories: ChangeCategory[] = [
  * The header for the section of the changelog listing unreleased changes.
  */
 export const unreleased = 'Unreleased';
+
+/**
+ * Keywords that indicate a commit should be excluded from the changelog.
+ */
+export const keywordsToIndicateExcluded: string[] = [
+  'Bump main version to',
+  'changelog',
+  'cherry-pick',
+  'cp-',
+  'e2e',
+  'flaky test',
+  'INFRA-',
+  'merge',
+  'New Crowdin translations',
+];

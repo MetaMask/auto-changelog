@@ -106,10 +106,6 @@ async function getCommits(
 
           if (prLabels.includes('no-changelog')) {
             description = 'null'; // Has the no-changelog label, use string 'null' to indicate no description
-          } else {
-            // Make description start with an uppercase letter
-            description =
-              description.charAt(0).toUpperCase() + description.slice(1);
           }
         }
       } else {
