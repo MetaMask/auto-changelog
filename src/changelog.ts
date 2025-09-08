@@ -114,7 +114,7 @@ function stringifyCategory(
   category: ChangeCategory,
   changes: Change[],
   repoUrl: string,
-  useShortPrLink: boolean,
+  useShortPrLink = false,
 ) {
   const categoryHeader = `### ${category}`;
   if (changes.length === 0) {
@@ -156,7 +156,7 @@ function stringifyRelease(
   version: Version | typeof unreleased,
   categories: ReleaseChanges,
   repoUrl: string,
-  useShortPrLink: boolean,
+  useShortPrLink = false,
   { date, status }: Partial<ReleaseMetadata> = {},
 ) {
   const releaseHeader = `## [${version}]${date ? ` - ${date}` : ''}${
@@ -188,7 +188,7 @@ function stringifyReleases(
   releases: ReleaseMetadata[],
   changes: ChangelogChanges,
   repoUrl: string,
-  useShortPrLink: boolean,
+  useShortPrLink = false,
 ) {
   const stringifiedUnreleased = stringifyRelease(
     unreleased,
@@ -603,7 +603,7 @@ export default class Changelog {
    * @param useShortPrLink - Whether to use short PR links in the changelog entries.
    * @returns The stringified release, as it appears in the changelog.
    */
-  getStringifiedRelease(version: Version, useShortPrLink: boolean) {
+  getStringifiedRelease(version: Version, useShortPrLink = false) {
     const release = this.getRelease(version);
     if (!release) {
       throw new Error(`Specified release version does not exist: '${version}'`);
@@ -643,7 +643,7 @@ export default class Changelog {
    * @param useShortPrLink - Whether to use short PR links in the changelog entries.
    * @returns The stringified changelog.
    */
-  async toString(useShortPrLink: boolean): Promise<string> {
+  async toString(useShortPrLink = false): Promise<string> {
     const changelog = `${changelogTitle}
 ${changelogDescription}
 
