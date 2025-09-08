@@ -101,9 +101,6 @@ async function getCommits(
         if (description !== 'null') {
           const prLabels = await getPrLabels(repoUrl, prNumber);
 
-          // TODO: eliminate this debug log
-          console.log(`PR #${prNumber} labels:`, prLabels);
-
           if (prLabels.includes('no-changelog')) {
             description = 'null'; // Has the no-changelog label, use string 'null' to indicate no description
           }
