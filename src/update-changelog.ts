@@ -150,6 +150,7 @@ export async function updateChangelog({
     tagPrefix: tagPrefixes[0],
     formatter,
     packageRename,
+    shouldExtractPrLinks: true, // By setting this to true, we ensure we don't re-add a PR to the changelog if it was already added in previous releases
   });
 
   const mostRecentTag = await getMostRecentTag({
@@ -207,7 +208,7 @@ export async function updateChangelog({
     }
   }
 
-  const newChangelogContent = await changelog.toString();
+  const newChangelogContent = await changelog.toString(useShortPrLink);
   const isChangelogUpdated = changelogContent !== newChangelogContent;
   return isChangelogUpdated ? newChangelogContent : undefined;
 }

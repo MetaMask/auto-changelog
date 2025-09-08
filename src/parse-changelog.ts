@@ -214,53 +214,34 @@ function extractPrLinks(changeEntry: string): {
   description: string;
   prNumbers: string[];
 } {
-  const [firstLine, ...otherLines] = changeEntry.split('\n');
-  const parentheticalMatches = firstLine.matchAll(/[ ]\((\[.+?\]\(.+?\))\)/gu);
+  const lines = changeEntry.split('\n');
   const prNumbers: string[] = [];
-  let startIndex = Infinity;
-  let endIndex = 0;
+  const cleanedLines: string[] = [];
 
-  for (const parentheticalMatch of parentheticalMatches) {
-    const { index } = parentheticalMatch;
-    const wholeMatch = parentheticalMatch[0];
-    const parts = wholeMatch.split(/,[ ]?/u);
+  for (const line of lines) {
+    let cleanedLine = line;
 
-    for (const part of parts) {
-      const regexp = /\[#(\d+)\]\([^()]+\)/u;
-      const match = part.match(regexp);
-      if (match !== null) {
-        const prNumber = match[1];
-        prNumbers.push(prNumber);
-      }
+    // Match and extract all long Markdown PR links: ([#123](...))
+    const longMatches = [...cleanedLine.matchAll(/\[#(\d+)\]\([^)]+\)/gu)];
+    for (const match of longMatches) {
+      prNumbers.push(match[1]);
     }
+    cleanedLine = cleanedLine.replace(/[ ]?\(\[#\d+\]\([^)]+\)\)/gu, '');
 
-    if (index === undefined) {
-      throw new Error('Could not find index. This should not happen.');
+    // Match and extract all short PR links: (#123)
+    const shortMatches = [...cleanedLine.matchAll(/\(#(\d+)\)/gu)];
+    for (const match of shortMatches) {
+      prNumbers.push(match[1]);
     }
+    cleanedLine = cleanedLine.replace(/[ ]?\(#\d+\)/gu, '');
 
-    if (index < startIndex) {
-      startIndex = index;
-    }
-
-    if (index + wholeMatch.length > endIndex) {
-      endIndex = index + wholeMatch.length;
-    }
+    cleanedLines.push(cleanedLine.trimEnd());
   }
 
   const uniquePrNumbers = [...new Set(prNumbers)];
 
-  if (prNumbers.length > 0) {
-    const firstLineWithoutPrLinks =
-      firstLine.slice(0, startIndex) + firstLine.slice(endIndex);
-
-    return {
-      description: [firstLineWithoutPrLinks, ...otherLines].join('\n'),
-      prNumbers: uniquePrNumbers,
-    };
-  }
-
   return {
-    description: changeEntry,
-    prNumbers: [],
+    description: cleanedLines.join('\n').trim(),
+    prNumbers: uniquePrNumbers,
   };
 }
