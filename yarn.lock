@@ -873,7 +873,7 @@ __metadata:
   peerDependencies:
     prettier: ">=3.0.0"
   bin:
-    auto-changelog: dist/cli.mjs
+    auto-changelog: dist/cli.js
   languageName: unknown
   linkType: soft
 
