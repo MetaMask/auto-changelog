@@ -216,32 +216,55 @@ function extractPrLinks(changeEntry: string): {
 } {
   const lines = changeEntry.split('\n');
   const prNumbers: string[] = [];
-  const cleanedLines: string[] = [];
 
-  for (const line of lines) {
-    let cleanedLine = line;
+  // Only process the first line for PR link extraction
+  let firstLine = lines[0];
 
-    // Match and extract all long Markdown PR links: ([#123](...))
-    const longMatches = [...cleanedLine.matchAll(/\[#(\d+)\]\([^)]+\)/gu)];
+  // Example of long match group: " ([#123](...), [#456](...))"
+  const longGroupMatchPattern = /\s+\(\s*(\[#\d+\]\([^)]+\)\s*,?\s*)+\)/gu;
+
+  // Example of long match: "[#123](...)"
+  const longMatchPattern = /\[#(\d+)\]\([^)]+\)/gu;
+
+  // Match and extract all long PR links like ([#123](...)) separated by commas
+  const longGroupMatches = [...firstLine.matchAll(longGroupMatchPattern)];
+  for (const longGroupMatch of longGroupMatches) {
+    const group = longGroupMatch[0];
+    const longMatches = [...group.matchAll(longMatchPattern)];
     for (const match of longMatches) {
       prNumbers.push(match[1]);
     }
-    cleanedLine = cleanedLine.replace(/[ ]?\(\[#\d+\]\([^)]+\)\)/gu, '');
+  }
 
-    // Match and extract all short PR links: (#123)
-    const shortMatches = [...cleanedLine.matchAll(/\(#(\d+)\)/gu)];
+  // Remove valid long PR links (grouped in parentheses, possibly comma-separated)
+  firstLine = firstLine.replace(longGroupMatchPattern, '');
+
+  // Example of short match group: " (#123), (#123)"
+  const shortGroupMatchPattern = /\s+(\(#\d+\)\s*,?\s*)+/gu;
+
+  // Example of short match: "(#123)"
+  const shortMatchPattern = /\(#(\d+)\)/gu;
+
+  // Match and extract all short PR links like (#123)
+  const shortGroupMatches = [...firstLine.matchAll(shortGroupMatchPattern)];
+  for (const shortGroupMatch of shortGroupMatches) {
+    const group = shortGroupMatch[0];
+    const shortMatches = [...group.matchAll(shortMatchPattern)];
     for (const match of shortMatches) {
       prNumbers.push(match[1]);
     }
-    cleanedLine = cleanedLine.replace(/[ ]?\(#\d+\)/gu, '');
-
-    cleanedLines.push(cleanedLine.trimEnd());
   }
 
-  const uniquePrNumbers = [...new Set(prNumbers)];
+  // Remove valid short PR links
+  firstLine = firstLine.replace(shortGroupMatchPattern, '');
 
+  // Prepare the cleaned description
+  const cleanedLines = [firstLine.trim(), ...lines.slice(1)];
+  const cleanedDescription = cleanedLines.join('\n');
+
+  // Return unique PR numbers and the cleaned description
   return {
-    description: cleanedLines.join('\n').trim(),
-    prNumbers: uniquePrNumbers,
+    description: cleanedDescription.trim(),
+    prNumbers: [...new Set(prNumbers)],
   };
 }
