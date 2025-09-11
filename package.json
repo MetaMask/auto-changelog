@@ -24,13 +24,13 @@
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.cts",
-  "bin": "dist/cli.js",
+  "bin": "dist/cli.mjs",
   "files": [
     "dist"
   ],
   "scripts": {
     "build": "ts-bridge --project tsconfig.build.json --clean",
-    "changelog": "node dist/cli.mjs",
+    "changelog": "node dist/cli.js",
     "lint": "yarn lint:eslint && yarn lint:misc --check",
     "lint:eslint": "eslint . --cache --ext js,ts",
     "lint:fix": "yarn lint:eslint --fix && yarn lint:misc --write",
