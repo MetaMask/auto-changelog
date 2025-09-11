@@ -267,7 +267,11 @@ export function getCategory(description: string): ChangeCategory {
 function checkIfDescriptionIndicatesExcluded(description: string): boolean {
   const _description = description.toLowerCase();
 
-  return keywordsToIndicateExcluded.some((word) =>
-    _description.includes(word.toLowerCase()),
+  const keywordsToIndicateExcludedLowerCase = keywordsToIndicateExcluded.map(
+    (word) => word.toLowerCase(),
+  );
+
+  return keywordsToIndicateExcludedLowerCase.some((word) =>
+    _description.includes(word),
   );
 }
