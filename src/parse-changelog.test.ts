@@ -4,6 +4,46 @@ import { parseChangelog } from './parse-changelog';
 
 const outdent = _outdent({ trimTrailingNewline: false });
 
+const COMMON_HEADER = outdent`# Changelog
+  All notable changes to this project will be documented in this file.
+
+  The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+  and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+  ## [Unreleased]
+`;
+
+const COMMON_REFERENCE_LINKS_1 = outdent`[Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
+  [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.2...v1.0.0
+`;
+const COMMON_REFERENCE_LINKS_3 = outdent`[Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
+  [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.2...v1.0.0
+  [0.0.2]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.1...v0.0.2
+  [0.0.1]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/v0.0.1
+`;
+const COMMON_REFERENCE_LINKS_4 = outdent`[Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
+  [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.3...v1.0.0
+  [0.0.3]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.2...v0.0.3
+  [0.0.2]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.1...v0.0.2
+  [0.0.1]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/v0.0.1
+`;
+
+/**
+ * Creates a changelog string with the given content, header, and reference links.
+ *
+ * @param content - The changelog content to include.
+ * @param header - The changelog header (default: COMMON_HEADER).
+ * @param reference - The reference links (default: COMMON_REFERENCE_LINKS).
+ * @returns The complete changelog string.
+ */
+function createChangelog(
+  header: string,
+  content: string,
+  reference: string,
+): string {
+  return `${header}\n${content}\n${reference}`;
+}
+
 describe('parseChangelog', () => {
   it('should parse empty changelog', () => {
     const changelog = parseChangelog({
@@ -905,16 +945,9 @@ describe('parseChangelog', () => {
 
   describe('when shouldExtractPrLinks is true and changelog entry matches long pattern', () => {
     it('should parse changelog with pull request links after changelog entries', () => {
-      const changelog = parseChangelog({
-        changelogContent: outdent`
-          # Changelog
-          All notable changes to this project will be documented in this file.
-
-          The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-          and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-          ## [Unreleased]
-
+      const changelogContent = createChangelog(
+        COMMON_HEADER,
+        outdent`
           ## [1.0.0]
           ### Changed
           - Change something else ([#100](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/100), [#200](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/200))
@@ -926,12 +959,12 @@ describe('parseChangelog', () => {
           ## [0.0.1]
           ### Added
           - Initial release ([#456](anything goes here actually))
-
-          [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
-          [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.2...v1.0.0
-          [0.0.2]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.1...v0.0.2
-          [0.0.1]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/v0.0.1
         `,
+        COMMON_REFERENCE_LINKS_3,
+      );
+
+      const changelog = parseChangelog({
+        changelogContent,
         repoUrl:
           'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
         shouldExtractPrLinks: true,
@@ -956,24 +989,19 @@ describe('parseChangelog', () => {
     });
 
     it('should parse changelog with pull request links at end of first line of multi-line change description', () => {
-      const changelog = parseChangelog({
-        changelogContent: outdent`
-          # Changelog
-          All notable changes to this project will be documented in this file.
-
-          The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-          and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-          ## [Unreleased]
-
+      const changelogContent = createChangelog(
+        COMMON_HEADER,
+        outdent`
           ## [1.0.0]
           ### Changed
           - Change something ([#100](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/100), [#200](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/200))
           This is a cool change, you will really like it.
-
-          [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
-          [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.2...v1.0.0
         `,
+        COMMON_REFERENCE_LINKS_1,
+      );
+
+      const changelog = parseChangelog({
+        changelogContent,
         repoUrl:
           'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
         shouldExtractPrLinks: true,
@@ -991,24 +1019,18 @@ describe('parseChangelog', () => {
     });
 
     it('should parse changelog with pull request links at end of first line of change description with sub-bullets', () => {
-      const changelog = parseChangelog({
-        changelogContent: outdent`
-          # Changelog
-          All notable changes to this project will be documented in this file.
-
-          The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-          and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-          ## [Unreleased]
-
+      const changelogContent = createChangelog(
+        COMMON_HEADER,
+        outdent`
           ## [1.0.0]
           ### Changed
           - Change something ([#100](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/100), [#200](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/200))
             - This is a cool change, you will really like it.
-
-          [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
-          [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.2...v1.0.0
         `,
+        COMMON_REFERENCE_LINKS_1,
+      );
+      const changelog = parseChangelog({
+        changelogContent,
         repoUrl:
           'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
         shouldExtractPrLinks: true,
@@ -1026,24 +1048,18 @@ describe('parseChangelog', () => {
     });
 
     it('should preserve links within sub-bullets', () => {
-      const changelog = parseChangelog({
-        changelogContent: outdent`
-          # Changelog
-          All notable changes to this project will be documented in this file.
-
-          The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-          and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-          ## [Unreleased]
-
+      const changelogContent = createChangelog(
+        COMMON_HEADER,
+        outdent`
           ## [1.0.0]
           ### Changed
           - Change something
             - This is a cool change, you will really like it. ([#100](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/100))
-
-          [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
-          [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.2...v1.0.0
         `,
+        COMMON_REFERENCE_LINKS_1,
+      );
+      const changelog = parseChangelog({
+        changelogContent,
         repoUrl:
           'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
         shouldExtractPrLinks: true,
@@ -1061,23 +1077,17 @@ describe('parseChangelog', () => {
     });
 
     it('should parse changelog with pull request links somewhere within entry, not just at end', () => {
-      const changelog = parseChangelog({
-        changelogContent: outdent`
-          # Changelog
-          All notable changes to this project will be documented in this file.
-
-          The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-          and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-          ## [Unreleased]
-
+      const changelogContent = createChangelog(
+        COMMON_HEADER,
+        outdent`
           ## [1.0.0]
           ### Changed
           - Change something ([#100](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/100), [#200](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/200)). And something else.
-
-          [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
-          [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.2...v1.0.0
         `,
+        COMMON_REFERENCE_LINKS_1,
+      );
+      const changelog = parseChangelog({
+        changelogContent,
         repoUrl:
           'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
         shouldExtractPrLinks: true,
@@ -1094,23 +1104,17 @@ describe('parseChangelog', () => {
     });
 
     it('should combine multiple pull request lists', () => {
-      const changelog = parseChangelog({
-        changelogContent: outdent`
-          # Changelog
-          All notable changes to this project will be documented in this file.
-
-          The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-          and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-          ## [Unreleased]
-
+      const changelogContent = createChangelog(
+        COMMON_HEADER,
+        outdent`
           ## [1.0.0]
           ### Changed
           - Change something ([#100](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/100), [#200](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/200)) ([#300](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/300))
-
-          [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
-          [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.2...v1.0.0
         `,
+        COMMON_REFERENCE_LINKS_1,
+      );
+      const changelog = parseChangelog({
+        changelogContent,
         repoUrl:
           'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
         shouldExtractPrLinks: true,
@@ -1127,23 +1131,17 @@ describe('parseChangelog', () => {
     });
 
     it('should de-duplicate pull request links in same list', () => {
-      const changelog = parseChangelog({
-        changelogContent: outdent`
-          # Changelog
-          All notable changes to this project will be documented in this file.
-
-          The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-          and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-          ## [Unreleased]
-
+      const changelogContent = createChangelog(
+        COMMON_HEADER,
+        outdent`
           ## [1.0.0]
           ### Changed
           - Change something ([#100](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/100), [#100](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/100))
-
-          [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
-          [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.2...v1.0.0
         `,
+        COMMON_REFERENCE_LINKS_1,
+      );
+      const changelog = parseChangelog({
+        changelogContent,
         repoUrl:
           'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
         shouldExtractPrLinks: true,
@@ -1160,23 +1158,17 @@ describe('parseChangelog', () => {
     });
 
     it('should de-duplicate pull request links in separate lists', () => {
-      const changelog = parseChangelog({
-        changelogContent: outdent`
-          # Changelog
-          All notable changes to this project will be documented in this file.
-
-          The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-          and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-          ## [Unreleased]
-
+      const changelogContent = createChangelog(
+        COMMON_HEADER,
+        outdent`
           ## [1.0.0]
           ### Changed
           - Change something ([#100](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/100)) ([#100](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/100))
-
-          [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
-          [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.2...v1.0.0
         `,
+        COMMON_REFERENCE_LINKS_1,
+      );
+      const changelog = parseChangelog({
+        changelogContent,
         repoUrl:
           'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
         shouldExtractPrLinks: true,
@@ -1193,16 +1185,9 @@ describe('parseChangelog', () => {
     });
 
     it('should preserve non-pull request links or malformed link syntax after changelog entries as part of the entry text itself', () => {
-      const changelog = parseChangelog({
-        changelogContent: outdent`
-          # Changelog
-          All notable changes to this project will be documented in this file.
-
-          The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-          and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-          ## [Unreleased]
-
+      const changelogContent = createChangelog(
+        COMMON_HEADER,
+        outdent`
           ## [1.0.0]
           ### Changed
           - Change something else ([123](https://github.com/ExampleUsernameOrOrganization/ExampleRepository))
@@ -1218,13 +1203,11 @@ describe('parseChangelog', () => {
           ## [0.0.1]
           ### Added
           - Initial release ([#789](https://example.com)
-
-          [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
-          [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.3...v1.0.0
-          [0.0.3]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.2...v0.0.3
-          [0.0.2]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.1...v0.0.2
-          [0.0.1]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/v0.0.1
         `,
+        COMMON_REFERENCE_LINKS_4,
+      );
+      const changelog = parseChangelog({
+        changelogContent,
         repoUrl:
           'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
         shouldExtractPrLinks: true,
@@ -1273,16 +1256,9 @@ describe('parseChangelog', () => {
 
   describe('when shouldExtractPrLinks is true and changelog entry matches short pattern', () => {
     it('should parse changelog with pull request links after changelog entries', () => {
-      const changelog = parseChangelog({
-        changelogContent: outdent`
-          # Changelog
-          All notable changes to this project will be documented in this file.
-
-          The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-          and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-          ## [Unreleased]
-
+      const changelogContent = createChangelog(
+        COMMON_HEADER,
+        outdent`
           ## [1.0.0]
           ### Changed
           - Change something else (#100), (#200)
@@ -1294,12 +1270,11 @@ describe('parseChangelog', () => {
           ## [0.0.1]
           ### Added
           - Initial release (#456)
-
-          [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
-          [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.2...v1.0.0
-          [0.0.2]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.1...v0.0.2
-          [0.0.1]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/v0.0.1
         `,
+        COMMON_REFERENCE_LINKS_3,
+      );
+      const changelog = parseChangelog({
+        changelogContent,
         repoUrl:
           'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
         shouldExtractPrLinks: true,
@@ -1324,24 +1299,18 @@ describe('parseChangelog', () => {
     });
 
     it('should parse changelog with pull request links at end of first line of multi-line change description', () => {
-      const changelog = parseChangelog({
-        changelogContent: outdent`
-          # Changelog
-          All notable changes to this project will be documented in this file.
-
-          The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-          and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-          ## [Unreleased]
-
+      const changelogContent = createChangelog(
+        COMMON_HEADER,
+        outdent`
           ## [1.0.0]
           ### Changed
           - Change something (#100), (#200)
           This is a cool change, you will really like it.
-
-          [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
-          [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.2...v1.0.0
         `,
+        COMMON_REFERENCE_LINKS_1,
+      );
+      const changelog = parseChangelog({
+        changelogContent,
         repoUrl:
           'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
         shouldExtractPrLinks: true,
@@ -1359,24 +1328,18 @@ describe('parseChangelog', () => {
     });
 
     it('should parse changelog with pull request links at end of first line of change description with sub-bullets', () => {
-      const changelog = parseChangelog({
-        changelogContent: outdent`
-          # Changelog
-          All notable changes to this project will be documented in this file.
-
-          The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-          and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-          ## [Unreleased]
-
+      const changelogContent = createChangelog(
+        COMMON_HEADER,
+        outdent`
           ## [1.0.0]
           ### Changed
           - Change something (#100), (#200)
             - This is a cool change, you will really like it.
-
-          [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
-          [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.2...v1.0.0
         `,
+        COMMON_REFERENCE_LINKS_1,
+      );
+      const changelog = parseChangelog({
+        changelogContent,
         repoUrl:
           'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
         shouldExtractPrLinks: true,
@@ -1394,24 +1357,18 @@ describe('parseChangelog', () => {
     });
 
     it('should preserve links within sub-bullets', () => {
-      const changelog = parseChangelog({
-        changelogContent: outdent`
-          # Changelog
-          All notable changes to this project will be documented in this file.
-
-          The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-          and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-          ## [Unreleased]
-
+      const changelogContent = createChangelog(
+        COMMON_HEADER,
+        outdent`
           ## [1.0.0]
           ### Changed
           - Change something
             - This is a cool change, you will really like it. (#100)
-
-          [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
-          [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.2...v1.0.0
         `,
+        COMMON_REFERENCE_LINKS_1,
+      );
+      const changelog = parseChangelog({
+        changelogContent,
         repoUrl:
           'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
         shouldExtractPrLinks: true,
@@ -1429,23 +1386,17 @@ describe('parseChangelog', () => {
     });
 
     it('should parse changelog with pull request links somewhere within entry, not just at end', () => {
-      const changelog = parseChangelog({
-        changelogContent: outdent`
-          # Changelog
-          All notable changes to this project will be documented in this file.
-
-          The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-          and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-          ## [Unreleased]
-
+      const changelogContent = createChangelog(
+        COMMON_HEADER,
+        outdent`
           ## [1.0.0]
           ### Changed
           - Change something (#100), (#200). And something else.
-
-          [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
-          [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.2...v1.0.0
         `,
+        COMMON_REFERENCE_LINKS_1,
+      );
+      const changelog = parseChangelog({
+        changelogContent,
         repoUrl:
           'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
         shouldExtractPrLinks: true,
@@ -1462,23 +1413,17 @@ describe('parseChangelog', () => {
     });
 
     it('should combine multiple pull request lists', () => {
-      const changelog = parseChangelog({
-        changelogContent: outdent`
-          # Changelog
-          All notable changes to this project will be documented in this file.
-
-          The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-          and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-          ## [Unreleased]
-
+      const changelogContent = createChangelog(
+        COMMON_HEADER,
+        outdent`
           ## [1.0.0]
           ### Changed
           - Change something (#100), (#200) (#300)
-
-          [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
-          [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.2...v1.0.0
         `,
+        COMMON_REFERENCE_LINKS_1,
+      );
+      const changelog = parseChangelog({
+        changelogContent,
         repoUrl:
           'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
         shouldExtractPrLinks: true,
@@ -1495,23 +1440,17 @@ describe('parseChangelog', () => {
     });
 
     it('should de-duplicate pull request links in same list', () => {
-      const changelog = parseChangelog({
-        changelogContent: outdent`
-          # Changelog
-          All notable changes to this project will be documented in this file.
-
-          The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-          and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-          ## [Unreleased]
-
+      const changelogContent = createChangelog(
+        COMMON_HEADER,
+        outdent`
           ## [1.0.0]
           ### Changed
           - Change something (#100), (#100)
-
-          [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
-          [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.2...v1.0.0
         `,
+        COMMON_REFERENCE_LINKS_1,
+      );
+      const changelog = parseChangelog({
+        changelogContent,
         repoUrl:
           'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
         shouldExtractPrLinks: true,
@@ -1528,23 +1467,17 @@ describe('parseChangelog', () => {
     });
 
     it('should de-duplicate pull request links in separate lists', () => {
-      const changelog = parseChangelog({
-        changelogContent: outdent`
-          # Changelog
-          All notable changes to this project will be documented in this file.
-
-          The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-          and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-          ## [Unreleased]
-
+      const changelogContent = createChangelog(
+        COMMON_HEADER,
+        outdent`
           ## [1.0.0]
           ### Changed
           - Change something (#100) (#100)
-
-          [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
-          [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.2...v1.0.0
         `,
+        COMMON_REFERENCE_LINKS_1,
+      );
+      const changelog = parseChangelog({
+        changelogContent,
         repoUrl:
           'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
         shouldExtractPrLinks: true,
@@ -1561,16 +1494,9 @@ describe('parseChangelog', () => {
     });
 
     it('should preserve non-pull request links or malformed link syntax after changelog entries as part of the entry text itself', () => {
-      const changelog = parseChangelog({
-        changelogContent: outdent`
-          # Changelog
-          All notable changes to this project will be documented in this file.
-
-          The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-          and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-          ## [Unreleased]
-
+      const changelogContent = createChangelog(
+        COMMON_HEADER,
+        outdent`
           ## [1.0.0]
           ### Changed
           - Change something else (123)
@@ -1586,13 +1512,11 @@ describe('parseChangelog', () => {
           ## [0.0.1]
           ### Added
           - Initial release (#789
-
-          [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
-          [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.3...v1.0.0
-          [0.0.3]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.2...v0.0.3
-          [0.0.2]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.1...v0.0.2
-          [0.0.1]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/v0.0.1
         `,
+        COMMON_REFERENCE_LINKS_4,
+      );
+      const changelog = parseChangelog({
+        changelogContent,
         repoUrl:
           'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
         shouldExtractPrLinks: true,
@@ -1639,16 +1563,9 @@ describe('parseChangelog', () => {
 
   describe('when shouldExtractPrLinks is false', () => {
     it('should not parse pull request links after changelog entries specially', () => {
-      const changelog = parseChangelog({
-        changelogContent: outdent`
-          # Changelog
-          All notable changes to this project will be documented in this file.
-
-          The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-          and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-          ## [Unreleased]
-
+      const changelogContent = createChangelog(
+        COMMON_HEADER,
+        outdent`
           ## [1.0.0]
           ### Changed
           - Change something else ([#100](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/100), [#200](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/200))
@@ -1660,12 +1577,11 @@ describe('parseChangelog', () => {
           ## [0.0.1]
           ### Added
           - Initial release ([#456](anything goes here actually))
-
-          [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
-          [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.2...v1.0.0
-          [0.0.2]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.1...v0.0.2
-          [0.0.1]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/v0.0.1
         `,
+        COMMON_REFERENCE_LINKS_3,
+      );
+      const changelog = parseChangelog({
+        changelogContent,
         repoUrl:
           'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
         shouldExtractPrLinks: false,
