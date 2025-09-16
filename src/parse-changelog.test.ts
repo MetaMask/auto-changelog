@@ -31,8 +31,8 @@ const COMMON_REFERENCE_LINKS_4 = outdent`[Unreleased]: https://github.com/Exampl
 /**
  * Creates a changelog string with the given content, header, and reference links.
  *
- * @param content - The changelog content to include.
  * @param header - The changelog header (default: COMMON_HEADER).
+ * @param content - The changelog content to include.
  * @param reference - The reference links (default: COMMON_REFERENCE_LINKS).
  * @returns The complete changelog string.
  */
