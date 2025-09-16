@@ -4,6 +4,9 @@ import { parseChangelog } from './parse-changelog';
 
 const outdent = _outdent({ trimTrailingNewline: false });
 
+const repoUrl =
+  'https://github.com/ExampleUsernameOrOrganization/ExampleRepository';
+
 const COMMON_HEADER = outdent`# Changelog
   All notable changes to this project will be documented in this file.
 
@@ -13,19 +16,19 @@ const COMMON_HEADER = outdent`# Changelog
   ## [Unreleased]
 `;
 
-const COMMON_REFERENCE_LINKS_1 = outdent`[Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
-  [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.2...v1.0.0
+const COMMON_REFERENCE_LINKS_1 = outdent`[Unreleased]: ${repoUrl}/compare/v1.0.0...HEAD
+  [1.0.0]: ${repoUrl}/compare/v0.0.2...v1.0.0
 `;
-const COMMON_REFERENCE_LINKS_3 = outdent`[Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
-  [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.2...v1.0.0
-  [0.0.2]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.1...v0.0.2
-  [0.0.1]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/v0.0.1
+const COMMON_REFERENCE_LINKS_3 = outdent`[Unreleased]: ${repoUrl}/compare/v1.0.0...HEAD
+  [1.0.0]: ${repoUrl}/compare/v0.0.2...v1.0.0
+  [0.0.2]: ${repoUrl}/compare/v0.0.1...v0.0.2
+  [0.0.1]: ${repoUrl}/releases/tag/v0.0.1
 `;
-const COMMON_REFERENCE_LINKS_4 = outdent`[Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
-  [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.3...v1.0.0
-  [0.0.3]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.2...v0.0.3
-  [0.0.2]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.1...v0.0.2
-  [0.0.1]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/v0.0.1
+const COMMON_REFERENCE_LINKS_4 = outdent`[Unreleased]: ${repoUrl}/compare/v1.0.0...HEAD
+  [1.0.0]: ${repoUrl}/compare/v0.0.3...v1.0.0
+  [0.0.3]: ${repoUrl}/compare/v0.0.2...v0.0.3
+  [0.0.2]: ${repoUrl}/compare/v0.0.1...v0.0.2
+  [0.0.1]: ${repoUrl}/releases/tag/v0.0.1
 `;
 
 /**
@@ -77,10 +80,9 @@ describe('parseChangelog', () => {
 
         ## [Unreleased]
 
-        [Unreleased]:https://github.com/ExampleUsernameOrOrganization/ExampleRepository/
+        [Unreleased]:${repoUrl}/
         `,
-      repoUrl:
-        'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+      repoUrl,
     });
 
     expect(changelog.getReleases()).toStrictEqual([]);
@@ -97,10 +99,9 @@ describe('parseChangelog', () => {
 
         ## [Unreleased]
 
-        [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/
+        [Unreleased]: ${repoUrl}/
         `,
-      repoUrl:
-        'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+      repoUrl,
     });
 
     expect(changelog.getReleases()).toStrictEqual([]);
@@ -114,10 +115,9 @@ describe('parseChangelog', () => {
 
         ## [Unreleased]
 
-        [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/
+        [Unreleased]: ${repoUrl}/
         `,
-      repoUrl:
-        'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+      repoUrl,
     });
 
     expect(changelog.getReleases()).toStrictEqual([]);
@@ -147,13 +147,12 @@ describe('parseChangelog', () => {
         ### Changed
         - Something
 
-        [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
-        [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.2...v1.0.0
-        [0.0.2]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.1...v0.0.2
-        [0.0.1]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/v0.0.1
+        [Unreleased]: ${repoUrl}/compare/v1.0.0...HEAD
+        [1.0.0]: ${repoUrl}/compare/v0.0.2...v1.0.0
+        [0.0.2]: ${repoUrl}/compare/v0.0.1...v0.0.2
+        [0.0.1]: ${repoUrl}/releases/tag/v0.0.1
         `,
-      repoUrl:
-        'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+      repoUrl,
     });
 
     expect(changelog.getReleases()).toStrictEqual([
@@ -229,10 +228,9 @@ describe('parseChangelog', () => {
         ### Changed
         - Something
 
-        [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
+        [Unreleased]: ${repoUrl}/compare/v1.0.0...HEAD
         `,
-      repoUrl:
-        'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+      repoUrl,
     });
 
     expect(changelog.getReleases()).toStrictEqual([
@@ -293,13 +291,12 @@ describe('parseChangelog', () => {
         ### Changed
         - Something
 
-        [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0-rc.1...HEAD
-        [1.0.0-rc.1]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.2-beta.1...v1.0.0-rc.1
-        [0.0.2-beta.1]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.1-alpha.1...v0.0.2-beta.1
-        [0.0.1-alpha.1]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/v0.0.1-alpha.1
+        [Unreleased]: ${repoUrl}/compare/v1.0.0-rc.1...HEAD
+        [1.0.0-rc.1]: ${repoUrl}/compare/v0.0.2-beta.1...v1.0.0-rc.1
+        [0.0.2-beta.1]: ${repoUrl}/compare/v0.0.1-alpha.1...v0.0.2-beta.1
+        [0.0.1-alpha.1]: ${repoUrl}/releases/tag/v0.0.1-alpha.1
         `,
-      repoUrl:
-        'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+      repoUrl,
     });
 
     expect(changelog.getReleases()).toStrictEqual([
@@ -332,13 +329,12 @@ describe('parseChangelog', () => {
         ### Changed
         - Something
 
-        [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
-        [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.2...v1.0.0
-        [0.0.2]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.0.1...v0.0.2
-        [0.0.1]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/v0.0.1
+        [Unreleased]: ${repoUrl}/compare/v1.0.0...HEAD
+        [1.0.0]: ${repoUrl}/compare/v0.0.2...v1.0.0
+        [0.0.2]: ${repoUrl}/compare/v0.0.1...v0.0.2
+        [0.0.1]: ${repoUrl}/releases/tag/v0.0.1
         `,
-      repoUrl:
-        'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+      repoUrl,
     });
 
     expect(changelog.getReleases()).toStrictEqual([
@@ -364,11 +360,10 @@ describe('parseChangelog', () => {
         - Something else
         Further explanation of changes
 
-        [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
-        [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/v1.0.0
+        [Unreleased]: ${repoUrl}/compare/v1.0.0...HEAD
+        [1.0.0]: ${repoUrl}/releases/tag/v1.0.0
         `,
-      repoUrl:
-        'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+      repoUrl,
     });
 
     expect(changelog.getReleaseChanges('1.0.0')).toStrictEqual({
@@ -397,11 +392,10 @@ describe('parseChangelog', () => {
         - Something else
           - Further explanation of changes
 
-        [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
-        [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/v1.0.0
+        [Unreleased]: ${repoUrl}/compare/v1.0.0...HEAD
+        [1.0.0]: ${repoUrl}/releases/tag/v1.0.0
         `,
-      repoUrl:
-        'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+      repoUrl,
     });
 
     expect(changelog.getReleaseChanges('1.0.0')).toStrictEqual({
@@ -431,11 +425,10 @@ describe('parseChangelog', () => {
           - Further explanation of changes
 
 
-        [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
-        [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/v1.0.0
+        [Unreleased]: ${repoUrl}/compare/v1.0.0...HEAD
+        [1.0.0]: ${repoUrl}/releases/tag/v1.0.0
         `,
-      repoUrl:
-        'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+      repoUrl,
     });
 
     expect(changelog.getReleaseChanges('1.0.0')).toStrictEqual({
@@ -467,11 +460,10 @@ describe('parseChangelog', () => {
         ### Fixed
         - Not including newline between change categories as part of change entry
 
-        [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
-        [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/v1.0.0
+        [Unreleased]: ${repoUrl}/compare/v1.0.0...HEAD
+        [1.0.0]: ${repoUrl}/releases/tag/v1.0.0
         `,
-      repoUrl:
-        'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+      repoUrl,
     });
 
     expect(changelog.getReleaseChanges('1.0.0')).toStrictEqual({
@@ -511,11 +503,10 @@ describe('parseChangelog', () => {
         ### Changed
         - Initial release
 
-        [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
-        [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/v1.0.0
+        [Unreleased]: ${repoUrl}/compare/v1.0.0...HEAD
+        [1.0.0]: ${repoUrl}/releases/tag/v1.0.0
         `,
-      repoUrl:
-        'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+      repoUrl,
     });
 
     expect(changelog.getReleaseChanges('1.0.0')).toStrictEqual({
@@ -540,11 +531,10 @@ describe('parseChangelog', () => {
         ## [1.0.0] - 2020-01-01
         ### Changed
         - Something else
-        [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
-        [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/v1.0.0
+        [Unreleased]: ${repoUrl}/compare/v1.0.0...HEAD
+        [1.0.0]: ${repoUrl}/releases/tag/v1.0.0
         `,
-      repoUrl:
-        'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+      repoUrl,
     });
 
     expect(changelog.getReleases()).toStrictEqual([
@@ -570,13 +560,12 @@ describe('parseChangelog', () => {
       The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
       and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-      [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/
+      [Unreleased]: ${repoUrl}/
       `;
     expect(() =>
       parseChangelog({
         changelogContent: brokenChangelog,
-        repoUrl:
-          'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+        repoUrl,
       }),
     ).toThrow('Failed to find Unreleased header');
   });
@@ -594,8 +583,7 @@ describe('parseChangelog', () => {
     expect(() =>
       parseChangelog({
         changelogContent: brokenChangelog,
-        repoUrl:
-          'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+        repoUrl,
       }),
     ).toThrow('Failed to find Unreleased link reference definition');
   });
@@ -614,14 +602,13 @@ describe('parseChangelog', () => {
       ### Changed
       - Something else
 
-      [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
-      [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/v1.0.0
+      [Unreleased]: ${repoUrl}/compare/v1.0.0...HEAD
+      [1.0.0]: ${repoUrl}/releases/tag/v1.0.0
       `;
     expect(() =>
       parseChangelog({
         changelogContent: brokenChangelog,
-        repoUrl:
-          'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+        repoUrl,
       }),
     ).toThrow(`Unrecognized line: '## 1.0.0 - 2020-01-01'`);
   });
@@ -640,14 +627,13 @@ describe('parseChangelog', () => {
       ### Changed
       - Something else
 
-      [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
-      [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/v1.0.0
+      [Unreleased]: ${repoUrl}/compare/v1.0.0...HEAD
+      [1.0.0]: ${repoUrl}/releases/tag/v1.0.0
       `;
     expect(() =>
       parseChangelog({
         changelogContent: brokenChangelog,
-        repoUrl:
-          'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+        repoUrl,
       }),
     ).toThrow(`Malformed release header: '## [1.0.0 - 2020-01-01'`);
   });
@@ -666,14 +652,13 @@ describe('parseChangelog', () => {
       ### Changed
       - Something else
 
-      [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.2.3.4...HEAD
-      [1.2.3.4]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/v1.2.3.4
+      [Unreleased]: ${repoUrl}/compare/v1.2.3.4...HEAD
+      [1.2.3.4]: ${repoUrl}/releases/tag/v1.2.3.4
       `;
     expect(() =>
       parseChangelog({
         changelogContent: brokenChangelog,
-        repoUrl:
-          'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+        repoUrl,
       }),
     ).toThrow(`Invalid SemVer version in release header: '## [1.2.3.4]`);
   });
@@ -692,14 +677,13 @@ describe('parseChangelog', () => {
       ### Changed
       - Something else
 
-      [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
-      [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/v1.0.0
+      [Unreleased]: ${repoUrl}/compare/v1.0.0...HEAD
+      [1.0.0]: ${repoUrl}/releases/tag/v1.0.0
       `;
     expect(() =>
       parseChangelog({
         changelogContent: brokenChangelog,
-        repoUrl:
-          'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+        repoUrl,
       }),
     ).toThrow(`Unrecognized line: '# [1.0.0] - 2020-01-01'`);
   });
@@ -717,14 +701,13 @@ describe('parseChangelog', () => {
       ## [1.0.0] - 2020-01-01
       - Something else
 
-      [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
-      [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/v1.0.0
+      [Unreleased]: ${repoUrl}/compare/v1.0.0...HEAD
+      [1.0.0]: ${repoUrl}/releases/tag/v1.0.0
       `;
     expect(() =>
       parseChangelog({
         changelogContent: brokenChangelog,
-        repoUrl:
-          'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+        repoUrl,
       }),
     ).toThrow(`Category missing for change: '- Something else'`);
   });
@@ -743,14 +726,13 @@ describe('parseChangelog', () => {
       #### Changed
       - Something else
 
-      [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
-      [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/v1.0.0
+      [Unreleased]: ${repoUrl}/compare/v1.0.0...HEAD
+      [1.0.0]: ${repoUrl}/releases/tag/v1.0.0
       `;
     expect(() =>
       parseChangelog({
         changelogContent: brokenChangelog,
-        repoUrl:
-          'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+        repoUrl,
       }),
     ).toThrow(`Unrecognized line: '#### Changed'`);
   });
@@ -769,14 +751,13 @@ describe('parseChangelog', () => {
       ### Ch-Ch-Ch-Ch-Changes
       - Something else
 
-      [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
-      [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/v1.0.0
+      [Unreleased]: ${repoUrl}/compare/v1.0.0...HEAD
+      [1.0.0]: ${repoUrl}/releases/tag/v1.0.0
       `;
     expect(() =>
       parseChangelog({
         changelogContent: brokenChangelog,
-        repoUrl:
-          'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+        repoUrl,
       }),
     ).toThrow(`Malformed category header: '### Ch-Ch-Ch-Ch-Changes'`);
   });
@@ -795,14 +776,13 @@ describe('parseChangelog', () => {
       ### Invalid
       - Something else
 
-      [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
-      [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/v1.0.0
+      [Unreleased]: ${repoUrl}/compare/v1.0.0...HEAD
+      [1.0.0]: ${repoUrl}/releases/tag/v1.0.0
       `;
     expect(() =>
       parseChangelog({
         changelogContent: brokenChangelog,
-        repoUrl:
-          'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+        repoUrl,
       }),
     ).toThrow(`Invalid change category: 'Invalid'`);
   });
@@ -821,14 +801,13 @@ describe('parseChangelog', () => {
       ### Changed
       * Something else
 
-      [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
-      [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/v1.0.0
+      [Unreleased]: ${repoUrl}/compare/v1.0.0...HEAD
+      [1.0.0]: ${repoUrl}/releases/tag/v1.0.0
       `;
     expect(() =>
       parseChangelog({
         changelogContent: brokenChangelog,
-        repoUrl:
-          'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+        repoUrl,
       }),
     ).toThrow(`Unrecognized line: '* Something else'`);
   });
@@ -847,14 +826,13 @@ describe('parseChangelog', () => {
       ### Changed
       * Very very very very very very very very very very very very very very very very very very very very long line
 
-      [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v1.0.0...HEAD
-      [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/v1.0.0
+      [Unreleased]: ${repoUrl}/compare/v1.0.0...HEAD
+      [1.0.0]: ${repoUrl}/releases/tag/v1.0.0
       `;
     expect(() =>
       parseChangelog({
         changelogContent: brokenChangelog,
-        repoUrl:
-          'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+        repoUrl,
       }),
     ).toThrow(
       `Unrecognized line: '* Very very very very very very very very very very very very very very very ver...'`,
@@ -884,13 +862,12 @@ describe('parseChangelog', () => {
         ### Changed
         - Something
 
-        [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/@metamask/test@1.0.0...HEAD
-        [1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/test@0.0.2...@metamask/test@1.0.0
-        [0.0.2]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/test@0.0.1...test@0.0.2
-        [0.0.1]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/test@0.0.1
+        [Unreleased]: ${repoUrl}/compare/@metamask/test@1.0.0...HEAD
+        [1.0.0]: ${repoUrl}/compare/test@0.0.2...@metamask/test@1.0.0
+        [0.0.2]: ${repoUrl}/compare/test@0.0.1...test@0.0.2
+        [0.0.1]: ${repoUrl}/releases/tag/test@0.0.1
         `,
-      repoUrl:
-        'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+      repoUrl,
     });
 
     expect(changelog.getReleases()).toStrictEqual([
@@ -950,7 +927,7 @@ describe('parseChangelog', () => {
         outdent`
           ## [1.0.0]
           ### Changed
-          - Change something else ([#100](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/100), [#200](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/200))
+          - Change something else ([#100](${repoUrl}/pull/100), [#200](${repoUrl}/pull/200))
 
           ## [0.0.2]
           ### Fixed
@@ -965,8 +942,7 @@ describe('parseChangelog', () => {
 
       const changelog = parseChangelog({
         changelogContent,
-        repoUrl:
-          'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+        repoUrl,
         shouldExtractPrLinks: true,
       });
 
@@ -994,7 +970,7 @@ describe('parseChangelog', () => {
         outdent`
           ## [1.0.0]
           ### Changed
-          - Change something ([#100](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/100), [#200](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/200))
+          - Change something ([#100](${repoUrl}/pull/100), [#200](${repoUrl}/pull/200))
           This is a cool change, you will really like it.
         `,
         COMMON_REFERENCE_LINKS_1,
@@ -1002,8 +978,7 @@ describe('parseChangelog', () => {
 
       const changelog = parseChangelog({
         changelogContent,
-        repoUrl:
-          'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+        repoUrl,
         shouldExtractPrLinks: true,
       });
 
@@ -1024,15 +999,14 @@ describe('parseChangelog', () => {
         outdent`
           ## [1.0.0]
           ### Changed
-          - Change something ([#100](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/100), [#200](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/200))
+          - Change something ([#100](${repoUrl}/pull/100), [#200](${repoUrl}/pull/200))
             - This is a cool change, you will really like it.
         `,
         COMMON_REFERENCE_LINKS_1,
       );
       const changelog = parseChangelog({
         changelogContent,
-        repoUrl:
-          'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+        repoUrl,
         shouldExtractPrLinks: true,
       });
 
@@ -1054,22 +1028,20 @@ describe('parseChangelog', () => {
           ## [1.0.0]
           ### Changed
           - Change something
-            - This is a cool change, you will really like it. ([#100](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/100))
+            - This is a cool change, you will really like it. ([#100](${repoUrl}/pull/100))
         `,
         COMMON_REFERENCE_LINKS_1,
       );
       const changelog = parseChangelog({
         changelogContent,
-        repoUrl:
-          'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+        repoUrl,
         shouldExtractPrLinks: true,
       });
 
       expect(changelog.getReleaseChanges('1.0.0')).toStrictEqual({
         Changed: [
           {
-            description:
-              'Change something\n  - This is a cool change, you will really like it. ([#100](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/100))',
+            description: `Change something\n  - This is a cool change, you will really like it. ([#100](${repoUrl}/pull/100))`,
             prNumbers: [],
           },
         ],
@@ -1082,14 +1054,13 @@ describe('parseChangelog', () => {
         outdent`
           ## [1.0.0]
           ### Changed
-          - Change something ([#100](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/100), [#200](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/200)). And something else.
+          - Change something ([#100](${repoUrl}/pull/100), [#200](${repoUrl}/pull/200)). And something else.
         `,
         COMMON_REFERENCE_LINKS_1,
       );
       const changelog = parseChangelog({
         changelogContent,
-        repoUrl:
-          'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+        repoUrl,
         shouldExtractPrLinks: true,
       });
 
@@ -1109,14 +1080,13 @@ describe('parseChangelog', () => {
         outdent`
           ## [1.0.0]
           ### Changed
-          - Change something ([#100](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/100), [#200](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/200)) ([#300](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/300))
+          - Change something ([#100](${repoUrl}/pull/100), [#200](${repoUrl}/pull/200)) ([#300](${repoUrl}/pull/300))
         `,
         COMMON_REFERENCE_LINKS_1,
       );
       const changelog = parseChangelog({
         changelogContent,
-        repoUrl:
-          'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+        repoUrl,
         shouldExtractPrLinks: true,
       });
 
@@ -1136,14 +1106,13 @@ describe('parseChangelog', () => {
         outdent`
           ## [1.0.0]
           ### Changed
-          - Change something ([#100](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/100), [#100](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/100))
+          - Change something ([#100](${repoUrl}/pull/100), [#100](${repoUrl}/pull/100))
         `,
         COMMON_REFERENCE_LINKS_1,
       );
       const changelog = parseChangelog({
         changelogContent,
-        repoUrl:
-          'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+        repoUrl,
         shouldExtractPrLinks: true,
       });
 
@@ -1163,14 +1132,13 @@ describe('parseChangelog', () => {
         outdent`
           ## [1.0.0]
           ### Changed
-          - Change something ([#100](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/100)) ([#100](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/100))
+          - Change something ([#100](${repoUrl}/pull/100)) ([#100](${repoUrl}/pull/100))
         `,
         COMMON_REFERENCE_LINKS_1,
       );
       const changelog = parseChangelog({
         changelogContent,
-        repoUrl:
-          'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+        repoUrl,
         shouldExtractPrLinks: true,
       });
 
@@ -1190,11 +1158,11 @@ describe('parseChangelog', () => {
         outdent`
           ## [1.0.0]
           ### Changed
-          - Change something else ([123](https://github.com/ExampleUsernameOrOrganization/ExampleRepository))
+          - Change something else ([123](${repoUrl}))
 
           ## [0.0.3]
           ### Deprecated
-          - Deprecate whatever([#123](https://github.com/ExampleUsernameOrOrganization/ExampleRepository))
+          - Deprecate whatever([#123](${repoUrl}))
 
           ## [0.0.2]
           ### Fixed
@@ -1208,8 +1176,7 @@ describe('parseChangelog', () => {
       );
       const changelog = parseChangelog({
         changelogContent,
-        repoUrl:
-          'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+        repoUrl,
         shouldExtractPrLinks: true,
       });
 
@@ -1217,8 +1184,7 @@ describe('parseChangelog', () => {
         Changed: [
           {
             // Missing '#'
-            description:
-              'Change something else ([123](https://github.com/ExampleUsernameOrOrganization/ExampleRepository))',
+            description: `Change something else ([123](${repoUrl}))`,
             prNumbers: [],
           },
         ],
@@ -1227,8 +1193,7 @@ describe('parseChangelog', () => {
         Deprecated: [
           {
             // Missing space before link
-            description:
-              'Deprecate whatever([#123](https://github.com/ExampleUsernameOrOrganization/ExampleRepository))',
+            description: `Deprecate whatever([#123](${repoUrl}))`,
             prNumbers: [],
           },
         ],
@@ -1275,8 +1240,7 @@ describe('parseChangelog', () => {
       );
       const changelog = parseChangelog({
         changelogContent,
-        repoUrl:
-          'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+        repoUrl,
         shouldExtractPrLinks: true,
       });
 
@@ -1311,8 +1275,7 @@ describe('parseChangelog', () => {
       );
       const changelog = parseChangelog({
         changelogContent,
-        repoUrl:
-          'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+        repoUrl,
         shouldExtractPrLinks: true,
       });
 
@@ -1340,8 +1303,7 @@ describe('parseChangelog', () => {
       );
       const changelog = parseChangelog({
         changelogContent,
-        repoUrl:
-          'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+        repoUrl,
         shouldExtractPrLinks: true,
       });
 
@@ -1369,8 +1331,7 @@ describe('parseChangelog', () => {
       );
       const changelog = parseChangelog({
         changelogContent,
-        repoUrl:
-          'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+        repoUrl,
         shouldExtractPrLinks: true,
       });
 
@@ -1397,8 +1358,7 @@ describe('parseChangelog', () => {
       );
       const changelog = parseChangelog({
         changelogContent,
-        repoUrl:
-          'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+        repoUrl,
         shouldExtractPrLinks: true,
       });
 
@@ -1424,8 +1384,7 @@ describe('parseChangelog', () => {
       );
       const changelog = parseChangelog({
         changelogContent,
-        repoUrl:
-          'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+        repoUrl,
         shouldExtractPrLinks: true,
       });
 
@@ -1451,8 +1410,7 @@ describe('parseChangelog', () => {
       );
       const changelog = parseChangelog({
         changelogContent,
-        repoUrl:
-          'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+        repoUrl,
         shouldExtractPrLinks: true,
       });
 
@@ -1478,8 +1436,7 @@ describe('parseChangelog', () => {
       );
       const changelog = parseChangelog({
         changelogContent,
-        repoUrl:
-          'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+        repoUrl,
         shouldExtractPrLinks: true,
       });
 
@@ -1517,8 +1474,7 @@ describe('parseChangelog', () => {
       );
       const changelog = parseChangelog({
         changelogContent,
-        repoUrl:
-          'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+        repoUrl,
         shouldExtractPrLinks: true,
       });
 
@@ -1568,7 +1524,7 @@ describe('parseChangelog', () => {
         outdent`
           ## [1.0.0]
           ### Changed
-          - Change something else ([#100](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/100), [#200](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/200))
+          - Change something else ([#100](${repoUrl}/pull/100), [#200](${repoUrl}/pull/200))
 
           ## [0.0.2]
           ### Fixed
@@ -1582,16 +1538,14 @@ describe('parseChangelog', () => {
       );
       const changelog = parseChangelog({
         changelogContent,
-        repoUrl:
-          'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+        repoUrl,
         shouldExtractPrLinks: false,
       });
 
       expect(changelog.getReleaseChanges('1.0.0')).toStrictEqual({
         Changed: [
           {
-            description:
-              'Change something else ([#100](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/100), [#200](https://github.com/ExampleUsernameOrOrganization/ExampleRepository/pull/200))',
+            description: `Change something else ([#100](${repoUrl}/pull/100), [#200](${repoUrl}/pull/200))`,
             prNumbers: [],
           },
         ],
