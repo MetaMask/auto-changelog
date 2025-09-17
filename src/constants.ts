@@ -93,7 +93,7 @@ export const orderedChangeCategories: ChangeCategory[] = [
 export const unreleased = 'Unreleased';
 
 /**
- * Keywords that indicate a commit should be excluded from the changelog.
+ * Lowercase keywords that indicate a commit should be excluded from the changelog.
  */
 export const keywordsToIndicateExcluded: string[] = [
   'Bump main version to',
@@ -105,4 +105,4 @@ export const keywordsToIndicateExcluded: string[] = [
   'INFRA-',
   'merge',
   'New Crowdin translations',
-];
+].map((word) => word.toLowerCase());
