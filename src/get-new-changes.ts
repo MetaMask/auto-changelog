@@ -3,6 +3,7 @@
 import { Octokit } from '@octokit/rest';
 import { strict as assert } from 'assert';
 
+import { ConventionalCommitType } from './constants';
 import { getOwnerAndRepoFromUrl } from './repo';
 import { runCommand, runCommandAndSplit } from './run-command';
 
@@ -16,6 +17,12 @@ export type AddNewCommitsOptions = {
   useChangelogEntry: boolean;
   useShortPrLink: boolean;
 };
+
+// Get array of all ConventionalCommitType values
+const conventionalCommitTypes = Object.values(ConventionalCommitType);
+
+// Create a regex pattern that matches any of the ConventionalCommitTypes
+const typesWithPipe = conventionalCommitTypes.join('|');
 
 /**
  * Get all commit hashes included in the given commit range.
@@ -33,6 +40,27 @@ async function getCommitHashesInRange(
     revListArgs.push(rootDirectory);
   }
   return await runCommandAndSplit('git', revListArgs);
+}
+
+/**
+ * Remove outer backticks if present in the given message.
+ *
+ * @param message - The changelog entry message.
+ * @returns The message without outer backticks.
+ */
+function removeOuterBackticksIfPresent(message: string) {
+  return message.replace(/^`(.*)`$/u, '$1');
+}
+
+/**
+ * Remove Conventional Commit prefix if it exists in the given message.
+ *
+ * @param message - The changelog entry message.
+ * @returns The message without Conventional Commit prefix.
+ */
+function removeConventionalCommitPrefixIfPresent(message: string) {
+  const regex = new RegExp(`^(${typesWithPipe})(\\([^)]*\\))?:\\s*`, 'iu');
+  return message.replace(regex, '');
 }
 
 /**
@@ -90,6 +118,12 @@ async function getCommits(
           description = changelogEntry; // This may be string 'null' to indicate no description
 
           if (description !== 'null') {
+            // Remove outer backticks if present. Example: `feat: new feature description` -> feat: new feature description
+            description = removeOuterBackticksIfPresent(description);
+
+            // Remove Conventional Commit prefix if present. Example: feat: new feature description -> new feature description
+            description = removeConventionalCommitPrefixIfPresent(description);
+
             // Make description coming from `CHANGELOG entry:` start with an uppercase letter
             description =
               description.charAt(0).toUpperCase() + description.slice(1);
@@ -100,9 +134,6 @@ async function getCommits(
 
         if (description !== 'null') {
           const prLabels = await getPrLabels(repoUrl, prNumber);
-
-          // TODO: eliminate this debug log
-          console.log(`PR #${prNumber} labels:`, prLabels);
 
           if (prLabels.includes('no-changelog')) {
             description = 'null'; // Has the no-changelog label, use string 'null' to indicate no description

@@ -214,53 +214,57 @@ function extractPrLinks(changeEntry: string): {
   description: string;
   prNumbers: string[];
 } {
-  const [firstLine, ...otherLines] = changeEntry.split('\n');
-  const parentheticalMatches = firstLine.matchAll(/[ ]\((\[.+?\]\(.+?\))\)/gu);
+  const lines = changeEntry.split('\n');
   const prNumbers: string[] = [];
-  let startIndex = Infinity;
-  let endIndex = 0;
 
-  for (const parentheticalMatch of parentheticalMatches) {
-    const { index } = parentheticalMatch;
-    const wholeMatch = parentheticalMatch[0];
-    const parts = wholeMatch.split(/,[ ]?/u);
+  // Only process the first line for PR link extraction
+  let firstLine = lines[0];
 
-    for (const part of parts) {
-      const regexp = /\[#(\d+)\]\([^()]+\)/u;
-      const match = part.match(regexp);
-      if (match !== null) {
-        const prNumber = match[1];
-        prNumbers.push(prNumber);
-      }
-    }
+  // Example of long match group: " ([#123](...), [#456](...))"
+  const longGroupMatchPattern = /\s+\(\s*(\[#\d+\]\([^)]+\)\s*,?\s*)+\)/gu;
 
-    if (index === undefined) {
-      throw new Error('Could not find index. This should not happen.');
-    }
+  // Example of long match: "[#123](...)"
+  const longMatchPattern = /\[#(\d+)\]\([^)]+\)/gu;
 
-    if (index < startIndex) {
-      startIndex = index;
-    }
-
-    if (index + wholeMatch.length > endIndex) {
-      endIndex = index + wholeMatch.length;
+  // Match and extract all long PR links like ([#123](...)) separated by commas
+  const longGroupMatches = [...firstLine.matchAll(longGroupMatchPattern)];
+  for (const longGroupMatch of longGroupMatches) {
+    const group = longGroupMatch[0];
+    const longMatches = [...group.matchAll(longMatchPattern)];
+    for (const match of longMatches) {
+      prNumbers.push(match[1]);
     }
   }
 
-  const uniquePrNumbers = [...new Set(prNumbers)];
+  // Remove valid long PR links (grouped in parentheses, possibly comma-separated)
+  firstLine = firstLine.replace(longGroupMatchPattern, '');
 
-  if (prNumbers.length > 0) {
-    const firstLineWithoutPrLinks =
-      firstLine.slice(0, startIndex) + firstLine.slice(endIndex);
+  // Example of short match group: " (#123), (#123)"
+  const shortGroupMatchPattern = /\s+(\(#\d+\)\s*,?\s*)+/gu;
 
-    return {
-      description: [firstLineWithoutPrLinks, ...otherLines].join('\n'),
-      prNumbers: uniquePrNumbers,
-    };
+  // Example of short match: "(#123)"
+  const shortMatchPattern = /\(#(\d+)\)/gu;
+
+  // Match and extract all short PR links like (#123)
+  const shortGroupMatches = [...firstLine.matchAll(shortGroupMatchPattern)];
+  for (const shortGroupMatch of shortGroupMatches) {
+    const group = shortGroupMatch[0];
+    const shortMatches = [...group.matchAll(shortMatchPattern)];
+    for (const match of shortMatches) {
+      prNumbers.push(match[1]);
+    }
   }
 
+  // Remove valid short PR links
+  firstLine = firstLine.replace(shortGroupMatchPattern, '');
+
+  // Prepare the cleaned description
+  const cleanedLines = [firstLine.trim(), ...lines.slice(1)];
+  const cleanedDescription = cleanedLines.join('\n');
+
+  // Return unique PR numbers and the cleaned description
   return {
-    description: changeEntry,
-    prNumbers: [],
+    description: cleanedDescription.trim(),
+    prNumbers: [...new Set(prNumbers)],
   };
 }

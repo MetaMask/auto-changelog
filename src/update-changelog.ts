@@ -150,6 +150,7 @@ export async function updateChangelog({
     tagPrefix: tagPrefixes[0],
     formatter,
     packageRename,
+    shouldExtractPrLinks: true, // By setting this to true, we ensure we don't re-add a PR to the changelog if it was already added in previous releases
   });
 
   const mostRecentTag = await getMostRecentTag({
@@ -207,7 +208,7 @@ export async function updateChangelog({
     }
   }
 
-  const newChangelogContent = await changelog.toString();
+  const newChangelogContent = await changelog.toString(useShortPrLink);
   const isChangelogUpdated = changelogContent !== newChangelogContent;
   return isChangelogUpdated ? newChangelogContent : undefined;
 }
@@ -266,5 +267,11 @@ export function getCategory(description: string): ChangeCategory {
 function checkIfDescriptionIndicatesExcluded(description: string): boolean {
   const _description = description.toLowerCase();
 
-  return keywordsToIndicateExcluded.some((word) => _description.includes(word));
+  const keywordsToIndicateExcludedLowerCase = keywordsToIndicateExcluded.map(
+    (word) => word.toLowerCase(),
+  );
+
+  return keywordsToIndicateExcludedLowerCase.some((word) =>
+    _description.includes(word),
+  );
 }
