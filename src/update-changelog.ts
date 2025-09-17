@@ -230,12 +230,15 @@ export function getCategory(description: string): ChangeCategory {
 
   // Create a regex pattern that matches any of the ConventionalCommitTypes
   const typesWithPipe = conventionalCommitTypes.join('|');
-  const conventionalCommitPattern = new RegExp(`^(${typesWithPipe}).*$`, 'ui');
+  const conventionalCommitPattern = new RegExp(
+    `^(${typesWithPipe})(\\([^)]*\\))?:.*$`,
+    'ui',
+  );
 
   const match = description.match(conventionalCommitPattern);
 
   if (match) {
-    const prefix = match.length > 1 ? match[1] : undefined;
+    const prefix = match[1]?.toLowerCase(); // Always use lowercase for consistency
     switch (prefix) {
       case ConventionalCommitType.FEAT:
         return ChangeCategory.Added;
