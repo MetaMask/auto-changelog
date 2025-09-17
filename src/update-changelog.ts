@@ -231,7 +231,7 @@ export function getCategory(description: string): ChangeCategory {
   // Create a regex pattern that matches any of the ConventionalCommitTypes
   const typesWithPipe = conventionalCommitTypes.join('|');
   const conventionalCommitPattern = new RegExp(
-    `^(${typesWithPipe})(\\([^)]*\\))?:.*$`,
+    `^(${typesWithPipe})\\s*(\\([^)]*\\))?:.*$`,
     'ui',
   );
 
