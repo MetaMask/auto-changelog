@@ -76,7 +76,10 @@ async function getCommits(
   repoUrl: string,
   useChangelogEntry: boolean,
 ) {
-  initOctoKit();
+  // Only initialize Octokit if we need to fetch PR labels
+  if (useChangelogEntry) {
+    initOctoKit();
+  }
 
   const commits: { prNumber?: string; subject: string; description: string }[] =
     [];
