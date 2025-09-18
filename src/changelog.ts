@@ -107,12 +107,14 @@ type ChangelogChanges = Record<Version, ReleaseChanges> & {
  * @param category - The title of the changelog category.
  * @param changes - The changes included in this category.
  * @param repoUrl - The URL of the repository.
+ * @param useShortPrLink - Whether to use short PR links in the changelog entries.
  * @returns The stringified category section.
  */
 function stringifyCategory(
   category: ChangeCategory,
   changes: Change[],
   repoUrl: string,
+  useShortPrLink = false,
 ) {
   const categoryHeader = `### ${category}`;
   if (changes.length === 0) {
@@ -122,7 +124,11 @@ function stringifyCategory(
     .map(({ description, prNumbers }) => {
       const [firstLine, ...otherLines] = description.split('\n');
       const stringifiedPrLinks = prNumbers
-        .map((prNumber) => `[#${prNumber}](${repoUrl}/pull/${prNumber})`)
+        .map((prNumber) =>
+          useShortPrLink
+            ? `#${prNumber}`
+            : `[#${prNumber}](${repoUrl}/pull/${prNumber})`,
+        )
         .join(', ');
       const parenthesizedPrLinks =
         stringifiedPrLinks.length > 0 ? ` (${stringifiedPrLinks})` : '';
@@ -140,6 +146,7 @@ function stringifyCategory(
  * @param version - The release version.
  * @param categories - The categories of changes included in this release.
  * @param repoUrl - The URL of the repository.
+ * @param useShortPrLink - Whether to use short PR links in the changelog entries.
  * @param options - Additional release options.
  * @param options.date - The date of the release.
  * @param options.status - The status of the release (e.g., "DEPRECATED").
@@ -149,6 +156,7 @@ function stringifyRelease(
   version: Version | typeof unreleased,
   categories: ReleaseChanges,
   repoUrl: string,
+  useShortPrLink = false,
   { date, status }: Partial<ReleaseMetadata> = {},
 ) {
   const releaseHeader = `## [${version}]${date ? ` - ${date}` : ''}${
@@ -158,7 +166,7 @@ function stringifyRelease(
     .filter((category) => categories[category])
     .map((category) => {
       const changes = categories[category] ?? [];
-      return stringifyCategory(category, changes, repoUrl);
+      return stringifyCategory(category, changes, repoUrl, useShortPrLink);
     })
     .join('\n\n');
   if (categorizedChanges === '') {
@@ -173,21 +181,27 @@ function stringifyRelease(
  * @param releases - The releases to stringify.
  * @param changes - The set of changes to include, organized by release.
  * @param repoUrl - The URL of the repository.
+ * @param useShortPrLink - Whether to use short PR links in the changelog entries.
  * @returns The stringified set of release sections.
  */
 function stringifyReleases(
   releases: ReleaseMetadata[],
   changes: ChangelogChanges,
   repoUrl: string,
+  useShortPrLink = false,
 ) {
   const stringifiedUnreleased = stringifyRelease(
     unreleased,
     changes[unreleased],
     repoUrl,
+    useShortPrLink,
   );
   const stringifiedReleases = releases.map(({ version, date, status }) => {
     const categories = changes[version];
-    return stringifyRelease(version, categories, repoUrl, { date, status });
+    return stringifyRelease(version, categories, repoUrl, useShortPrLink, {
+      date,
+      status,
+    });
   });
 
   return [stringifiedUnreleased, ...stringifiedReleases].join('\n\n');
@@ -586,15 +600,22 @@ export default class Changelog {
    * Throws an error if no such release exists.
    *
    * @param version - The version of the release to stringify.
+   * @param useShortPrLink - Whether to use short PR links in the changelog entries.
    * @returns The stringified release, as it appears in the changelog.
    */
-  getStringifiedRelease(version: Version) {
+  getStringifiedRelease(version: Version, useShortPrLink = false) {
     const release = this.getRelease(version);
     if (!release) {
       throw new Error(`Specified release version does not exist: '${version}'`);
     }
     const releaseChanges = this.getReleaseChanges(version);
-    return stringifyRelease(version, releaseChanges, this.#repoUrl, release);
+    return stringifyRelease(
+      version,
+      releaseChanges,
+      this.#repoUrl,
+      useShortPrLink,
+      release,
+    );
   }
 
   /**
@@ -619,13 +640,14 @@ export default class Changelog {
   /**
    * The stringified changelog, formatted according to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
    *
+   * @param useShortPrLink - Whether to use short PR links in the changelog entries.
    * @returns The stringified changelog.
    */
-  async toString(): Promise<string> {
+  async toString(useShortPrLink = false): Promise<string> {
     const changelog = `${changelogTitle}
 ${changelogDescription}
 
-${stringifyReleases(this.#releases, this.#changes, this.#repoUrl)}
+${stringifyReleases(this.#releases, this.#changes, this.#repoUrl, useShortPrLink)}
 
 ${stringifyLinkReferenceDefinitions(
   this.#repoUrl,

@@ -1,10 +1,14 @@
-import execa from 'execa';
-
 import type Changelog from './changelog';
 import { Formatter, getKnownPropertyNames } from './changelog';
-import { ChangeCategory, Version, ConventionalCommitType } from './constants';
+import {
+  ChangeCategory,
+  ConventionalCommitType,
+  Version,
+  keywordsToIndicateExcluded,
+} from './constants';
 import { getNewChangeEntries } from './get-new-changes';
 import { parseChangelog } from './parse-changelog';
+import { runCommandAndSplit } from './run-command';
 import { PackageRename } from './shared-types';
 
 /**
@@ -21,7 +25,7 @@ async function getMostRecentTag({
   tagPrefixes: [string, ...string[]];
 }) {
   // Ensure we have all tags on remote
-  await runCommand('git', ['fetch', '--tags']);
+  await runCommandAndSplit('git', ['fetch', '--tags']);
 
   let mostRecentTagCommitHash: string | null = null;
   for (const tagPrefix of tagPrefixes) {
@@ -31,7 +35,7 @@ async function getMostRecentTag({
       '--max-count=1',
       '--date-order',
     ];
-    const results = await runCommand('git', revListArgs);
+    const results = await runCommandAndSplit('git', revListArgs);
     if (results.length) {
       mostRecentTagCommitHash = results[0];
       break;
@@ -41,7 +45,7 @@ async function getMostRecentTag({
   if (mostRecentTagCommitHash === null) {
     return null;
   }
-  const [mostRecentTag] = await runCommand('git', [
+  const [mostRecentTag] = await runCommandAndSplit('git', [
     'describe',
     '--tags',
     mostRecentTagCommitHash,
@@ -89,6 +93,14 @@ export type UpdateChangelogOptions = {
    * The package rename properties, used in case of package is renamed
    */
   packageRename?: PackageRename;
+  /**
+   * Whether to use `CHANGELOG entry:` from the commit body and the no-changelog label
+   */
+  useChangelogEntry: boolean;
+  /**
+   * Whether to use short PR links in the changelog entries.
+   */
+  useShortPrLink: boolean;
 };
 
 /**
@@ -115,6 +127,8 @@ export type UpdateChangelogOptions = {
  * An optional, which is required only in case of package renamed.
  * @param options.autoCategorize - A flag indicating whether changes should be auto-categorized
  * based on commit message prefixes.
+ * @param options.useChangelogEntry - Whether to use `CHANGELOG entry:` from the commit body and the no-changelog label.
+ * @param options.useShortPrLink - Whether to use short PR links in the changelog.
  * @returns The updated changelog text.
  */
 export async function updateChangelog({
@@ -127,6 +141,8 @@ export async function updateChangelog({
   formatter = undefined,
   packageRename,
   autoCategorize,
+  useChangelogEntry,
+  useShortPrLink,
 }: UpdateChangelogOptions): Promise<string | undefined> {
   const changelog = parseChangelog({
     changelogContent,
@@ -134,6 +150,7 @@ export async function updateChangelog({
     tagPrefix: tagPrefixes[0],
     formatter,
     packageRename,
+    shouldExtractPrLinks: true, // By setting this to true, we ensure we don't re-add a PR to the changelog if it was already added in previous releases
   });
 
   const mostRecentTag = await getMostRecentTag({
@@ -173,38 +190,27 @@ export async function updateChangelog({
     repoUrl,
     loggedPrNumbers: getAllLoggedPrNumbers(changelog),
     projectRootDirectory,
+    useChangelogEntry,
+    useShortPrLink,
   });
 
-  for (const description of newChangeEntries.reverse()) {
+  for (const entry of newChangeEntries.reverse()) {
     const category = autoCategorize
-      ? getCategory(description)
+      ? getCategory(entry.subject)
       : ChangeCategory.Uncategorized;
 
-    changelog.addChange({
-      version: isReleaseCandidate ? currentVersion : undefined,
-      category,
-      description,
-    });
+    if (category !== ChangeCategory.Excluded) {
+      changelog.addChange({
+        version: isReleaseCandidate ? currentVersion : undefined,
+        category,
+        description: entry.description,
+      });
+    }
   }
 
-  const newChangelogContent = await changelog.toString();
+  const newChangelogContent = await changelog.toString(useShortPrLink);
   const isChangelogUpdated = changelogContent !== newChangelogContent;
   return isChangelogUpdated ? newChangelogContent : undefined;
-}
-
-/**
- * Executes a shell command in a child process and returns what it wrote to
- * stdout, or rejects if the process exited with an error.
- *
- * @param command - The command to run, e.g. "git".
- * @param args - The arguments to the command.
- * @returns An array of the non-empty lines returned by the command.
- */
-async function runCommand(command: string, args: string[]): Promise<string[]> {
-  return (await execa(command, [...args])).stdout
-    .trim()
-    .split('\n')
-    .filter((line) => line !== '');
 }
 
 /**
@@ -214,20 +220,55 @@ async function runCommand(command: string, args: string[]): Promise<string[]> {
  * @returns The category of the change.
  */
 export function getCategory(description: string): ChangeCategory {
-  const conventionalCommitPattern = /^(feat|fix)(?:\([^)]+\))?\s*:\s*/u;
+  // Check whether the commit description includes exclusion keywords
+  if (checkIfDescriptionIndicatesExcluded(description)) {
+    return ChangeCategory.Excluded;
+  }
+
+  // Get array of all ConventionalCommitType values
+  const conventionalCommitTypes = Object.values(ConventionalCommitType);
+
+  // Create a regex pattern that matches any of the ConventionalCommitTypes
+  const typesWithPipe = conventionalCommitTypes.join('|');
+  const conventionalCommitPattern = new RegExp(
+    `^(${typesWithPipe})\\s*(\\([^)]*\\))?:.*$`,
+    'ui',
+  );
+
   const match = description.match(conventionalCommitPattern);
 
   if (match) {
-    const prefix = match.length > 1 ? match[1] : undefined;
+    const prefix = match[1]?.toLowerCase(); // Always use lowercase for consistency
     switch (prefix) {
-      case ConventionalCommitType.Feat:
+      case ConventionalCommitType.FEAT:
         return ChangeCategory.Added;
-      case ConventionalCommitType.Fix:
+      case ConventionalCommitType.FIX:
         return ChangeCategory.Fixed;
+      // Begin categories that should be excluded from the changelog
+      case ConventionalCommitType.STYLE:
+      case ConventionalCommitType.REFACTOR:
+      case ConventionalCommitType.TEST:
+      case ConventionalCommitType.BUILD:
+      case ConventionalCommitType.CI:
+      case ConventionalCommitType.RELEASE:
+        return ChangeCategory.Excluded;
+      // End categories that should be excluded from the changelog
       default:
         return ChangeCategory.Uncategorized;
     }
   }
   // Return 'Uncategorized' if no colon is found or prefix doesn't match
   return ChangeCategory.Uncategorized;
+}
+
+/**
+ * Check whether the commit description includes exclusion keywords.
+ *
+ * @param description - The raw or processed commit description.
+ * @returns True if the description contains any exclusion keywords; otherwise false.
+ */
+function checkIfDescriptionIndicatesExcluded(description: string): boolean {
+  const _description = description.toLowerCase();
+
+  return keywordsToIndicateExcluded.some((word) => _description.includes(word));
 }

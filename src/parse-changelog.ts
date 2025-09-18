@@ -25,6 +25,17 @@ function isValidChangeCategory(category: string): category is ChangeCategory {
 }
 
 /**
+ * Returns the repository name from a GitHub repository URL.
+ *
+ * @param repoUrl - The URL for the GitHub repository.
+ * @returns The repository name, or null if it could not be determined.
+ */
+function extractRepoName(repoUrl: string): string {
+  const match = repoUrl?.match(/github\.com\/[^/]+\/([^/]+)/u); // Match and capture the repo name
+  return match ? match[1] : '';
+}
+
+/**
  * Constructs a Changelog instance that represents the given changelog, which
  * is parsed for release and change information.
  *
@@ -61,6 +72,7 @@ export function parseChangelog({
     formatter,
     packageRename,
   });
+  const repoName = extractRepoName(repoUrl);
 
   const unreleasedHeaderIndex = changelogLines.indexOf(`## [${unreleased}]`);
   if (unreleasedHeaderIndex === -1) {
@@ -115,7 +127,7 @@ export function parseChangelog({
     }
 
     const { description, prNumbers } = shouldExtractPrLinks
-      ? extractPrLinks(currentChangeEntry)
+      ? extractPrLinks(currentChangeEntry, repoName)
       : {
           description: currentChangeEntry,
           prNumbers: [],
@@ -207,60 +219,80 @@ export function parseChangelog({
  * changelog).
  *
  * @param changeEntry - The text of the change entry.
+ * @param repoName - The name of the GitHub repository.
  * @returns The list of pull request numbers referenced by the change entry, and
  * the change entry without the links to those pull requests.
  */
-function extractPrLinks(changeEntry: string): {
+function extractPrLinks(
+  changeEntry: string,
+  repoName: string,
+): {
   description: string;
   prNumbers: string[];
 } {
-  const [firstLine, ...otherLines] = changeEntry.split('\n');
-  const parentheticalMatches = firstLine.matchAll(/[ ]\((\[.+?\]\(.+?\))\)/gu);
+  const lines = changeEntry.split('\n');
   const prNumbers: string[] = [];
-  let startIndex = Infinity;
-  let endIndex = 0;
 
-  for (const parentheticalMatch of parentheticalMatches) {
-    const { index } = parentheticalMatch;
-    const wholeMatch = parentheticalMatch[0];
-    const parts = wholeMatch.split(/,[ ]?/u);
+  // Only process the first line for PR link extraction
+  let firstLine = lines[0];
 
-    for (const part of parts) {
-      const regexp = /\[#(\d+)\]\([^()]+\)/u;
-      const match = part.match(regexp);
-      if (match !== null) {
-        const prNumber = match[1];
-        prNumbers.push(prNumber);
-      }
-    }
+  // We only extract PR links from the right repo, because it happens that some
+  // changelog entries include links to PRs from other repos like packages that were bumped.
+  // We don't want to accidentally extract those.
 
-    if (index === undefined) {
-      throw new Error('Could not find index. This should not happen.');
-    }
+  // eslint-disable-next-line prefer-regex-literals
+  const longGroupMatchPattern = new RegExp(
+    // Example of long match group: " ([#123](...), [#456](...))"
+    `\\s+\\(\\s*(\\[#\\d+\\]\\([^)]*${repoName}[^)]*\\)\\s*,?\\s*)+\\)`,
+    'gu',
+  );
 
-    if (index < startIndex) {
-      startIndex = index;
-    }
+  // eslint-disable-next-line prefer-regex-literals
+  const longMatchPattern = new RegExp(
+    // Example of long match: "[#123](...)"
+    `\\[#(\\d+)\\]\\([^)]*${repoName}[^)]*\\)`,
+    'gu',
+  );
 
-    if (index + wholeMatch.length > endIndex) {
-      endIndex = index + wholeMatch.length;
+  // Match and extract all long PR links like ([#123](...)) separated by commas
+  const longGroupMatches = [...firstLine.matchAll(longGroupMatchPattern)];
+  for (const longGroupMatch of longGroupMatches) {
+    const group = longGroupMatch[0];
+    const longMatches = [...group.matchAll(longMatchPattern)];
+    for (const match of longMatches) {
+      prNumbers.push(match[1]);
     }
   }
 
-  const uniquePrNumbers = [...new Set(prNumbers)];
+  // Remove valid long PR links (grouped in parentheses, possibly comma-separated)
+  firstLine = firstLine.replace(longGroupMatchPattern, '');
 
-  if (prNumbers.length > 0) {
-    const firstLineWithoutPrLinks =
-      firstLine.slice(0, startIndex) + firstLine.slice(endIndex);
+  // Example of short match group: " (#123), (#123)"
+  const shortGroupMatchPattern = /\s+(\(#\d+\)\s*,?\s*)+/gu;
 
-    return {
-      description: [firstLineWithoutPrLinks, ...otherLines].join('\n'),
-      prNumbers: uniquePrNumbers,
-    };
+  // Example of short match: "(#123)"
+  const shortMatchPattern = /\(#(\d+)\)/gu;
+
+  // Match and extract all short PR links like (#123)
+  const shortGroupMatches = [...firstLine.matchAll(shortGroupMatchPattern)];
+  for (const shortGroupMatch of shortGroupMatches) {
+    const group = shortGroupMatch[0];
+    const shortMatches = [...group.matchAll(shortMatchPattern)];
+    for (const match of shortMatches) {
+      prNumbers.push(match[1]);
+    }
   }
 
+  // Remove valid short PR links
+  firstLine = firstLine.replace(shortGroupMatchPattern, '');
+
+  // Prepare the cleaned description
+  const cleanedLines = [firstLine.trim(), ...lines.slice(1)];
+  const cleanedDescription = cleanedLines.join('\n');
+
+  // Return unique PR numbers and the cleaned description
   return {
-    description: changeEntry,
-    prNumbers: [],
+    description: cleanedDescription.trim(),
+    prNumbers: [...new Set(prNumbers)],
   };
 }

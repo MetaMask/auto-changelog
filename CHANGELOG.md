@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Look for `CHANGELOG entry:` in the PR description, and look for `no-changelog` label, then apply this to the generated CHANGELOG, plus properly categorize by Conventional Commit type, including our custom ConventionalCommitType.RELEASE (#247)
+
 ## [5.0.2]
 
 ### Fixed
