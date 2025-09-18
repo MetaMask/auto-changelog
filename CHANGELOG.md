@@ -7,9 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.1.0]
+
 ### Added
 
-- Look for `CHANGELOG entry:` in the PR description, and look for `no-changelog` label, then apply this to the generated CHANGELOG, plus properly categorize by Conventional Commit type, including our custom ConventionalCommitType.RELEASE (#247)
+- Look for `CHANGELOG entry:` in the PR description, and look for `no-changelog` label, then apply this to the generated CHANGELOG, plus properly categorize by Conventional Commit type, including our custom ConventionalCommitType.RELEASE ([#247](https://github.com/MetaMask/auto-changelog/pull/247))
+
+### Fixed
+
+- Fixed problems running auto-changelog on Windows around /r/n or CRLF ([#246](https://github.com/MetaMask/auto-changelog/pull/246))
 
 ## [5.0.2]
 
@@ -160,7 +166,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Correctly calculate the most recent git tag ([#87](https://github.com/MetaMask/auto-changelog/pull/87)) ([#87](https://github.com/MetaMask/auto-changelog/pull/87))
+- Correctly calculate the most recent git tag ([#87](https://github.com/MetaMask/auto-changelog/pull/87))
   - Previously, we passed the path to the project root directory as a parameter to an invocation of `git rev-list`. For all repositories, this caused most tags belonging to merge commits to be excluded. For monorepos, this also caused tags belonging to commits that didn't change any files belonging to the changelog's package / workspace to be excluded.
 
 ## [2.2.0]
@@ -219,14 +225,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- The initial `auto-changelog` implementation, adapted from the original `auto-changelog.js` script in `metamask-extension` ([#8](https://github.com/MetaMask/auto-changelog/pull/8)).
+- The initial `auto-changelog` implementation, adapted from the original `auto-changelog.js` script in `metamask-extension`. ([#8](https://github.com/MetaMask/auto-changelog/pull/8))
   Includes the following features:
   - An `update` command ([#26](https://github.com/MetaMask/auto-changelog/pull/26))
   - A `validate` command ([#28](https://github.com/MetaMask/auto-changelog/pull/28))
   - Monorepo support ([#41](https://github.com/MetaMask/auto-changelog/pull/41))
   - Configurable repository URL, version, and changelog file path ([#33](https://github.com/MetaMask/auto-changelog/pull/33), [#31](https://github.com/MetaMask/auto-changelog/pull/31), [#30](https://github.com/MetaMask/auto-changelog/pull/30))
 
-[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v5.0.2...HEAD
+[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v5.1.0...HEAD
+[5.1.0]: https://github.com/MetaMask/auto-changelog/compare/v5.0.2...v5.1.0
 [5.0.2]: https://github.com/MetaMask/auto-changelog/compare/v5.0.1...v5.0.2
 [5.0.1]: https://github.com/MetaMask/auto-changelog/compare/v5.0.0...v5.0.1
 [5.0.0]: https://github.com/MetaMask/auto-changelog/compare/v4.1.0...v5.0.0
