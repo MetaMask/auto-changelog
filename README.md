@@ -28,6 +28,16 @@ or
 
 `yarn run auto-changelog update --autoCategorize`
 
+#### Read the "CHANGELOG entry:" on the PR
+
+`yarn run auto-changelog update --useChangelogEntry`
+
+#### Use Short PR links
+
+- Like `(#247)` instead of `([#247](https://github.com/MetaMask/auto-changelog/pull/247))`
+
+`yarn run auto-changelog update --useShortPrLink`
+
 #### Update the current release section of the changelog
 
 `yarn run auto-changelog update --rc`
@@ -35,6 +45,10 @@ or
 or
 
 `npm run auto-changelog update --rc`
+
+### Deluxe, as used in metamask-extension
+
+`yarn run auto-changelog update --autoCategorize --useChangelogEntry --useShortPrLink --rc`
 
 #### Update the changelog for a renamed package
 

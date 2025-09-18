@@ -83,6 +83,21 @@ describe('updateChangelog', () => {
     expect(result).toContain('### Added\n- New cool feature (#124)');
     expect(result).toContain('### Fixed\n- Fixed a critical bug (#123)');
   });
+
+  it('should have default values for useChangelogEntry and useShortPrLink', async () => {
+    jest
+      .spyOn(ChangeLogUtils, 'getNewChangeEntries')
+      .mockResolvedValue(getNewChangeEntriesMockData);
+
+    const result = await ChangeLogManager.updateChangelog({
+      ...changelogData,
+      useChangelogEntry: undefined,
+      useShortPrLink: undefined,
+    });
+
+    expect(result).toContain('### Added\n- New cool feature (#124)');
+    expect(result).toContain('### Fixed\n- Fixed a critical bug (#123)');
+  });
 });
 
 describe('getCategory', () => {
