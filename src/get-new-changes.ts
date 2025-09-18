@@ -226,7 +226,13 @@ export async function getNewChangeEntries({
         ? `(#${prNumber})`
         : `([#${prNumber}](${repoUrl}/pull/${prNumber}))`;
 
-      newDescription = `${newDescription} ${suffix}`;
+      if (newDescription) {
+        const lines = newDescription.split('\n');
+        lines[0] = `${lines[0]} ${suffix}`; // Append suffix to the first line (next lines are considered part of the description and ignored by the parsing logic)
+        newDescription = lines.join('\n');
+      } else {
+        newDescription = suffix;
+      }
     }
 
     return { description: newDescription, subject };
