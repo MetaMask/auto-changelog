@@ -96,11 +96,11 @@ export type UpdateChangelogOptions = {
   /**
    * Whether to use `CHANGELOG entry:` from the commit body and the no-changelog label
    */
-  useChangelogEntry: boolean;
+  useChangelogEntry?: boolean;
   /**
    * Whether to use short PR links in the changelog entries.
    */
-  useShortPrLink: boolean;
+  useShortPrLink?: boolean;
 };
 
 /**
@@ -141,8 +141,8 @@ export async function updateChangelog({
   formatter = undefined,
   packageRename,
   autoCategorize,
-  useChangelogEntry,
-  useShortPrLink,
+  useChangelogEntry = false,
+  useShortPrLink = false,
 }: UpdateChangelogOptions): Promise<string | undefined> {
   const changelog = parseChangelog({
     changelogContent,
