@@ -115,7 +115,9 @@ type UpdateOptions = {
  * @param options.projectRootDirectory - The root project directory.
  * @param options.tagPrefix - The prefix used in tags before the version number.
  * @param options.formatter - A custom Markdown formatter to use.
- * @param options.packageRename - The package rename properties.
+ * @param options.packageRename - The package rename properties. Optional.
+ * Only needed when retrieving a changelog for a renamed package
+ * (e.g., utils -> @metamask/utils).
  * @param options.autoCategorize - Whether to categorize commits automatically based on their messages.
  * @param options.useChangelogEntry - Whether to read `CHANGELOG entry:` from the commit body and the no-changelog label.
  * @param options.useShortPrLink - Whether to use short PR links in the changelog entries.
