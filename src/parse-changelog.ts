@@ -25,6 +25,17 @@ function isValidChangeCategory(category: string): category is ChangeCategory {
 }
 
 /**
+ * Returns the repository name from a GitHub repository URL.
+ *
+ * @param repoUrl - The URL for the GitHub repository.
+ * @returns The repository name, or null if it could not be determined.
+ */
+function extractRepoName(repoUrl: string): string {
+  const match = repoUrl.match(/github\.com\/[^/]+\/([^/]+)/u); // Match and capture the repo name
+  return match ? match[1] : '';
+}
+
+/**
  * Constructs a Changelog instance that represents the given changelog, which
  * is parsed for release and change information.
  *
@@ -61,6 +72,7 @@ export function parseChangelog({
     formatter,
     packageRename,
   });
+  const repoName = extractRepoName(repoUrl);
 
   const unreleasedHeaderIndex = changelogLines.indexOf(`## [${unreleased}]`);
   if (unreleasedHeaderIndex === -1) {
@@ -115,7 +127,7 @@ export function parseChangelog({
     }
 
     const { description, prNumbers } = shouldExtractPrLinks
-      ? extractPrLinks(currentChangeEntry)
+      ? extractPrLinks(currentChangeEntry, repoName)
       : {
           description: currentChangeEntry,
           prNumbers: [],
@@ -207,10 +219,14 @@ export function parseChangelog({
  * changelog).
  *
  * @param changeEntry - The text of the change entry.
+ * @param repoName - The name of the GitHub repository.
  * @returns The list of pull request numbers referenced by the change entry, and
  * the change entry without the links to those pull requests.
  */
-function extractPrLinks(changeEntry: string): {
+function extractPrLinks(
+  changeEntry: string,
+  repoName: string,
+): {
   description: string;
   prNumbers: string[];
 } {
@@ -220,11 +236,23 @@ function extractPrLinks(changeEntry: string): {
   // Only process the first line for PR link extraction
   let firstLine = lines[0];
 
-  // Example of long match group: " ([#123](...), [#456](...))"
-  const longGroupMatchPattern = /\s+\(\s*(\[#\d+\]\([^)]+\)\s*,?\s*)+\)/gu;
+  // We only extract PR links from the right repo, because it happens that some
+  // changelog entries include links to PRs from other repos like packages that were bumped.
+  // We don't want to accidentally extract those.
 
-  // Example of long match: "[#123](...)"
-  const longMatchPattern = /\[#(\d+)\]\([^)]+\)/gu;
+  // eslint-disable-next-line prefer-regex-literals
+  const longGroupMatchPattern = new RegExp(
+    // Example of long match group: " ([#123](...), [#456](...))"
+    `\\s+\\(\\s*(\\[#\\d+\\]\\([^)]*${repoName}[^)]*\\)\\s*,?\\s*)+\\)`,
+    'gu',
+  );
+
+  // eslint-disable-next-line prefer-regex-literals
+  const longMatchPattern = new RegExp(
+    // Example of long match: "[#123](...)"
+    `\\[#(\\d+)\\]\\([^)]*${repoName}[^)]*\\)`,
+    'gu',
+  );
 
   // Match and extract all long PR links like ([#123](...)) separated by commas
   const longGroupMatches = [...firstLine.matchAll(longGroupMatchPattern)];

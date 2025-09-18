@@ -806,6 +806,8 @@ describe('validateChangelog', () => {
         [0.0.1]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/releases/tag/v0.0.1
       `;
 
+      // The links to other repos are not recognized as PR links, which is why in this example
+      // the error is about 'missing PR link', not invalid one.
       await expect(
         validateChangelog({
           changelogContent,
@@ -815,7 +817,9 @@ describe('validateChangelog', () => {
           isReleaseCandidate: false,
           ensureValidPrLinksPresent: true,
         }),
-      ).rejects.toThrow('Changelog is not well-formatted');
+      ).rejects.toThrow(
+        `Pull request link(s) missing for change: 'Fix something ([#123](https://github.com/foo/bar/pull/123))' (in 0.0.2)`,
+      );
     });
   });
 

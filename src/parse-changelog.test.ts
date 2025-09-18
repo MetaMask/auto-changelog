@@ -935,7 +935,7 @@ describe('parseChangelog', () => {
 
           ## [0.0.1]
           ### Added
-          - Initial release ([#456](anything goes here actually))
+          - Initial release ([#456](a PR link to the right repo is needed here, otherwise it will be ignored))
         `,
         COMMON_REFERENCE_LINKS_3,
       );
@@ -957,8 +957,9 @@ describe('parseChangelog', () => {
       expect(changelog.getReleaseChanges('0.0.1')).toStrictEqual({
         Added: [
           {
-            description: 'Initial release',
-            prNumbers: ['456'],
+            description:
+              'Initial release ([#456](a PR link to the right repo is needed here, otherwise it will be ignored))',
+            prNumbers: [],
           },
         ],
       });
