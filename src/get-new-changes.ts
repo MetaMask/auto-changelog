@@ -213,14 +213,20 @@ export async function getNewChangeEntries({
   );
 
   return newCommits.map(({ prNumber, subject, description }) => {
-    let newDescription = description;
+    // Handle the edge case where the PR description includes multiple changelog entries with this format:
+    //   CHANGELOG entry: Added support to Solana tokens with multiplier (#509)
+    //   CHANGELOG entry: Fix a bug that was causing to show spam Solana transactions in the activity list (#515)
+    //   CHANGELOG entry: Fixed an issue that was causing to show an empty symbol instead of UNKNOWN in activity list for Solana tokens with no metadata (#517)
+    // This is not a supposed to happen, but we've seen engineers doing it already.
+    // Example PR on metamask-extension repo: (#35695)
+    let newDescription = description?.replace(/CHANGELOG entry: /gu, '');
 
     if (prNumber) {
       const suffix = useShortPrLink
         ? `(#${prNumber})`
         : `([#${prNumber}](${repoUrl}/pull/${prNumber}))`;
 
-      newDescription = `${description} ${suffix}`;
+      newDescription = `${newDescription} ${suffix}`;
     }
 
     return { description: newDescription, subject };
