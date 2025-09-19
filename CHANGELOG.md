@@ -11,11 +11,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Look for `CHANGELOG entry:` in the PR description, and look for `no-changelog` label, then apply this to the generated CHANGELOG, plus properly categorize by Conventional Commit type, including our custom ConventionalCommitType.RELEASE ([#247](https://github.com/MetaMask/auto-changelog/pull/247))
+- Add `--useChangelogEntry` to `auto-changelog update` ([#247](https://github.com/MetaMask/auto-changelog/pull/247))
+  - This will read the PR referenced in each commit message, look for `CHANGELOG entry:` in the PR description, and use this as the new changelog entry in the changelog (or skip if the `no-changelog` label is present on the PR)
+  - Note that `GITHUB_TOKEN` must be set in order to use this option
+  - The `updateChangelog` function also supports this option
+- Add `--useShortPrLink` to `auto-changelog update` ([#247](https://github.com/MetaMask/auto-changelog/pull/247))
+  - This will generate short references to PRs, e.g. `#123` instead of `[#123](https://some/repo)`
+  - The `updateChangelog` function also supports this option
 
-### Fixed
-
-- Fixed problems running auto-changelog on Windows around /r/n or CRLF ([#246](https://github.com/MetaMask/auto-changelog/pull/246))
+### Changed
+- Update `auto-changelog update --autoCategorize` to exclude entries with certain phrases or Conventional Commit prefixes ([#247](https://github.com/MetaMask/auto-changelog/pull/247))
+  - If commit messages have the following prefixes they will not be automatically added to the changelog:
+    - `style`
+    - `refactor`
+    - `test`
+    - `build`
+    - `ci`
+    - `release`
+  - If commit messages have the following phrases they will not be automatically added to the changelog:
+    - `Bump main version to`
+    - `changelog`
+    - `cherry-pick`
+    - `cp-`
+    - `e2e`
+    - `flaky test`
+    - `INFRA-`
+    - `merge`
+    - `New Crowdin translations`
 
 ## [5.0.2]
 
