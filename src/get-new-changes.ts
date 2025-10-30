@@ -209,7 +209,7 @@ export async function getNewChangeEntries({
   );
 
   const newCommits = commits.filter(
-    ({ prNumber }) => !prNumber || !loggedPrNumbers.includes(prNumber),
+    ({ prNumber }) => prNumber && !loggedPrNumbers.includes(prNumber),
   );
 
   return newCommits.map(({ prNumber, subject, description }) => {
