@@ -221,18 +221,17 @@ export async function getNewChangeEntries({
     // Example PR on metamask-extension repo: (#35695)
     let newDescription = description?.replace(/CHANGELOG entry: /gu, '');
 
-    if (prNumber) {
-      const suffix = useShortPrLink
-        ? `(#${prNumber})`
-        : `([#${prNumber}](${repoUrl}/pull/${prNumber}))`;
+    // prNumber is guaranteed to be truthy due to the filter above
+    const suffix = useShortPrLink
+      ? `(#${prNumber})`
+      : `([#${prNumber}](${repoUrl}/pull/${prNumber}))`;
 
-      if (newDescription) {
-        const lines = newDescription.split('\n');
-        lines[0] = `${lines[0]} ${suffix}`; // Append suffix to the first line (next lines are considered part of the description and ignored by the parsing logic)
-        newDescription = lines.join('\n');
-      } else {
-        newDescription = suffix;
-      }
+    if (newDescription) {
+      const lines = newDescription.split('\n');
+      lines[0] = `${lines[0]} ${suffix}`; // Append suffix to the first line (next lines are considered part of the description and ignored by the parsing logic)
+      newDescription = lines.join('\n');
+    } else {
+      newDescription = suffix;
     }
 
     return { description: newDescription, subject };
