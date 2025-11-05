@@ -20,7 +20,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - The `updateChangelog` function also supports this option
 
 ### Changed
-
 - Update `auto-changelog update --autoCategorize` to exclude entries with certain phrases or Conventional Commit prefixes ([#247](https://github.com/MetaMask/auto-changelog/pull/247))
   - If commit messages have the following prefixes they will not be automatically added to the changelog:
     - `style`
