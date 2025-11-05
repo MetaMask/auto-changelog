@@ -83,7 +83,7 @@ async function getCommits(
   const commits: { prNumber?: string; subject: string; description: string }[] =
     [];
   for (const commitHash of commitHashes) {
-    const subject: string = await runCommand('git', [
+    const subject = await runCommand('git', [
       'show',
       '-s',
       '--format=%s',
