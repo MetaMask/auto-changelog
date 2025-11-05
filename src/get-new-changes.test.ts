@@ -1,5 +1,5 @@
-import * as runCommandModule from './run-command';
 import { getNewChangeEntries } from './get-new-changes';
+import * as runCommandModule from './run-command';
 
 // Mock the run-command module
 jest.mock('./run-command');
@@ -7,9 +7,10 @@ jest.mock('./run-command');
 const mockRunCommand = runCommandModule.runCommand as jest.MockedFunction<
   typeof runCommandModule.runCommand
 >;
-const mockRunCommandAndSplit = runCommandModule.runCommandAndSplit as jest.MockedFunction<
-  typeof runCommandModule.runCommandAndSplit
->;
+const mockRunCommandAndSplit =
+  runCommandModule.runCommandAndSplit as jest.MockedFunction<
+    typeof runCommandModule.runCommandAndSplit
+  >;
 
 const repoUrl = 'https://github.com/MetaMask/metamask-mobile';
 
@@ -23,7 +24,11 @@ describe('getNewChangeEntries', () => {
   describe('filtering commits without PR numbers', () => {
     it('should exclude commits without PR numbers', async () => {
       // Mock git rev-list to return commit hashes
-      mockRunCommandAndSplit.mockResolvedValueOnce(['commit1', 'commit2', 'commit3']);
+      mockRunCommandAndSplit.mockResolvedValueOnce([
+        'commit1',
+        'commit2',
+        'commit3',
+      ]);
 
       // Mock git show calls for each commit
       // Commit 1: Has PR number (squash & merge format)
@@ -44,7 +49,9 @@ describe('getNewChangeEntries', () => {
       expect(result).toHaveLength(2);
       expect(result[0].description).toContain('12345');
       expect(result[1].description).toContain('12346');
-      expect(result.find((r) => r.description.includes('Attributions'))).toBeUndefined();
+      expect(
+        result.find((item) => item.description.includes('Attributions')),
+      ).toBeUndefined();
     });
 
     it('should exclude direct commits even with meaningful messages', async () => {
@@ -64,11 +71,17 @@ describe('getNewChangeEntries', () => {
 
       expect(result).toHaveLength(1);
       expect(result[0].description).toContain('important feature');
-      expect(result.find((r) => r.description.includes('Bump version'))).toBeUndefined();
+      expect(
+        result.find((item) => item.description.includes('Bump version')),
+      ).toBeUndefined();
     });
 
     it('should handle merge commit format and exclude direct commits', async () => {
-      mockRunCommandAndSplit.mockResolvedValueOnce(['commit1', 'commit2', 'commit3']);
+      mockRunCommandAndSplit.mockResolvedValueOnce([
+        'commit1',
+        'commit2',
+        'commit3',
+      ]);
 
       mockRunCommand
         .mockResolvedValueOnce('feat: feature (#12345)') // Squash merge
@@ -88,7 +101,9 @@ describe('getNewChangeEntries', () => {
 
       // Should include both PR-based commits but not the direct commit
       expect(result).toHaveLength(2);
-      expect(result.find((r) => r.description.includes('Manual commit'))).toBeUndefined();
+      expect(
+        result.find((item) => item.description.includes('Manual commit')),
+      ).toBeUndefined();
     });
   });
 
@@ -111,7 +126,9 @@ describe('getNewChangeEntries', () => {
       // Should only include the new PR #12346
       expect(result).toHaveLength(1);
       expect(result[0].description).toContain('12346');
-      expect(result.find((r) => r.description.includes('12345'))).toBeUndefined();
+      expect(
+        result.find((item) => item.description.includes('12345')),
+      ).toBeUndefined();
     });
 
     it('should include PRs not yet logged', async () => {
@@ -156,7 +173,7 @@ describe('getNewChangeEntries', () => {
   describe('mixed scenarios - the regression test', () => {
     it('should only include PRs and exclude direct commits even when re-run multiple times', async () => {
       // Simulate multiple workflow runs with accumulating commits
-      
+
       // Run 1: Initial commits
       mockRunCommandAndSplit.mockResolvedValueOnce(['commit1', 'commit2']);
 
@@ -174,11 +191,17 @@ describe('getNewChangeEntries', () => {
 
       expect(result1).toHaveLength(1);
       expect(result1[0].description).toContain('12345');
-      expect(result1.find((r) => r.description.includes('Attributions'))).toBeUndefined();
+      expect(
+        result1.find((item) => item.description.includes('Attributions')),
+      ).toBeUndefined();
 
       // Run 2: Same commits + new one (simulating re-run after new push)
       jest.clearAllMocks();
-      mockRunCommandAndSplit.mockResolvedValueOnce(['commit1', 'commit2', 'commit3']);
+      mockRunCommandAndSplit.mockResolvedValueOnce([
+        'commit1',
+        'commit2',
+        'commit3',
+      ]);
 
       mockRunCommand
         .mockResolvedValueOnce('feat: feature (#12345)') // Already logged
@@ -196,12 +219,20 @@ describe('getNewChangeEntries', () => {
       // Should only include the new PR, not the duplicate or direct commit
       expect(result2).toHaveLength(1);
       expect(result2[0].description).toContain('12346');
-      expect(result2.find((r) => r.description.includes('12345'))).toBeUndefined(); // Excluded due to idempotency
-      expect(result2.find((r) => r.description.includes('Attributions'))).toBeUndefined(); // Excluded due to no PR number
+      expect(
+        result2.find((item) => item.description.includes('12345')),
+      ).toBeUndefined(); // Excluded due to idempotency
+      expect(
+        result2.find((item) => item.description.includes('Attributions')),
+      ).toBeUndefined(); // Excluded due to no PR number
     });
 
     it('should handle all commits being either duplicates or direct commits', async () => {
-      mockRunCommandAndSplit.mockResolvedValueOnce(['commit1', 'commit2', 'commit3']);
+      mockRunCommandAndSplit.mockResolvedValueOnce([
+        'commit1',
+        'commit2',
+        'commit3',
+      ]);
 
       mockRunCommand
         .mockResolvedValueOnce('feat: feature (#12345)') // Already logged
@@ -240,7 +271,7 @@ describe('getNewChangeEntries', () => {
 
     it('should extract PR number from merge commit format', async () => {
       mockRunCommandAndSplit.mockResolvedValueOnce(['commit1']);
-      
+
       mockRunCommand
         .mockResolvedValueOnce('Merge pull request #12346 from feature-branch')
         .mockResolvedValueOnce('fix: actual fix description'); // body
@@ -258,7 +289,11 @@ describe('getNewChangeEntries', () => {
     });
 
     it('should exclude commits with no recognizable PR pattern', async () => {
-      mockRunCommandAndSplit.mockResolvedValueOnce(['commit1', 'commit2', 'commit3']);
+      mockRunCommandAndSplit.mockResolvedValueOnce([
+        'commit1',
+        'commit2',
+        'commit3',
+      ]);
 
       mockRunCommand
         .mockResolvedValueOnce('Regular commit message')
@@ -311,9 +346,11 @@ describe('getNewChangeEntries', () => {
 
     it('should handle commits with multiple PR references', async () => {
       mockRunCommandAndSplit.mockResolvedValueOnce(['commit1']);
-      
+
       // Commit message with multiple PR numbers - takes the last one
-      mockRunCommand.mockResolvedValueOnce('feat: feature with refs (#12345) (#12346)');
+      mockRunCommand.mockResolvedValueOnce(
+        'feat: feature with refs (#12345) (#12346)',
+      );
 
       const result = await getNewChangeEntries({
         mostRecentTag: 'v1.0.0',
@@ -342,7 +379,9 @@ describe('getNewChangeEntries', () => {
       });
 
       expect(result).toHaveLength(1);
-      expect(result[0].description).toContain('[#12345](https://github.com/MetaMask/metamask-mobile/pull/12345)');
+      expect(result[0].description).toContain(
+        '[#12345](https://github.com/MetaMask/metamask-mobile/pull/12345)',
+      );
     });
 
     it('should use short PR link when useShortPrLink is true', async () => {
@@ -391,11 +430,21 @@ describe('getNewChangeEntries', () => {
 
       // Should only include the 3 PRs, not the 2 direct commits
       expect(result).toHaveLength(3);
-      expect(result.find((r) => r.description.includes('20001'))).toBeDefined();
-      expect(result.find((r) => r.description.includes('20002'))).toBeDefined();
-      expect(result.find((r) => r.description.includes('20003'))).toBeDefined();
-      expect(result.find((r) => r.description.includes('Attributions'))).toBeUndefined();
-      expect(result.find((r) => r.description.includes('Bump version'))).toBeUndefined();
+      expect(
+        result.find((item) => item.description.includes('20001')),
+      ).toBeDefined();
+      expect(
+        result.find((item) => item.description.includes('20002')),
+      ).toBeDefined();
+      expect(
+        result.find((item) => item.description.includes('20003')),
+      ).toBeDefined();
+      expect(
+        result.find((item) => item.description.includes('Attributions')),
+      ).toBeUndefined();
+      expect(
+        result.find((item) => item.description.includes('Bump version')),
+      ).toBeUndefined();
     });
 
     it('should handle attribution workflow commits gracefully', async () => {
@@ -416,12 +465,14 @@ describe('getNewChangeEntries', () => {
 
       expect(result).toHaveLength(1);
       expect(result[0].description).toContain('user-facing feature');
-      expect(result.find((r) => r.description.includes('attributions'))).toBeUndefined();
+      expect(
+        result.find((item) => item.description.includes('attributions')),
+      ).toBeUndefined();
     });
 
     it('should demonstrate the fix - no duplicates on subsequent runs', async () => {
       // This is the critical test that demonstrates the bug fix
-      
+
       // First run
       mockRunCommandAndSplit.mockResolvedValueOnce(['commit1', 'commit2']);
       mockRunCommand
@@ -442,7 +493,11 @@ describe('getNewChangeEntries', () => {
 
       // Second run - simulate another push to release branch
       jest.clearAllMocks();
-      mockRunCommandAndSplit.mockResolvedValueOnce(['commit1', 'commit2', 'commit3']);
+      mockRunCommandAndSplit.mockResolvedValueOnce([
+        'commit1',
+        'commit2',
+        'commit3',
+      ]);
       mockRunCommand
         .mockResolvedValueOnce('feat: feature (#12345)') // Already logged
         .mockResolvedValueOnce('Update Attributions') // Direct commit (still in history)
@@ -459,12 +514,21 @@ describe('getNewChangeEntries', () => {
       // Second run: Only new PR, no duplicate of #12345, no duplicate of "Update Attributions"
       expect(secondRun).toHaveLength(1);
       expect(secondRun[0].description).toContain('12346');
-      expect(secondRun.find((r) => r.description.includes('12345'))).toBeUndefined();
-      expect(secondRun.find((r) => r.description.includes('Attributions'))).toBeUndefined();
+      expect(
+        secondRun.find((item) => item.description.includes('12345')),
+      ).toBeUndefined();
+      expect(
+        secondRun.find((item) => item.description.includes('Attributions')),
+      ).toBeUndefined();
 
       // Third run - one more push
       jest.clearAllMocks();
-      mockRunCommandAndSplit.mockResolvedValueOnce(['commit1', 'commit2', 'commit3', 'commit4']);
+      mockRunCommandAndSplit.mockResolvedValueOnce([
+        'commit1',
+        'commit2',
+        'commit3',
+        'commit4',
+      ]);
       mockRunCommand
         .mockResolvedValueOnce('feat: feature (#12345)')
         .mockResolvedValueOnce('Update Attributions')
@@ -482,7 +546,7 @@ describe('getNewChangeEntries', () => {
       // Third run: Only the newest PR
       expect(thirdRun).toHaveLength(1);
       expect(thirdRun[0].description).toContain('12347');
-      
+
       // Critical: "Update Attributions" NEVER appears in any run
       // This proves idempotency is maintained even without PR numbers
     });
@@ -507,8 +571,12 @@ describe('getNewChangeEntries', () => {
 
     it('should not break when all commits have PR numbers', async () => {
       // Scenario: Perfect PR-based workflow (current best practice)
-      mockRunCommandAndSplit.mockResolvedValueOnce(['commit1', 'commit2', 'commit3']);
-      
+      mockRunCommandAndSplit.mockResolvedValueOnce([
+        'commit1',
+        'commit2',
+        'commit3',
+      ]);
+
       mockRunCommand
         .mockResolvedValueOnce('feat: feature A (#20001)')
         .mockResolvedValueOnce('fix: bug B (#20002)')

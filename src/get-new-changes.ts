@@ -222,9 +222,11 @@ export async function getNewChangeEntries({
     let newDescription = description?.replace(/CHANGELOG entry: /gu, '');
 
     // prNumber is guaranteed to be truthy due to the filter above
+    // Type assertion is safe here because the filter ensures prNumber exists
+    const prNum = prNumber as string;
     const suffix = useShortPrLink
-      ? `(#${prNumber})`
-      : `([#${prNumber}](${repoUrl}/pull/${prNumber}))`;
+      ? `(#${prNum})`
+      : `([#${prNum}](${repoUrl}/pull/${prNum}))`;
 
     if (newDescription) {
       const lines = newDescription.split('\n');
