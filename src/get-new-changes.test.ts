@@ -527,6 +527,3 @@ describe('getNewChangeEntries', () => {
     });
   });
 });
-
-
-
