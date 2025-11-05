@@ -1,7 +1,6 @@
 /* eslint-disable node/no-process-env */
 
 import { Octokit } from '@octokit/rest';
-import { strict as assert } from 'assert';
 
 import { ConventionalCommitType } from './constants';
 import { getOwnerAndRepoFromUrl } from './repo';
@@ -91,10 +90,11 @@ async function getCommits(
       commitHash,
     ]);
 
-    assert.ok(
-      Boolean(subject),
-      `"git show" returned empty subject for commit "${commitHash}".`,
-    );
+    if (!subject) {
+      throw new Error(
+        `"git show" returned empty subject for commit "${commitHash}".`,
+      );
+    }
 
     const subjectMatch = subject.match(/\(#(\d+)\)/u);
 
