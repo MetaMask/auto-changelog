@@ -220,9 +220,7 @@ export async function getNewChangeEntries({
       return !loggedPrNumbers.includes(prNumber);
     }
     // Direct commit (no PR number): check if this exact description is already logged
-    return !loggedDescriptions.some((loggedDesc) =>
-      loggedDesc.includes(description),
-    );
+    return !loggedDescriptions.includes(description);
   });
 
   return newCommits.map(({ prNumber, subject, description }) => {
