@@ -1,7 +1,6 @@
 /* eslint-disable node/no-process-env */
 
 import { Octokit } from '@octokit/rest';
-import { strict as assert } from 'assert';
 
 import { ConventionalCommitType } from './constants';
 import { getOwnerAndRepoFromUrl } from './repo';
@@ -13,6 +12,7 @@ export type AddNewCommitsOptions = {
   mostRecentTag: string | null;
   repoUrl: string;
   loggedPrNumbers: string[];
+  loggedDescriptions: string[];
   projectRootDirectory?: string;
   useChangelogEntry: boolean;
   useShortPrLink: boolean;
@@ -91,10 +91,11 @@ async function getCommits(
       commitHash,
     ]);
 
-    assert.ok(
-      Boolean(subject),
-      `"git show" returned empty subject for commit "${commitHash}".`,
-    );
+    if (!subject) {
+      throw new Error(
+        `"git show" returned empty subject for commit "${commitHash}".`,
+      );
+    }
 
     const subjectMatch = subject.match(/\(#(\d+)\)/u);
 
@@ -180,6 +181,7 @@ async function getCommits(
  * @param options.mostRecentTag - The most recent tag.
  * @param options.repoUrl - The GitHub repository URL for the current project.
  * @param options.loggedPrNumbers - A list of all pull request numbers included in the relevant parsed changelog.
+ * @param options.loggedDescriptions - A list of all change descriptions included in the relevant parsed changelog.
  * @param options.projectRootDirectory - The root project directory, used to
  * filter results from various git commands. This path is assumed to be either
  * absolute, or relative to the current directory. Defaults to the root of the
@@ -192,6 +194,7 @@ export async function getNewChangeEntries({
   mostRecentTag,
   repoUrl,
   loggedPrNumbers,
+  loggedDescriptions,
   projectRootDirectory,
   useChangelogEntry,
   useShortPrLink,
@@ -208,9 +211,19 @@ export async function getNewChangeEntries({
     useChangelogEntry,
   );
 
-  const newCommits = commits.filter(
-    ({ prNumber }) => !prNumber || !loggedPrNumbers.includes(prNumber),
-  );
+  // Filter commits to exclude duplicates:
+  // - For commits with PR numbers: check if PR number already exists in changelog
+  // - For commits without PR numbers: check if the description already exists in changelog
+  const newCommits = commits.filter(({ prNumber, description }) => {
+    if (prNumber) {
+      // PR-based commit: check if this PR number is already logged
+      return !loggedPrNumbers.includes(prNumber);
+    }
+    // Direct commit (no PR number): check if this exact description is already logged
+    return !loggedDescriptions.some((loggedDesc) =>
+      loggedDesc.includes(description),
+    );
+  });
 
   return newCommits.map(({ prNumber, subject, description }) => {
     // Handle the edge case where the PR description includes multiple changelog entries with this format:
