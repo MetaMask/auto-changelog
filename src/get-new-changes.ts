@@ -211,6 +211,14 @@ export async function getNewChangeEntries({
     useChangelogEntry,
   );
 
+  // Pre-build a Set of descriptions from PR-based commits for efficient lookup
+  // This avoids O(N*M) complexity when checking for corresponding merge commits
+  const prCommitDescriptions = new Set(
+    commits
+      .filter((commit) => commit.prNumber)
+      .map((commit) => commit.description.trim()),
+  );
+
   // Filter commits to exclude duplicates:
   // - For commits with PR numbers: check if PR number already exists in changelog
   // - For commits without PR numbers: check if the description already exists in changelog
@@ -224,19 +232,15 @@ export async function getNewChangeEntries({
 
     // Case 1: Check if there's a corresponding merge commit in this batch
     // This handles squash merges where both the original commit and merge commit appear
-    const hasCorrespondingMergeCommit = commits.some(
-      (commit) =>
-        commit.prNumber && commit.description.trim() === description.trim(),
-    );
-
-    if (hasCorrespondingMergeCommit) {
+    const normalizedDescription = description.trim();
+    if (prCommitDescriptions.has(normalizedDescription)) {
       // Skip this commit - the merge commit with PR number will be used instead
       return false;
     }
 
     // Case 2: Check if this exact description is already logged in the changelog
     // Trim description to match pre-normalized loggedDescriptions
-    return !loggedDescriptions.includes(description.trim());
+    return !loggedDescriptions.includes(normalizedDescription);
   });
 
   return newCommits.map(({ prNumber, subject, description }) => {
