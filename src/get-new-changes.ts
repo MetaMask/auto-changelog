@@ -220,11 +220,8 @@ export async function getNewChangeEntries({
       return !loggedPrNumbers.includes(prNumber);
     }
     // Direct commit (no PR number): check if this exact description is already logged
-    // Normalize whitespace to match how changelog parser trims descriptions
-    const normalizedDescription = description.trim();
-    return !loggedDescriptions.some(
-      (loggedDesc) => loggedDesc.trim() === normalizedDescription,
-    );
+    // Trim description to match pre-normalized loggedDescriptions
+    return !loggedDescriptions.includes(description.trim());
   });
 
   return newCommits.map(({ prNumber, subject, description }) => {

@@ -82,12 +82,13 @@ function getAllLoggedPrNumbers(changelog: Changelog) {
 
 /**
  * Get all change descriptions included in the given changelog.
+ * Descriptions are trimmed to match the normalization applied during comparison.
  *
  * @param changelog - The changelog.
- * @returns All change descriptions included in the given changelog.
+ * @returns All change descriptions included in the given changelog, trimmed.
  */
 function getAllLoggedDescriptions(changelog: Changelog) {
-  return getAllChanges(changelog).map((change) => change.description);
+  return getAllChanges(changelog).map((change) => change.description.trim());
 }
 
 export type UpdateChangelogOptions = {
