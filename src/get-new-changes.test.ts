@@ -271,7 +271,7 @@ describe('getNewChangeEntries', () => {
         mostRecentTag: 'v1.0.0',
         repoUrl,
         loggedPrNumbers: ['12345'], // First PR now logged in changelog
-        loggedDescriptions: ['feat: feature (#12345)', 'Update Attributions'], // Both now logged
+        loggedDescriptions: ['feat: feature', 'Update Attributions'], // Both now logged (PR link stripped)
         useChangelogEntry: false,
         useShortPrLink: false,
       });
