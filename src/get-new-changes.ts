@@ -219,7 +219,22 @@ export async function getNewChangeEntries({
       // PR-based commit: check if this PR number is already logged
       return !loggedPrNumbers.includes(prNumber);
     }
-    // Direct commit (no PR number): check if this exact description is already logged
+
+    // Direct commit (no PR number): need to handle two cases
+
+    // Case 1: Check if there's a corresponding merge commit in this batch
+    // This handles squash merges where both the original commit and merge commit appear
+    const hasCorrespondingMergeCommit = commits.some(
+      (commit) =>
+        commit.prNumber && commit.description.trim() === description.trim(),
+    );
+
+    if (hasCorrespondingMergeCommit) {
+      // Skip this commit - the merge commit with PR number will be used instead
+      return false;
+    }
+
+    // Case 2: Check if this exact description is already logged in the changelog
     // Trim description to match pre-normalized loggedDescriptions
     return !loggedDescriptions.includes(description.trim());
   });
