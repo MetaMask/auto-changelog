@@ -171,6 +171,14 @@ async function getCommits(
     }
   }
 
+  // DEBUG: Log all extracted commits
+  console.log('DEBUG [getCommits]: Total commits extracted:', commits.length);
+  commits.forEach((c) => {
+    console.log(
+      `  - ${c.prNumber ? `PR #${c.prNumber}` : 'Direct'}: ${c.description.substring(0, 60)}${c.description.length > 60 ? '...' : ''}`,
+    );
+  });
+
   return commits;
 }
 
@@ -219,13 +227,23 @@ export async function getNewChangeEntries({
       .map((commit) => commit.description.trim()),
   );
 
+  console.log('DEBUG [filter setup]: PR commit descriptions Set size:', prCommitDescriptions.size);
+  console.log('DEBUG [filter setup]: Logged PR numbers:', loggedPrNumbers);
+  console.log('DEBUG [filter setup]: Logged descriptions count:', loggedDescriptions.length);
+
   // Filter commits to exclude duplicates:
   // - For commits with PR numbers: check if PR number already exists in changelog
   // - For commits without PR numbers: check if the description already exists in changelog
   const newCommits = commits.filter(({ prNumber, description }) => {
     if (prNumber) {
       // PR-based commit: check if this PR number is already logged
-      return !loggedPrNumbers.includes(prNumber);
+      const isFiltered = loggedPrNumbers.includes(prNumber);
+      if (isFiltered) {
+        console.log(
+          `  DEBUG [filter]: Skipping PR #${prNumber} (already logged)`,
+        );
+      }
+      return !isFiltered;
     }
 
     // Direct commit (no PR number): need to handle two cases
@@ -235,12 +253,28 @@ export async function getNewChangeEntries({
     const normalizedDescription = description.trim();
     if (prCommitDescriptions.has(normalizedDescription)) {
       // Skip this commit - the merge commit with PR number will be used instead
+      console.log(
+        `  DEBUG [filter]: Skipping direct commit (has merge): ${normalizedDescription.substring(0, 50)}`,
+      );
       return false;
     }
 
     // Case 2: Check if this exact description is already logged in the changelog
     // Trim description to match pre-normalized loggedDescriptions
-    return !loggedDescriptions.includes(normalizedDescription);
+    const isDuplicate = loggedDescriptions.includes(normalizedDescription);
+    if (isDuplicate) {
+      console.log(
+        `  DEBUG [filter]: Skipping direct commit (duplicate): ${normalizedDescription.substring(0, 50)}`,
+      );
+    }
+    return !isDuplicate;
+  });
+
+  console.log('DEBUG [filter]: Commits after filtering:', newCommits.length);
+  newCommits.forEach((c) => {
+    console.log(
+      `  - ${c.prNumber ? `PR #${c.prNumber}` : 'Direct'}: ${c.description.substring(0, 60)}`,
+    );
   });
 
   return newCommits.map(({ prNumber, subject, description }) => {
