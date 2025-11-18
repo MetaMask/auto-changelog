@@ -1,5 +1,3 @@
-/* eslint-disable node/no-process-env */
-
 import { Octokit } from '@octokit/rest';
 
 import { ConventionalCommitType } from './constants';
@@ -7,21 +5,6 @@ import { getOwnerAndRepoFromUrl } from './repo';
 import { runCommand, runCommandAndSplit } from './run-command';
 
 let github: Octokit;
-const isDebugEnabled = process.env.AUTO_CHANGELOG_DEBUG === 'true';
-
-/**
- * Conditionally log debug output when AUTO_CHANGELOG_DEBUG is enabled.
- *
- * @param args - Arguments to forward to console.log.
- */
-function logDebug(...args: unknown[]) {
-  if (!isDebugEnabled) {
-    return;
-  }
-
-  // eslint-disable-next-line no-console
-  console.log(...args);
-}
 
 export type AddNewCommitsOptions = {
   mostRecentTag: string | null;
@@ -186,16 +169,6 @@ async function getCommits(
     }
   }
 
-  if (isDebugEnabled) {
-    logDebug('DEBUG [getCommits]: Total commits extracted:', commits.length);
-    commits.forEach((commit) => {
-      const label = commit.prNumber ? `PR #${commit.prNumber}` : 'Direct';
-      const preview = commit.description.substring(0, 60);
-      const ellipsis = commit.description.length > 60 ? '...' : '';
-      logDebug(`  - ${label}: ${preview}${ellipsis}`);
-    });
-  }
-
   return commits;
 }
 
@@ -244,27 +217,13 @@ export async function getNewChangeEntries({
       .map((commit) => commit.description.trim()),
   );
 
-  logDebug(
-    'DEBUG [filter setup]: PR commit descriptions Set size:',
-    prCommitDescriptions.size,
-  );
-  logDebug('DEBUG [filter setup]: Logged PR numbers:', loggedPrNumbers);
-  logDebug(
-    'DEBUG [filter setup]: Logged descriptions count:',
-    loggedDescriptions.length,
-  );
-
   // Filter commits to exclude duplicates:
   // - For commits with PR numbers: check if PR number already exists in changelog
   // - For commits without PR numbers: check if the description already exists in changelog
   const newCommits = commits.filter(({ prNumber, description }) => {
     if (prNumber) {
       // PR-based commit: check if this PR number is already logged
-      const isFiltered = loggedPrNumbers.includes(prNumber);
-      if (isFiltered) {
-        logDebug(`  DEBUG [filter]: Skipping PR #${prNumber} (already logged)`);
-      }
-      return !isFiltered;
+      return !loggedPrNumbers.includes(prNumber);
     }
 
     // Direct commit (no PR number): need to handle two cases
@@ -274,36 +233,13 @@ export async function getNewChangeEntries({
     const normalizedDescription = description.trim();
     if (prCommitDescriptions.has(normalizedDescription)) {
       // Skip this commit - the merge commit with PR number will be used instead
-      logDebug(
-        `  DEBUG [filter]: Skipping direct commit (has merge): ${normalizedDescription.substring(
-          0,
-          50,
-        )}`,
-      );
       return false;
     }
 
     // Case 2: Check if this exact description is already logged in the changelog
     // Trim description to match pre-normalized loggedDescriptions
-    const isDuplicate = loggedDescriptions.includes(normalizedDescription);
-    if (isDuplicate) {
-      logDebug(
-        `  DEBUG [filter]: Skipping direct commit (duplicate): ${normalizedDescription.substring(
-          0,
-          50,
-        )}`,
-      );
-    }
-    return !isDuplicate;
+    return !loggedDescriptions.includes(normalizedDescription);
   });
-
-  if (isDebugEnabled) {
-    logDebug('DEBUG [filter]: Commits after filtering:', newCommits.length);
-    newCommits.forEach((commit) => {
-      const label = commit.prNumber ? `PR #${commit.prNumber}` : 'Direct';
-      logDebug(`  - ${label}: ${commit.description.substring(0, 60)}`);
-    });
-  }
 
   return newCommits.map(({ prNumber, subject, description }) => {
     // Handle the edge case where the PR description includes multiple changelog entries with this format:
@@ -336,11 +272,13 @@ export async function getNewChangeEntries({
  * Initialize the Octokit GitHub client with authentication token.
  */
 function initOctoKit() {
-  if (!process.env.GITHUB_TOKEN) {
+  const githubToken = process.env.GITHUB_TOKEN;
+  
+  if (!githubToken) {
     throw new Error('GITHUB_TOKEN environment variable is not set');
   }
 
-  github = new Octokit({ auth: process.env.GITHUB_TOKEN });
+  github = new Octokit({ auth: githubToken });
 }
 
 /**
