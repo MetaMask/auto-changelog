@@ -7,6 +7,21 @@ import { getOwnerAndRepoFromUrl } from './repo';
 import { runCommand, runCommandAndSplit } from './run-command';
 
 let github: Octokit;
+const isDebugEnabled = process.env.AUTO_CHANGELOG_DEBUG === 'true';
+
+/**
+ * Conditionally log debug output when AUTO_CHANGELOG_DEBUG is enabled.
+ *
+ * @param args - Arguments to forward to console.log.
+ */
+function logDebug(...args: unknown[]) {
+  if (!isDebugEnabled) {
+    return;
+  }
+
+  // eslint-disable-next-line no-console
+  console.log(...args);
+}
 
 export type AddNewCommitsOptions = {
   mostRecentTag: string | null;
@@ -171,13 +186,15 @@ async function getCommits(
     }
   }
 
-  // DEBUG: Log all extracted commits
-  console.log('DEBUG [getCommits]: Total commits extracted:', commits.length);
-  commits.forEach((c) => {
-    console.log(
-      `  - ${c.prNumber ? `PR #${c.prNumber}` : 'Direct'}: ${c.description.substring(0, 60)}${c.description.length > 60 ? '...' : ''}`,
-    );
-  });
+  if (isDebugEnabled) {
+    logDebug('DEBUG [getCommits]: Total commits extracted:', commits.length);
+    commits.forEach((commit) => {
+      const label = commit.prNumber ? `PR #${commit.prNumber}` : 'Direct';
+      const preview = commit.description.substring(0, 60);
+      const ellipsis = commit.description.length > 60 ? '...' : '';
+      logDebug(`  - ${label}: ${preview}${ellipsis}`);
+    });
+  }
 
   return commits;
 }
@@ -227,9 +244,15 @@ export async function getNewChangeEntries({
       .map((commit) => commit.description.trim()),
   );
 
-  console.log('DEBUG [filter setup]: PR commit descriptions Set size:', prCommitDescriptions.size);
-  console.log('DEBUG [filter setup]: Logged PR numbers:', loggedPrNumbers);
-  console.log('DEBUG [filter setup]: Logged descriptions count:', loggedDescriptions.length);
+  logDebug(
+    'DEBUG [filter setup]: PR commit descriptions Set size:',
+    prCommitDescriptions.size,
+  );
+  logDebug('DEBUG [filter setup]: Logged PR numbers:', loggedPrNumbers);
+  logDebug(
+    'DEBUG [filter setup]: Logged descriptions count:',
+    loggedDescriptions.length,
+  );
 
   // Filter commits to exclude duplicates:
   // - For commits with PR numbers: check if PR number already exists in changelog
@@ -239,9 +262,7 @@ export async function getNewChangeEntries({
       // PR-based commit: check if this PR number is already logged
       const isFiltered = loggedPrNumbers.includes(prNumber);
       if (isFiltered) {
-        console.log(
-          `  DEBUG [filter]: Skipping PR #${prNumber} (already logged)`,
-        );
+        logDebug(`  DEBUG [filter]: Skipping PR #${prNumber} (already logged)`);
       }
       return !isFiltered;
     }
@@ -253,8 +274,11 @@ export async function getNewChangeEntries({
     const normalizedDescription = description.trim();
     if (prCommitDescriptions.has(normalizedDescription)) {
       // Skip this commit - the merge commit with PR number will be used instead
-      console.log(
-        `  DEBUG [filter]: Skipping direct commit (has merge): ${normalizedDescription.substring(0, 50)}`,
+      logDebug(
+        `  DEBUG [filter]: Skipping direct commit (has merge): ${normalizedDescription.substring(
+          0,
+          50,
+        )}`,
       );
       return false;
     }
@@ -263,19 +287,23 @@ export async function getNewChangeEntries({
     // Trim description to match pre-normalized loggedDescriptions
     const isDuplicate = loggedDescriptions.includes(normalizedDescription);
     if (isDuplicate) {
-      console.log(
-        `  DEBUG [filter]: Skipping direct commit (duplicate): ${normalizedDescription.substring(0, 50)}`,
+      logDebug(
+        `  DEBUG [filter]: Skipping direct commit (duplicate): ${normalizedDescription.substring(
+          0,
+          50,
+        )}`,
       );
     }
     return !isDuplicate;
   });
 
-  console.log('DEBUG [filter]: Commits after filtering:', newCommits.length);
-  newCommits.forEach((c) => {
-    console.log(
-      `  - ${c.prNumber ? `PR #${c.prNumber}` : 'Direct'}: ${c.description.substring(0, 60)}`,
-    );
-  });
+  if (isDebugEnabled) {
+    logDebug('DEBUG [filter]: Commits after filtering:', newCommits.length);
+    newCommits.forEach((commit) => {
+      const label = commit.prNumber ? `PR #${commit.prNumber}` : 'Direct';
+      logDebug(`  - ${label}: ${commit.description.substring(0, 60)}`);
+    });
+  }
 
   return newCommits.map(({ prNumber, subject, description }) => {
     // Handle the edge case where the PR description includes multiple changelog entries with this format:
