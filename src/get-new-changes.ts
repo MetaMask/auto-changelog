@@ -250,6 +250,13 @@ export async function getNewChangeEntries({
     // Example PR on metamask-extension repo: (#35695)
     let newDescription = description?.replace(/CHANGELOG entry: /gu, '');
 
+    // For categorization purposes, use the description instead of subject for merge commits
+    // because merge commits have subjects like "Merge pull request #123..." which would be excluded,
+    // but their actual content (from the PR) is in the description
+    const subjectForCategorization = subject.startsWith('Merge pull request')
+      ? description
+      : subject;
+
     if (prNumber) {
       const suffix = useShortPrLink
         ? `(#${prNumber})`
@@ -264,7 +271,7 @@ export async function getNewChangeEntries({
       }
     }
 
-    return { description: newDescription, subject };
+    return { description: newDescription, subject: subjectForCategorization };
   });
 }
 
