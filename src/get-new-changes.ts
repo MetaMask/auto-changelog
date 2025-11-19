@@ -272,8 +272,9 @@ export async function getNewChangeEntries({
  * Initialize the Octokit GitHub client with authentication token.
  */
 function initOctoKit() {
+  // eslint-disable-next-line node/no-process-env
   const githubToken = process.env.GITHUB_TOKEN;
-  
+
   if (!githubToken) {
     throw new Error('GITHUB_TOKEN environment variable is not set');
   }
