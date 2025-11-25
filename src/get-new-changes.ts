@@ -61,26 +61,32 @@ function removeConventionalCommitPrefixIfPresent(message: string) {
   return message.replace(regex, '');
 }
 
+type Commit = {
+  prNumber?: string;
+  subject: string;
+  description: string;
+  isMergeCommit: boolean;
+};
+
 /**
  * Get commit details for each given commit hash.
  *
  * @param commitHashes - The list of commit hashes.
  * @param repoUrl - The repository URL.
  * @param useChangelogEntry - Whether to use `CHANGELOG entry:` from the commit body and the no-changelog label.
- * @returns Commit details for each commit, including description and PR number (if present).
+ * @returns Commit details for each commit, including description, PR number (if present), and merge commit indicator.
  */
 async function getCommits(
   commitHashes: string[],
   repoUrl: string,
   useChangelogEntry: boolean,
-) {
+): Promise<Commit[]> {
   // Only initialize Octokit if we need to fetch PR labels
   if (useChangelogEntry) {
     initOctoKit();
   }
 
-  const commits: { prNumber?: string; subject: string; description: string }[] =
-    [];
+  const commits: Commit[] = [];
   for (const commitHash of commitHashes) {
     const subject = await runCommand('git', [
       'show',
@@ -99,6 +105,7 @@ async function getCommits(
 
     let prNumber: string | undefined;
     let description = subject;
+    let isMergeCommit = false;
 
     if (subjectMatch) {
       // Squash & Merge: the commit subject is parsed as `<description> (#<PR ID>)`
@@ -145,12 +152,12 @@ async function getCommits(
         description = subject.match(/^(.+)\s\(#\d+\)/u)?.[1] ?? '';
       }
     } else {
-      // Merge: the PR ID is parsed from the git subject (which is of the form `Merge pull request
+      // Merge commit: the PR ID is parsed from the git subject (which is of the form `Merge pull request
       // #<PR ID> from <branch>`, and the description is assumed to be the first line of the body.
-      // If no body is found, the description is set to the commit subject
       const mergeMatch = subject.match(/#(\d+)\sfrom/u);
       if (mergeMatch) {
         prNumber = mergeMatch[1];
+        isMergeCommit = true;
         const [firstLineOfBody] = await runCommandAndSplit('git', [
           'show',
           '-s',
@@ -160,16 +167,56 @@ async function getCommits(
         description = firstLineOfBody || subject;
       }
     }
-    // Otherwise:
-    // Normal commits: The commit subject is the description, and the PR ID is omitted.
 
     // String 'null' is used to indicate no description
     if (description !== 'null') {
-      commits.push({ prNumber, subject, description });
+      commits.push({
+        prNumber,
+        subject,
+        description: description.trim(),
+        isMergeCommit,
+      });
     }
   }
 
   return commits;
+}
+
+/**
+ * Filter out duplicate commits based on PR numbers and descriptions.
+ *
+ * For PR-tagged commits: excludes if PR number already exists in changelog.
+ * For direct commits: excludes if a PR-tagged commit with the same description exists
+ * in the current batch (handles squash merges), or if already logged in changelog.
+ *
+ * @param commits - The list of commits to deduplicate.
+ * @param loggedPrNumbers - PR numbers already in the changelog.
+ * @param loggedDescriptions - Descriptions already in the changelog.
+ * @returns Filtered list of commits without duplicates.
+ */
+function deduplicateCommits(
+  commits: Commit[],
+  loggedPrNumbers: string[],
+  loggedDescriptions: string[],
+): Commit[] {
+  const prTaggedCommitDescriptions = new Set(
+    commits
+      .filter((commit) => commit.prNumber !== undefined)
+      .map((commit) => commit.description),
+  );
+
+  return commits.filter(({ prNumber, description }) => {
+    if (prNumber !== undefined) {
+      return !loggedPrNumbers.includes(prNumber);
+    }
+
+    // Direct commit: skip if a PR-tagged commit with same description exists in this batch
+    if (prTaggedCommitDescriptions.has(description)) {
+      return false;
+    }
+
+    return !loggedDescriptions.includes(description);
+  });
 }
 
 /**
@@ -209,53 +256,19 @@ export async function getNewChangeEntries({
     useChangelogEntry,
   );
 
-  // Pre-build a Set of descriptions from PR-based commits for efficient lookup
-  // This avoids O(N*M) complexity when checking for corresponding merge commits
-  const prCommitDescriptions = new Set(
-    commits
-      .filter((commit) => commit.prNumber)
-      .map((commit) => commit.description.trim()),
+  const newCommits = deduplicateCommits(
+    commits,
+    loggedPrNumbers,
+    loggedDescriptions,
   );
 
-  // Filter commits to exclude duplicates:
-  // - For commits with PR numbers: check if PR number already exists in changelog
-  // - For commits without PR numbers: check if the description already exists in changelog
-  const newCommits = commits.filter(({ prNumber, description }) => {
-    if (prNumber) {
-      // PR-based commit: check if this PR number is already logged
-      return !loggedPrNumbers.includes(prNumber);
-    }
-
-    // Direct commit (no PR number): need to handle two cases
-
-    // Case 1: Check if there's a corresponding merge commit in this batch
-    // This handles squash merges where both the original commit and merge commit appear
-    const normalizedDescription = description.trim();
-    if (prCommitDescriptions.has(normalizedDescription)) {
-      // Skip this commit - the merge commit with PR number will be used instead
-      return false;
-    }
-
-    // Case 2: Check if this exact description is already logged in the changelog
-    // Trim description to match pre-normalized loggedDescriptions
-    return !loggedDescriptions.includes(normalizedDescription);
-  });
-
-  return newCommits.map(({ prNumber, subject, description }) => {
-    // Handle the edge case where the PR description includes multiple changelog entries with this format:
-    //   CHANGELOG entry: Added support to Solana tokens with multiplier (#509)
-    //   CHANGELOG entry: Fix a bug that was causing to show spam Solana transactions in the activity list (#515)
-    //   CHANGELOG entry: Fixed an issue that was causing to show an empty symbol instead of UNKNOWN in activity list for Solana tokens with no metadata (#517)
-    // This is not a supposed to happen, but we've seen engineers doing it already.
-    // Example PR on metamask-extension repo: (#35695)
+  return newCommits.map(({ prNumber, subject, isMergeCommit, description }) => {
+    // Handle edge case where PR description includes multiple CHANGELOG entries
     let newDescription = description?.replace(/CHANGELOG entry: /gu, '');
 
-    // For categorization purposes, use the description instead of subject for merge commits
-    // because merge commits have subjects like "Merge pull request #123..." which would be excluded,
-    // but their actual content (from the PR) is in the description
-    const subjectForCategorization = subject.startsWith('Merge pull request')
-      ? description
-      : subject;
+    // For merge commits, use the description for categorization because the subject
+    // is "Merge pull request #123..." which would be incorrectly excluded
+    const subjectForCategorization = isMergeCommit ? description : subject;
 
     if (prNumber) {
       const suffix = useShortPrLink
