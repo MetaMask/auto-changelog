@@ -80,6 +80,17 @@ function getAllLoggedPrNumbers(changelog: Changelog) {
   return getAllChanges(changelog).flatMap((change) => change.prNumbers);
 }
 
+/**
+ * Get all change descriptions included in the given changelog.
+ * Descriptions are trimmed to match the normalization applied during comparison.
+ *
+ * @param changelog - The changelog.
+ * @returns All change descriptions included in the given changelog, trimmed.
+ */
+function getAllLoggedDescriptions(changelog: Changelog) {
+  return getAllChanges(changelog).map((change) => change.description.trim());
+}
+
 export type UpdateChangelogOptions = {
   changelogContent: string;
   currentVersion?: Version;
@@ -189,6 +200,7 @@ export async function updateChangelog({
     mostRecentTag,
     repoUrl,
     loggedPrNumbers: getAllLoggedPrNumbers(changelog),
+    loggedDescriptions: getAllLoggedDescriptions(changelog),
     projectRootDirectory,
     useChangelogEntry,
     useShortPrLink,

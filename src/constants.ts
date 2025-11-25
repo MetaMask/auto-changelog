@@ -103,6 +103,6 @@ export const keywordsToIndicateExcluded: string[] = [
   'e2e',
   'flaky test',
   'INFRA-',
-  'merge',
+  'Merge pull request',
   'New Crowdin translations',
 ].map((word) => word.toLowerCase());

@@ -1,7 +1,4 @@
-/* eslint-disable node/no-process-env */
-
 import { Octokit } from '@octokit/rest';
-import { strict as assert } from 'assert';
 
 import { ConventionalCommitType } from './constants';
 import { getOwnerAndRepoFromUrl } from './repo';
@@ -13,6 +10,7 @@ export type AddNewCommitsOptions = {
   mostRecentTag: string | null;
   repoUrl: string;
   loggedPrNumbers: string[];
+  loggedDescriptions: string[];
   projectRootDirectory?: string;
   useChangelogEntry: boolean;
   useShortPrLink: boolean;
@@ -63,26 +61,32 @@ function removeConventionalCommitPrefixIfPresent(message: string) {
   return message.replace(regex, '');
 }
 
+type Commit = {
+  prNumber?: string;
+  subject: string;
+  description: string;
+  isMergeCommit: boolean;
+};
+
 /**
  * Get commit details for each given commit hash.
  *
  * @param commitHashes - The list of commit hashes.
  * @param repoUrl - The repository URL.
  * @param useChangelogEntry - Whether to use `CHANGELOG entry:` from the commit body and the no-changelog label.
- * @returns Commit details for each commit, including description and PR number (if present).
+ * @returns Commit details for each commit, including description, PR number (if present), and merge commit indicator.
  */
 async function getCommits(
   commitHashes: string[],
   repoUrl: string,
   useChangelogEntry: boolean,
-) {
+): Promise<Commit[]> {
   // Only initialize Octokit if we need to fetch PR labels
   if (useChangelogEntry) {
     initOctoKit();
   }
 
-  const commits: { prNumber?: string; subject: string; description: string }[] =
-    [];
+  const commits: Commit[] = [];
   for (const commitHash of commitHashes) {
     const subject = await runCommand('git', [
       'show',
@@ -91,15 +95,17 @@ async function getCommits(
       commitHash,
     ]);
 
-    assert.ok(
-      Boolean(subject),
-      `"git show" returned empty subject for commit "${commitHash}".`,
-    );
+    if (!subject) {
+      throw new Error(
+        `"git show" returned empty subject for commit "${commitHash}".`,
+      );
+    }
 
     const subjectMatch = subject.match(/\(#(\d+)\)/u);
 
     let prNumber: string | undefined;
     let description = subject;
+    let isMergeCommit = false;
 
     if (subjectMatch) {
       // Squash & Merge: the commit subject is parsed as `<description> (#<PR ID>)`
@@ -146,12 +152,12 @@ async function getCommits(
         description = subject.match(/^(.+)\s\(#\d+\)/u)?.[1] ?? '';
       }
     } else {
-      // Merge: the PR ID is parsed from the git subject (which is of the form `Merge pull request
+      // Merge commit: the PR ID is parsed from the git subject (which is of the form `Merge pull request
       // #<PR ID> from <branch>`, and the description is assumed to be the first line of the body.
-      // If no body is found, the description is set to the commit subject
       const mergeMatch = subject.match(/#(\d+)\sfrom/u);
       if (mergeMatch) {
         prNumber = mergeMatch[1];
+        isMergeCommit = true;
         const [firstLineOfBody] = await runCommandAndSplit('git', [
           'show',
           '-s',
@@ -161,16 +167,56 @@ async function getCommits(
         description = firstLineOfBody || subject;
       }
     }
-    // Otherwise:
-    // Normal commits: The commit subject is the description, and the PR ID is omitted.
 
     // String 'null' is used to indicate no description
     if (description !== 'null') {
-      commits.push({ prNumber, subject, description });
+      commits.push({
+        prNumber,
+        subject,
+        description: description.trim(),
+        isMergeCommit,
+      });
     }
   }
 
   return commits;
+}
+
+/**
+ * Filter out duplicate commits based on PR numbers and descriptions.
+ *
+ * For PR-tagged commits: excludes if PR number already exists in changelog.
+ * For direct commits: excludes if a PR-tagged commit with the same description exists
+ * in the current batch (handles squash merges), or if already logged in changelog.
+ *
+ * @param commits - The list of commits to deduplicate.
+ * @param loggedPrNumbers - PR numbers already in the changelog.
+ * @param loggedDescriptions - Descriptions already in the changelog.
+ * @returns Filtered list of commits without duplicates.
+ */
+function deduplicateCommits(
+  commits: Commit[],
+  loggedPrNumbers: string[],
+  loggedDescriptions: string[],
+): Commit[] {
+  const prTaggedCommitDescriptions = new Set(
+    commits
+      .filter((commit) => commit.prNumber !== undefined)
+      .map((commit) => commit.description),
+  );
+
+  return commits.filter(({ prNumber, description }) => {
+    if (prNumber !== undefined) {
+      return !loggedPrNumbers.includes(prNumber);
+    }
+
+    // Direct commit: skip if a PR-tagged commit with same description exists in this batch
+    if (prTaggedCommitDescriptions.has(description)) {
+      return false;
+    }
+
+    return !loggedDescriptions.includes(description);
+  });
 }
 
 /**
@@ -180,6 +226,7 @@ async function getCommits(
  * @param options.mostRecentTag - The most recent tag.
  * @param options.repoUrl - The GitHub repository URL for the current project.
  * @param options.loggedPrNumbers - A list of all pull request numbers included in the relevant parsed changelog.
+ * @param options.loggedDescriptions - A list of all change descriptions included in the relevant parsed changelog.
  * @param options.projectRootDirectory - The root project directory, used to
  * filter results from various git commands. This path is assumed to be either
  * absolute, or relative to the current directory. Defaults to the root of the
@@ -192,6 +239,7 @@ export async function getNewChangeEntries({
   mostRecentTag,
   repoUrl,
   loggedPrNumbers,
+  loggedDescriptions,
   projectRootDirectory,
   useChangelogEntry,
   useShortPrLink,
@@ -208,18 +256,19 @@ export async function getNewChangeEntries({
     useChangelogEntry,
   );
 
-  const newCommits = commits.filter(
-    ({ prNumber }) => !prNumber || !loggedPrNumbers.includes(prNumber),
+  const newCommits = deduplicateCommits(
+    commits,
+    loggedPrNumbers,
+    loggedDescriptions,
   );
 
-  return newCommits.map(({ prNumber, subject, description }) => {
-    // Handle the edge case where the PR description includes multiple changelog entries with this format:
-    //   CHANGELOG entry: Added support to Solana tokens with multiplier (#509)
-    //   CHANGELOG entry: Fix a bug that was causing to show spam Solana transactions in the activity list (#515)
-    //   CHANGELOG entry: Fixed an issue that was causing to show an empty symbol instead of UNKNOWN in activity list for Solana tokens with no metadata (#517)
-    // This is not a supposed to happen, but we've seen engineers doing it already.
-    // Example PR on metamask-extension repo: (#35695)
+  return newCommits.map(({ prNumber, subject, isMergeCommit, description }) => {
+    // Handle edge case where PR description includes multiple CHANGELOG entries
     let newDescription = description?.replace(/CHANGELOG entry: /gu, '');
+
+    // For merge commits, use the description for categorization because the subject
+    // is "Merge pull request #123..." which would be incorrectly excluded
+    const subjectForCategorization = isMergeCommit ? description : subject;
 
     if (prNumber) {
       const suffix = useShortPrLink
@@ -235,7 +284,7 @@ export async function getNewChangeEntries({
       }
     }
 
-    return { description: newDescription, subject };
+    return { description: newDescription, subject: subjectForCategorization };
   });
 }
 
@@ -243,11 +292,14 @@ export async function getNewChangeEntries({
  * Initialize the Octokit GitHub client with authentication token.
  */
 function initOctoKit() {
-  if (!process.env.GITHUB_TOKEN) {
+  // eslint-disable-next-line node/no-process-env
+  const githubToken = process.env.GITHUB_TOKEN;
+
+  if (!githubToken) {
     throw new Error('GITHUB_TOKEN environment variable is not set');
   }
 
-  github = new Octokit({ auth: process.env.GITHUB_TOKEN });
+  github = new Octokit({ auth: githubToken });
 }
 
 /**
