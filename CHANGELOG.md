@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.2.0]
+
+### Added
+
+- Deduplicate commits with no PR number in subject ([#254](https://github.com/MetaMask/auto-changelog/pull/254))
+  - For commits with no PR number in the subject (non-"Squash & Merge" commits), deduplication now checks if exact description text already exists in changelog
+  - Merge commits are deduplicated using commit body instead of the generic merge subject
+
 ## [5.1.0]
 
 ### Added
@@ -20,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - The `updateChangelog` function also supports this option
 
 ### Changed
+
 - Update `auto-changelog update --autoCategorize` to exclude entries with certain phrases or Conventional Commit prefixes ([#247](https://github.com/MetaMask/auto-changelog/pull/247))
   - If commit messages have the following prefixes they will not be automatically added to the changelog:
     - `style`
@@ -254,7 +263,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Monorepo support ([#41](https://github.com/MetaMask/auto-changelog/pull/41))
   - Configurable repository URL, version, and changelog file path ([#33](https://github.com/MetaMask/auto-changelog/pull/33), [#31](https://github.com/MetaMask/auto-changelog/pull/31), [#30](https://github.com/MetaMask/auto-changelog/pull/30))
 
-[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v5.1.0...HEAD
+[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v5.2.0...HEAD
+[5.2.0]: https://github.com/MetaMask/auto-changelog/compare/v5.1.0...v5.2.0
 [5.1.0]: https://github.com/MetaMask/auto-changelog/compare/v5.0.2...v5.1.0
 [5.0.2]: https://github.com/MetaMask/auto-changelog/compare/v5.0.1...v5.0.2
 [5.0.1]: https://github.com/MetaMask/auto-changelog/compare/v5.0.0...v5.0.1
