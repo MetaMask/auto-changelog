@@ -9,9 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [5.2.0]
 
-### Uncategorized
+### Added
 
-- fix(INFRA-3081): implement duplicate detection for all commit types ([#254](https://github.com/MetaMask/auto-changelog/pull/254))
+- Deduplicate commits with no PR number in subject ([#254](https://github.com/MetaMask/auto-changelog/pull/254))
+  - For commits with no PR number in the subject (non-"Squash & Merge" commits), deduplication now checks if exact description text already exists in changelog
+  - Merge commits are deduplicated using commit body instead of the generic merge subject
 
 ## [5.1.0]
 
