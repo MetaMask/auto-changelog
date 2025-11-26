@@ -9,13 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [5.1.1]
 
-### Fixed
+### Added
 
-- Fix duplicate changelog entries ([#254](https://github.com/MetaMask/auto-changelog/pull/254))
-  - PR-based commits: Deduplication now checks if PR number already exists in changelog
-  - Direct commits (no PR number): Deduplication now checks if exact description text already exists in changelog
-  - Squash merges: Feature branch commits are skipped when a corresponding merge commit with the same description exists
-  - Merge commits: Now properly categorized using PR content instead of the generic merge subject
+- Deduplicate commits with no PR number in subject ([#254](https://github.com/MetaMask/auto-changelog/pull/254))
+  - For commits with no PR number in the subject (non-"Squash & Merge" commits), deduplication now checks if exact description text already exists in changelog
+  - Merge commits are deduplicated using commit body instead of the generic merge subject
 
 ## [5.1.0]
 
