@@ -14,6 +14,7 @@ export type AddNewCommitsOptions = {
   projectRootDirectory?: string;
   useChangelogEntry: boolean;
   useShortPrLink: boolean;
+  requirePrNumbers?: boolean;
 };
 
 // Get array of all ConventionalCommitType values
@@ -233,6 +234,7 @@ function deduplicateCommits(
  * current git repository.
  * @param options.useChangelogEntry - Whether to use `CHANGELOG entry:` from the commit body and the no-changelog label.
  * @param options.useShortPrLink - Whether to use short PR links in the changelog entries.
+ * @param options.requirePrNumbers - Whether to require PR numbers for all commits. If true, commits without PR numbers are filtered out.
  * @returns A list of new change entries to add to the changelog, based on commits made since the last release.
  */
 export async function getNewChangeEntries({
@@ -243,6 +245,7 @@ export async function getNewChangeEntries({
   projectRootDirectory,
   useChangelogEntry,
   useShortPrLink,
+  requirePrNumbers = false,
 }: AddNewCommitsOptions) {
   const commitRange =
     mostRecentTag === null ? 'HEAD' : `${mostRecentTag}..HEAD`;
@@ -256,8 +259,12 @@ export async function getNewChangeEntries({
     useChangelogEntry,
   );
 
+  const filteredPrCommits = requirePrNumbers
+    ? commits.filter((commit) => commit.prNumber !== undefined)
+    : commits;
+
   const newCommits = deduplicateCommits(
-    commits,
+    filteredPrCommits,
     loggedPrNumbers,
     loggedDescriptions,
   );

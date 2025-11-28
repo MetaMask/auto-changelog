@@ -38,6 +38,14 @@ or
 
 `yarn run auto-changelog update --useShortPrLink`
 
+#### Require PR numbers (filter out commits without PR numbers)
+
+- Only include commits that have associated PR numbers in the changelog
+- Commits without PR numbers (like direct commits) will be filtered out
+- This is useful for projects that want to ensure all changelog entries come from reviewed pull requests
+
+`yarn run auto-changelog update --requirePrNumbers`
+
 #### Update the current release section of the changelog
 
 `yarn run auto-changelog update --rc`
@@ -49,6 +57,10 @@ or
 ### Deluxe, as used in metamask-extension
 
 `yarn run auto-changelog update --autoCategorize --useChangelogEntry --useShortPrLink --rc`
+
+### With requirePrNumbers (for stricter PR-based workflows)
+
+`yarn run auto-changelog update --autoCategorize --useChangelogEntry --useShortPrLink --requirePrNumbers --rc`
 
 #### Update the changelog for a renamed package
 
@@ -132,6 +144,7 @@ const updatedChangelog = await updateChangelog({
   currentVersion: '1.0.0',
   repoUrl: 'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
   isReleaseCandidate: false,
+  requirePrNumbers: false, // Optional: set to true to filter out commits without PR numbers
 });
 await fs.writeFile('CHANGELOG.md', updatedChangelog);
 ```
