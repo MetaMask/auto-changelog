@@ -330,16 +330,31 @@ async function getPrLabels(
 
   const { owner, repo } = getOwnerAndRepoFromUrl(repoUrl);
 
-  const { data: pullRequest } = await github.rest.pulls.get({
-    owner,
-    repo,
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    pull_number: Number(prNumber),
-  });
+  try {
+    const { data: pullRequest } = await github.rest.pulls.get({
+      owner,
+      repo,
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      pull_number: Number(prNumber),
+    });
 
-  if (pullRequest) {
-    const labels = pullRequest.labels.map((label: any) => label.name);
-    return labels;
+    if (pullRequest) {
+      const labels = pullRequest.labels.map((label: any) => label.name);
+      return labels;
+    }
+  } catch (error: unknown) {
+    // If PR doesn't exist (404), return empty labels instead of throwing
+    if (
+      error instanceof Error &&
+      'status' in error &&
+      (error as { status: number }).status === 404
+    ) {
+      console.warn(
+        `PR #${prNumber} not found in ${owner}/${repo}, skipping label check`,
+      );
+      return [];
+    }
+    throw error;
   }
 
   return [];
