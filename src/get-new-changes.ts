@@ -139,11 +139,12 @@ async function getCommits(
         const changelogMatch = body.match(/\nCHANGELOG entry:\s(\S.+?)\n\n/su);
 
         if (changelogMatch) {
-          const changelogEntry = changelogMatch[1].replace('\n', ' ');
+          const changelogEntry = changelogMatch[1].replace('\n', ' ').trim();
 
           description = changelogEntry; // This may be string 'null' to indicate no description
 
-          if (description !== 'null') {
+          // Check for 'null' (case-insensitive) to exclude entries marked as no-changelog
+          if (description.toLowerCase() !== 'null') {
             // Remove outer backticks if present. Example: `feat: new feature description` -> feat: new feature description
             description = removeOuterBackticksIfPresent(description);
 
