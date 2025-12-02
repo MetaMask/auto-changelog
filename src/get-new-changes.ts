@@ -159,7 +159,8 @@ async function getCommits(
           description = subject.match(/^(.+)\s\(#\d+\)/u)?.[1] ?? '';
         }
 
-        if (description !== 'null') {
+        // Filter out entries marked as no-changelog (case-insensitive null check)
+        if (description.toLowerCase() !== 'null') {
           const prLabels = await getPrLabels(repoUrl, prNumber);
 
           if (prLabels.includes('no-changelog')) {
