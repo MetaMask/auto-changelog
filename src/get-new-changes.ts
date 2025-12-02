@@ -62,6 +62,22 @@ function removeConventionalCommitPrefixIfPresent(message: string) {
   return message.replace(regex, '');
 }
 
+/**
+ * Remove HTML comments from the given message.
+ * Handles both complete comments (<!-- ... -->) and unclosed comments (<!-- ...).
+ * This prevents PR template content from breaking the changelog markdown.
+ *
+ * @param message - The changelog entry message.
+ * @returns The message without HTML comments.
+ */
+function stripHtmlComments(message: string): string {
+  // Remove complete HTML comments (<!-- ... -->)
+  let result = message.replace(/<!--[\s\S]*?-->/gu, '');
+  // Remove unclosed HTML comments (<!-- without closing -->)
+  result = result.replace(/<!--[\s\S]*$/gu, '');
+  return result.trim();
+}
+
 type Commit = {
   prNumber?: string;
   subject: string;
@@ -272,6 +288,11 @@ export async function getNewChangeEntries({
   return newCommits.map(({ prNumber, subject, isMergeCommit, description }) => {
     // Handle edge case where PR description includes multiple CHANGELOG entries
     let newDescription = description?.replace(/CHANGELOG entry: /gu, '');
+
+    // Strip HTML comments that may come from PR templates to prevent broken markdown
+    if (newDescription) {
+      newDescription = stripHtmlComments(newDescription);
+    }
 
     // For merge commits, use the description for categorization because the subject
     // is "Merge pull request #123..." which would be incorrectly excluded
