@@ -102,6 +102,10 @@ type UpdateOptions = {
    * Whether to use short PR links in the changelog entries
    */
   useShortPrLink: boolean;
+  /**
+   * Whether to require PR numbers for all commits. If true, commits without PR numbers are filtered out.
+   */
+  requirePrNumbers: boolean;
 };
 
 /**
@@ -121,6 +125,7 @@ type UpdateOptions = {
  * @param options.autoCategorize - Whether to categorize commits automatically based on their messages.
  * @param options.useChangelogEntry - Whether to read `CHANGELOG entry:` from the commit body and the no-changelog label.
  * @param options.useShortPrLink - Whether to use short PR links in the changelog entries.
+ * @param options.requirePrNumbers - Whether to require PR numbers for all commits. If true, commits without PR numbers are filtered out.
  */
 async function update({
   changelogPath,
@@ -134,6 +139,7 @@ async function update({
   autoCategorize,
   useChangelogEntry,
   useShortPrLink,
+  requirePrNumbers,
 }: UpdateOptions) {
   const changelogContent = await readChangelog(changelogPath);
 
@@ -149,6 +155,7 @@ async function update({
     autoCategorize,
     useChangelogEntry,
     useShortPrLink,
+    requirePrNumbers,
   });
 
   if (newChangelogContent) {
@@ -357,6 +364,12 @@ async function main() {
             description: 'Use short PR links in the changelog entries',
             type: 'boolean',
           })
+          .option('requirePrNumbers', {
+            default: false,
+            description:
+              'Only include commits with PR numbers in the changelog. Commits without PR numbers will be filtered out',
+            type: 'boolean',
+          })
           .epilog(updateEpilog),
     )
     .command(
@@ -416,6 +429,7 @@ async function main() {
     prLinks,
     useChangelogEntry,
     useShortPrLink,
+    requirePrNumbers,
   } = argv;
   let { currentVersion } = argv;
 
@@ -547,6 +561,7 @@ async function main() {
       autoCategorize,
       useChangelogEntry: Boolean(useChangelogEntry),
       useShortPrLink: Boolean(useShortPrLink),
+      requirePrNumbers: Boolean(requirePrNumbers),
     });
   } else if (command === 'validate') {
     let packageRename: PackageRename | undefined;

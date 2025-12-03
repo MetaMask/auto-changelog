@@ -112,6 +112,10 @@ export type UpdateChangelogOptions = {
    * Whether to use short PR links in the changelog entries.
    */
   useShortPrLink?: boolean;
+  /**
+   * Whether to require PR numbers for all commits. If true, commits without PR numbers are filtered out.
+   */
+  requirePrNumbers?: boolean;
 };
 
 /**
@@ -140,6 +144,7 @@ export type UpdateChangelogOptions = {
  * based on commit message prefixes.
  * @param options.useChangelogEntry - Whether to use `CHANGELOG entry:` from the commit body and the no-changelog label.
  * @param options.useShortPrLink - Whether to use short PR links in the changelog.
+ * @param options.requirePrNumbers - Whether to require PR numbers for all commits. If true, commits without PR numbers are filtered out.
  * @returns The updated changelog text.
  */
 export async function updateChangelog({
@@ -154,6 +159,7 @@ export async function updateChangelog({
   autoCategorize,
   useChangelogEntry = false,
   useShortPrLink = false,
+  requirePrNumbers = false,
 }: UpdateChangelogOptions): Promise<string | undefined> {
   const changelog = parseChangelog({
     changelogContent,
@@ -204,6 +210,7 @@ export async function updateChangelog({
     projectRootDirectory,
     useChangelogEntry,
     useShortPrLink,
+    requirePrNumbers,
   });
 
   for (const entry of newChangeEntries.reverse()) {

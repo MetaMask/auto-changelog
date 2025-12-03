@@ -14,6 +14,7 @@ export type AddNewCommitsOptions = {
   projectRootDirectory?: string;
   useChangelogEntry: boolean;
   useShortPrLink: boolean;
+  requirePrNumbers?: boolean;
 };
 
 // Get array of all ConventionalCommitType values
@@ -59,6 +60,22 @@ function removeOuterBackticksIfPresent(message: string) {
 function removeConventionalCommitPrefixIfPresent(message: string) {
   const regex = new RegExp(`^(${typesWithPipe})(\\([^)]*\\))?:\\s*`, 'iu');
   return message.replace(regex, '');
+}
+
+/**
+ * Remove HTML comments from the given message.
+ * Handles both complete comments (<!-- ... -->) and unclosed comments (<!-- ...).
+ * This prevents PR template content from breaking the changelog markdown.
+ *
+ * @param message - The changelog entry message.
+ * @returns The message without HTML comments.
+ */
+function stripHtmlComments(message: string): string {
+  // Remove complete HTML comments (<!-- ... -->)
+  let result = message.replace(/<!--[\s\S]*?-->/gu, '');
+  // Remove unclosed HTML comments (<!-- without closing -->)
+  result = result.replace(/<!--[\s\S]*$/gu, '');
+  return result.trim();
 }
 
 type Commit = {
@@ -122,11 +139,12 @@ async function getCommits(
         const changelogMatch = body.match(/\nCHANGELOG entry:\s(\S.+?)\n\n/su);
 
         if (changelogMatch) {
-          const changelogEntry = changelogMatch[1].replace('\n', ' ');
+          const changelogEntry = changelogMatch[1].replace('\n', ' ').trim();
 
           description = changelogEntry; // This may be string 'null' to indicate no description
 
-          if (description !== 'null') {
+          // Check for 'null' (case-insensitive) to exclude entries marked as no-changelog
+          if (description.toLowerCase() !== 'null') {
             // Remove outer backticks if present. Example: `feat: new feature description` -> feat: new feature description
             description = removeOuterBackticksIfPresent(description);
 
@@ -141,7 +159,8 @@ async function getCommits(
           description = subject.match(/^(.+)\s\(#\d+\)/u)?.[1] ?? '';
         }
 
-        if (description !== 'null') {
+        // Filter out entries marked as no-changelog (case-insensitive null check)
+        if (description.toLowerCase() !== 'null') {
           const prLabels = await getPrLabels(repoUrl, prNumber);
 
           if (prLabels.includes('no-changelog')) {
@@ -233,6 +252,7 @@ function deduplicateCommits(
  * current git repository.
  * @param options.useChangelogEntry - Whether to use `CHANGELOG entry:` from the commit body and the no-changelog label.
  * @param options.useShortPrLink - Whether to use short PR links in the changelog entries.
+ * @param options.requirePrNumbers - Whether to require PR numbers for all commits. If true, commits without PR numbers are filtered out.
  * @returns A list of new change entries to add to the changelog, based on commits made since the last release.
  */
 export async function getNewChangeEntries({
@@ -243,6 +263,7 @@ export async function getNewChangeEntries({
   projectRootDirectory,
   useChangelogEntry,
   useShortPrLink,
+  requirePrNumbers = false,
 }: AddNewCommitsOptions) {
   const commitRange =
     mostRecentTag === null ? 'HEAD' : `${mostRecentTag}..HEAD`;
@@ -256,8 +277,12 @@ export async function getNewChangeEntries({
     useChangelogEntry,
   );
 
+  const filteredPrCommits = requirePrNumbers
+    ? commits.filter((commit) => commit.prNumber !== undefined)
+    : commits;
+
   const newCommits = deduplicateCommits(
-    commits,
+    filteredPrCommits,
     loggedPrNumbers,
     loggedDescriptions,
   );
@@ -265,6 +290,11 @@ export async function getNewChangeEntries({
   return newCommits.map(({ prNumber, subject, isMergeCommit, description }) => {
     // Handle edge case where PR description includes multiple CHANGELOG entries
     let newDescription = description?.replace(/CHANGELOG entry: /gu, '');
+
+    // Strip HTML comments that may come from PR templates to prevent broken markdown
+    if (newDescription) {
+      newDescription = stripHtmlComments(newDescription);
+    }
 
     // For merge commits, use the description for categorization because the subject
     // is "Merge pull request #123..." which would be incorrectly excluded
@@ -323,16 +353,31 @@ async function getPrLabels(
 
   const { owner, repo } = getOwnerAndRepoFromUrl(repoUrl);
 
-  const { data: pullRequest } = await github.rest.pulls.get({
-    owner,
-    repo,
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    pull_number: Number(prNumber),
-  });
+  try {
+    const { data: pullRequest } = await github.rest.pulls.get({
+      owner,
+      repo,
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      pull_number: Number(prNumber),
+    });
 
-  if (pullRequest) {
-    const labels = pullRequest.labels.map((label: any) => label.name);
-    return labels;
+    if (pullRequest) {
+      const labels = pullRequest.labels.map((label: any) => label.name);
+      return labels;
+    }
+  } catch (error: unknown) {
+    // If PR doesn't exist (404), return empty labels instead of throwing
+    if (
+      error instanceof Error &&
+      'status' in error &&
+      (error as { status: number }).status === 404
+    ) {
+      console.warn(
+        `PR #${prNumber} not found in ${owner}/${repo}, skipping label check`,
+      );
+      return [];
+    }
+    throw error;
   }
 
   return [];
