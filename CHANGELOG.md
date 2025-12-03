@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.3.0]
+
+### Added
+
+- Add `--requirePrNumbers` flag to `auto-changelog update` CLI command for generation-time filtering ([#253](https://github.com/MetaMask/auto-changelog/pull/253))
+  - When enabled, commits without PR numbers are filtered out from the changelog
+  - Disabled by default for backward compatibility
+  - The `updateChangelog` function also supports this option via the `requirePrNumbers` parameter
+
 ## [5.2.0]
 
 ### Added
@@ -263,7 +272,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Monorepo support ([#41](https://github.com/MetaMask/auto-changelog/pull/41))
   - Configurable repository URL, version, and changelog file path ([#33](https://github.com/MetaMask/auto-changelog/pull/33), [#31](https://github.com/MetaMask/auto-changelog/pull/31), [#30](https://github.com/MetaMask/auto-changelog/pull/30))
 
-[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v5.2.0...HEAD
+[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v5.3.0...HEAD
+[5.3.0]: https://github.com/MetaMask/auto-changelog/compare/v5.2.0...v5.3.0
 [5.2.0]: https://github.com/MetaMask/auto-changelog/compare/v5.1.0...v5.2.0
 [5.1.0]: https://github.com/MetaMask/auto-changelog/compare/v5.0.2...v5.1.0
 [5.0.2]: https://github.com/MetaMask/auto-changelog/compare/v5.0.1...v5.0.2
