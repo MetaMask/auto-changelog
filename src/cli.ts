@@ -6,6 +6,7 @@ import { hideBin } from 'yargs/helpers';
 import yargs from 'yargs/yargs';
 
 import { format, Formatter } from './changelog';
+import { checkDependencyBumps } from './check-dependency-bumps';
 import { unreleased, Version } from './constants';
 import { generateDiff } from './generate-diff';
 import { createEmptyChangelog } from './init';
@@ -80,6 +81,16 @@ async function saveChangelog(
 ) {
   await fs.writeFile(changelogPath, newChangelogContent);
 }
+
+type CheckDependencyBumpsCommandOptions = {
+  from?: string;
+  to?: string;
+  defaultBranch?: string;
+  fix?: boolean;
+  pr?: string;
+  repo?: string;
+  root?: string;
+};
 
 type UpdateOptions = {
   changelogPath: string;
@@ -373,6 +384,49 @@ async function main() {
           .epilog(updateEpilog),
     )
     .command(
+      'check-deps',
+      'Check dependency version bumps between git references and ensure changelog entries exist.\nUsage: $0 check-deps [options]',
+      (_yargs) =>
+        _yargs
+          .option('from', {
+            describe:
+              'The starting git reference (commit, branch, or tag). If not provided, auto-detects from merge base with the default branch.',
+            type: 'string',
+          })
+          .option('to', {
+            describe: 'The ending git reference (commit, branch, or tag).',
+            type: 'string',
+            default: 'HEAD',
+          })
+          .option('default-branch', {
+            alias: 'b',
+            describe:
+              'The name of the default branch to compare against when auto-detecting.',
+            default: 'main',
+            type: 'string',
+          })
+          .option('fix', {
+            describe:
+              'Automatically update changelogs with missing dependency bump entries.',
+            type: 'boolean',
+            default: false,
+          })
+          .option('pr', {
+            describe:
+              'PR number to use in changelog entries (uses placeholder if not provided).',
+            type: 'string',
+          })
+          .option('repo', {
+            default: getRepositoryUrl(),
+            description: `The GitHub repository URL`,
+            type: 'string',
+          })
+          .option('root', {
+            description: rootDescription,
+            type: 'string',
+          }),
+    )
+    .command(
       'validate',
       'Validate the changelog, ensuring that it is well-formatted.\nUsage: $0 validate [options]',
       (_yargs) =>
@@ -457,6 +511,32 @@ async function main() {
     }
   }
 
+  if (!argv._) {
+    throw new Error('No command provided');
+  }
+  const command = argv._[0];
+
+  if (command === 'check-deps') {
+    const checkDepsArgs = argv as unknown as CheckDependencyBumpsCommandOptions;
+    const resolvedRoot = projectRootDirectory
+      ? path.resolve(projectRootDirectory)
+      : process.cwd();
+
+    await checkDependencyBumps({
+      projectRoot: resolvedRoot,
+      fromRef: checkDepsArgs.from,
+      toRef: checkDepsArgs.to,
+      defaultBranch: checkDepsArgs.defaultBranch,
+      fix: checkDepsArgs.fix,
+      prNumber: checkDepsArgs.pr,
+      repoUrl: checkDepsArgs.repo,
+      stdout: process.stdout,
+      stderr: process.stderr,
+    });
+
+    return undefined;
+  }
+
   if (!currentVersion) {
     const manifestPath = projectRootDirectory
       ? path.join(projectRootDirectory, 'package.json')
@@ -519,11 +599,6 @@ async function main() {
   if (!path.isAbsolute(changelogFilename) && projectRootDirectory) {
     changelogPath = path.resolve(projectRootDirectory, changelogFilename);
   }
-
-  if (!argv._) {
-    throw new Error('No command provided');
-  }
-  const command = argv._[0];
 
   if (command !== 'init') {
     try {

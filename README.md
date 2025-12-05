@@ -124,6 +124,41 @@ or
 
 `npm run auto-changelog validate --pr-links`
 
+### Check Dependencies
+
+#### Check and validate dependency bump changelog entries
+
+This command detects dependency and peerDependency version changes from git diffs and validates that corresponding changelog entries exist.
+
+`yarn run auto-changelog check-deps --from <git-ref>`
+
+or
+
+`npm run auto-changelog check-deps --from <git-ref>`
+
+#### Auto-fix missing dependency bump entries
+
+Use the `--fix` flag to automatically add missing changelog entries for detected dependency bumps:
+
+`yarn run auto-changelog check-deps --from <git-ref> --fix --pr 123`
+
+Options:
+
+- `--from <ref>` - Starting git reference (commit, branch, or tag). If not provided, auto-detects from merge base with default branch.
+- `--to <ref>` - Ending git reference (default: HEAD)
+- `--default-branch <branch>` - Default branch name for auto-detection (default: main)
+- `--fix` - Automatically update changelogs with missing dependency bump entries
+- `--pr <number>` - PR number to use in changelog entries (uses placeholder if not provided)
+
+Features:
+
+- Automatically detects dependency/peerDependency version changes (skips devDependencies/optionalDependencies)
+- Validates changelog entries with exact version matching (catches stale entries)
+- Marks peerDependency bumps as **BREAKING** changes
+- Smart PR concatenation when same dependency is bumped multiple times
+- Detects package releases and adds entries to correct section (Unreleased vs specific version)
+- Handles renamed packages via package.json script hints
+
 ## API Usage
 
 Each supported command is a separate named export.
@@ -173,6 +208,28 @@ try {
 } catch (error) {
   // changelog is invalid
 }
+```
+
+### `checkDependencyBumps`
+
+This command checks for dependency version bumps and validates/updates changelog entries.
+
+```javascript
+import { checkDependencyBumps } from '@metamask/auto-changelog';
+
+const result = await checkDependencyBumps({
+  projectRoot: '/path/to/project',
+  fromRef: 'main', // or a commit SHA
+  toRef: 'HEAD',
+  fix: true, // automatically update changelogs
+  prNumber: '123', // PR number for changelog entries
+  repoUrl: 'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+  stdout: process.stdout,
+  stderr: process.stderr,
+});
+
+// result contains detected dependency changes per package
+console.log(result);
 ```
 
 ## Contributing
