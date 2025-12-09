@@ -36,12 +36,14 @@ export type PackageChanges = Record<string, PackageInfo>;
 export type CheckDependencyBumpsOptions = {
   /** Root directory containing packages. */
   projectRoot: string;
-  /** Starting git reference (defaults to merge base with default branch). */
+  /** Starting git reference (defaults to merge base with base branch). */
   fromRef?: string;
   /** Ending git reference (defaults to HEAD). */
   toRef?: string;
-  /** Default branch name for auto-detection. */
-  defaultBranch?: string;
+  /** Remote name for auto-detection (defaults to 'origin'). */
+  remote?: string;
+  /** Base branch reference for auto-detection (defaults to '<remote>/main'). */
+  baseBranch?: string;
   /** Whether to automatically add missing changelog entries. */
   fix?: boolean;
   /** PR number to include in changelog entries. */

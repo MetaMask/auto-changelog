@@ -46,23 +46,23 @@ async function getStdoutFromCommand(
  * @param projectRoot - Working directory for the command.
  * @returns The git diff output.
  */
-async function getGitDiff(
+async function getManifestGitDiff(
   fromRef: string,
   toRef: string,
   projectRoot: string,
 ): Promise<string> {
-  try {
-    return await getStdoutFromCommand(
-      'git',
-      ['diff', '-U9999', fromRef, toRef, '--', '**/package.json'],
-      projectRoot,
-    );
-  } catch (error: any) {
-    if (error.exitCode === 1 && error.stdout === '') {
-      return '';
-    }
-    throw error;
-  }
+  return await getStdoutFromCommand(
+    'git',
+    [
+      'diff',
+      '-U9999', // Show maximum context to ensure full dependency lists are visible
+      fromRef,
+      toRef,
+      '--',
+      '**/package.json',
+    ],
+    projectRoot,
+  );
 }
 
 /**
@@ -240,29 +240,21 @@ async function getCurrentBranchName(projectRoot: string): Promise<string> {
 }
 
 /**
- * Gets the merge base between HEAD and the default branch.
+ * Gets the merge base between HEAD and the base branch.
  *
- * @param defaultBranch - The default branch name.
+ * @param baseBranch - The base branch reference (e.g., 'origin/main', 'upstream/develop').
  * @param projectRoot - Working directory for the command.
  * @returns The merge base commit SHA.
  */
 async function getMergeBase(
-  defaultBranch: string,
+  baseBranch: string,
   projectRoot: string,
 ): Promise<string> {
-  try {
-    return await getStdoutFromCommand(
-      'git',
-      ['merge-base', 'HEAD', defaultBranch],
-      projectRoot,
-    );
-  } catch {
-    return await getStdoutFromCommand(
-      'git',
-      ['merge-base', 'HEAD', `origin/${defaultBranch}`],
-      projectRoot,
-    );
-  }
+  return await getStdoutFromCommand(
+    'git',
+    ['merge-base', 'HEAD', baseBranch],
+    projectRoot,
+  );
 }
 
 /**
@@ -310,9 +302,10 @@ async function resolveRepositoryUrl(
  *
  * @param options - Options.
  * @param options.projectRoot - Root directory containing packages.
- * @param options.fromRef - Starting git ref (defaults to merge base with default branch).
+ * @param options.fromRef - Starting git ref (defaults to merge base with base branch).
  * @param options.toRef - Ending git ref (defaults to HEAD).
- * @param options.defaultBranch - Default branch name.
+ * @param options.remote - Remote name (defaults to 'origin').
+ * @param options.baseBranch - Base branch reference (defaults to '<remote>/main').
  * @param options.fix - Whether to add missing changelog entries.
  * @param options.prNumber - PR number to include when adding entries.
  * @param options.repoUrl - Repository URL override.
@@ -324,34 +317,36 @@ export async function checkDependencyBumps({
   projectRoot,
   fromRef,
   toRef = 'HEAD',
-  defaultBranch = 'main',
+  remote = 'origin',
+  baseBranch,
   fix = false,
   prNumber,
   repoUrl,
   stdout,
   stderr,
 }: CheckDependencyBumpsOptions): Promise<PackageChanges> {
+  const actualBaseBranch = baseBranch ?? `${remote}/main`;
   let actualFromRef = fromRef ?? '';
 
   if (!actualFromRef) {
     const currentBranch = await getCurrentBranchName(projectRoot);
-    stdout.write(`\n📌 Current branch: ${currentBranch}\n`);
+    stdout.write(`\n📌 Current branch: '${currentBranch}'\n`);
 
-    if (currentBranch === defaultBranch) {
+    if (currentBranch === actualBaseBranch) {
       stdout.write(
-        `⚠️  You are on the ${defaultBranch} branch. Provide --from or switch to a feature branch.\n`,
+        `⚠️  You are on the ${actualBaseBranch} branch. Provide --from or switch to a feature branch.\n`,
       );
       return {};
     }
 
     try {
-      actualFromRef = await getMergeBase(defaultBranch, projectRoot);
+      actualFromRef = await getMergeBase(actualBaseBranch, projectRoot);
       stdout.write(
-        `📍 Comparing against merge base with ${defaultBranch}: ${actualFromRef.substring(0, 8)}...\n`,
+        `📍 Comparing against merge base with ${actualBaseBranch}: ${actualFromRef.substring(0, 8)}...\n`,
       );
     } catch {
       stderr.write(
-        `❌ Could not find merge base with ${defaultBranch}. Provide --from or --default-branch.\n`,
+        `❌ Could not find merge base with ${actualBaseBranch}. Provide --from or --base-branch.\n`,
       );
       return {};
     }
@@ -364,7 +359,7 @@ export async function checkDependencyBumps({
     )} to ${toRef}...\n\n`,
   );
 
-  const diff = await getGitDiff(actualFromRef, toRef, projectRoot);
+  const diff = await getManifestGitDiff(actualFromRef, toRef, projectRoot);
   if (!diff) {
     stdout.write('No package.json changes found.\n');
     return {};

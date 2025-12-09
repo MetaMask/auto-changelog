@@ -85,7 +85,8 @@ async function saveChangelog(
 type CheckDependencyBumpsCommandOptions = {
   from?: string;
   to?: string;
-  defaultBranch?: string;
+  remote?: string;
+  baseBranch?: string;
   fix?: boolean;
   pr?: string;
   repo?: string;
@@ -398,11 +399,17 @@ async function main() {
             type: 'string',
             default: 'HEAD',
           })
-          .option('default-branch', {
+          .option('remote', {
+            alias: 'r',
+            describe:
+              'The remote name to use when auto-detecting the base branch.',
+            default: 'origin',
+            type: 'string',
+          })
+          .option('base-branch', {
             alias: 'b',
             describe:
-              'The name of the default branch to compare against when auto-detecting.',
-            default: 'main',
+              'The base branch reference to compare against (defaults to <remote>/main).',
             type: 'string',
           })
           .option('fix', {
@@ -526,7 +533,8 @@ async function main() {
       projectRoot: resolvedRoot,
       fromRef: checkDepsArgs.from,
       toRef: checkDepsArgs.to,
-      defaultBranch: checkDepsArgs.defaultBranch,
+      remote: checkDepsArgs.remote,
+      baseBranch: checkDepsArgs.baseBranch,
       fix: checkDepsArgs.fix,
       prNumber: checkDepsArgs.pr,
       repoUrl: checkDepsArgs.repo,
