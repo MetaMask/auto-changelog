@@ -68,7 +68,10 @@ jobs:
       - name: Get commit SHA
         id: commit-sha
         run: echo "COMMIT_SHA=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
-      - run: ./scripts/prepare-preview-builds.sh @metamask-previews ${{ steps.commit-sha.outputs.COMMIT_SHA }}
+      - name: Prepare preview build 
+        run: ./scripts/prepare-preview-builds.sh @metamask-previews "$COMMIT_SHA"
+        env:
+          COMMIT_SHA: ${{ steps.commit-sha.outputs.COMMIT_SHA }}
       - run: yarn build
       - name: Publish preview build
         run: yarn npm publish --tag preview
