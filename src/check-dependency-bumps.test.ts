@@ -21,6 +21,7 @@ const updateMock = updateDependencyChangelogs as jest.MockedFunction<
 
 const stdout = { write: jest.fn() };
 const stderr = { write: jest.fn() };
+const formatter = async (content: string) => content;
 
 describe('check-dependency-bumps', () => {
   beforeEach(() => {
@@ -34,6 +35,7 @@ describe('check-dependency-bumps', () => {
 
     const result = await checkDependencyBumps({
       projectRoot: '/repo',
+      formatter,
       stdout,
       stderr,
     });
@@ -52,6 +54,7 @@ describe('check-dependency-bumps', () => {
     const result = await checkDependencyBumps({
       projectRoot: '/repo',
       fromRef: 'abc123',
+      formatter,
       stdout,
       stderr,
     });
@@ -113,6 +116,7 @@ index 1234567..890abcd 100644
       projectRoot: '/repo',
       fromRef: 'abc123',
       repoUrl: 'https://github.com/example/repo',
+      formatter,
       fix: true,
       stdout,
       stderr,

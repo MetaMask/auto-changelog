@@ -82,17 +82,6 @@ async function saveChangelog(
   await fs.writeFile(changelogPath, newChangelogContent);
 }
 
-type CheckDependencyBumpsCommandOptions = {
-  from?: string;
-  to?: string;
-  remote?: string;
-  baseBranch?: string;
-  fix?: boolean;
-  pr?: string;
-  repo?: string;
-  root?: string;
-};
-
 type UpdateOptions = {
   changelogPath: string;
   currentVersion?: Version;
@@ -385,55 +374,6 @@ async function main() {
           .epilog(updateEpilog),
     )
     .command(
-      'check-deps',
-      'Check dependency version bumps between git references and ensure changelog entries exist.\nUsage: $0 check-deps [options]',
-      (_yargs) =>
-        _yargs
-          .option('from', {
-            describe:
-              'The starting git reference (commit, branch, or tag). If not provided, auto-detects from merge base with the default branch.',
-            type: 'string',
-          })
-          .option('to', {
-            describe: 'The ending git reference (commit, branch, or tag).',
-            type: 'string',
-            default: 'HEAD',
-          })
-          .option('remote', {
-            alias: 'r',
-            describe:
-              'The remote name to use when auto-detecting the base branch.',
-            default: 'origin',
-            type: 'string',
-          })
-          .option('base-branch', {
-            alias: 'b',
-            describe:
-              'The base branch reference to compare against (defaults to <remote>/main).',
-            type: 'string',
-          })
-          .option('fix', {
-            describe:
-              'Automatically update changelogs with missing dependency bump entries.',
-            type: 'boolean',
-            default: false,
-          })
-          .option('pr', {
-            describe:
-              'PR number to use in changelog entries (uses placeholder if not provided).',
-            type: 'string',
-          })
-          .option('repo', {
-            default: getRepositoryUrl(),
-            description: `The GitHub repository URL`,
-            type: 'string',
-          })
-          .option('root', {
-            description: rootDescription,
-            type: 'string',
-          }),
-    )
-    .command(
       'validate',
       'Validate the changelog, ensuring that it is well-formatted.\nUsage: $0 validate [options]',
       (_yargs) =>
@@ -465,6 +405,56 @@ async function main() {
             type: 'boolean',
           })
           .epilog(validateEpilog),
+    )
+    .command(
+      'check-deps',
+      'Check dependency version bumps between git references and ensure changelog entries exist.\nUsage: $0 check-deps [options]',
+      (_yargs) =>
+        _yargs
+          .option('from', {
+            describe:
+              'The starting git reference (commit, branch, or tag). If not provided, auto-detects from merge base with the default branch.',
+            type: 'string',
+          })
+          .option('to', {
+            describe: 'The ending git reference (commit, branch, or tag).',
+            type: 'string',
+            default: 'HEAD',
+          })
+          .option('remote', {
+            alias: 'r',
+            describe:
+              'The remote name to use when auto-detecting the base branch.',
+            default: 'origin',
+            type: 'string',
+          })
+          .option('baseBranch', {
+            alias: 'b',
+            describe:
+              'The base branch reference to compare against (defaults to <remote>/main).',
+            type: 'string',
+          })
+          .option('fix', {
+            describe:
+              'Automatically update changelogs with missing dependency bump entries.',
+            type: 'boolean',
+            default: false,
+          })
+          .option('currentPr', {
+            describe:
+              'PR number to use in changelog entries (uses placeholder if not provided).',
+            type: 'string',
+          })
+          .option('repo', {
+            default: getRepositoryUrl(),
+            description: `The GitHub repository URL`,
+            type: 'string',
+          })
+          .option('prettier', {
+            default: false,
+            description: `Expect the changelog to be formatted with Prettier.`,
+            type: 'boolean',
+          }),
     )
     .command('init', 'Initialize a new empty changelog', (_yargs) => {
       configureCommonCommandOptions(_yargs);
@@ -523,21 +513,25 @@ async function main() {
   }
   const command = argv._[0];
 
+  const formatter = async (changelog: string) => {
+    return usePrettier ? await format(changelog) : changelog;
+  };
+
   if (command === 'check-deps') {
-    const checkDepsArgs = argv as unknown as CheckDependencyBumpsCommandOptions;
     const resolvedRoot = projectRootDirectory
       ? path.resolve(projectRootDirectory)
       : process.cwd();
 
     await checkDependencyBumps({
       projectRoot: resolvedRoot,
-      fromRef: checkDepsArgs.from,
-      toRef: checkDepsArgs.to,
-      remote: checkDepsArgs.remote,
-      baseBranch: checkDepsArgs.baseBranch,
-      fix: checkDepsArgs.fix,
-      prNumber: checkDepsArgs.pr,
-      repoUrl: checkDepsArgs.repo,
+      fromRef: argv.from,
+      toRef: argv.to,
+      remote: argv.remote,
+      baseBranch: argv.baseBranch,
+      formatter,
+      fix: argv.fix,
+      prNumber: argv.currentPr,
+      repoUrl: argv.repo,
       stdout: process.stdout,
       stderr: process.stderr,
     });
@@ -619,10 +613,6 @@ async function main() {
       return exitWithError(`File is not writable: '${changelogPath}'`);
     }
   }
-
-  const formatter = async (changelog: string) => {
-    return usePrettier ? await format(changelog) : changelog;
-  };
 
   if (command === 'update') {
     let packageRename: PackageRename | undefined;

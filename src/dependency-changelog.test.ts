@@ -12,6 +12,7 @@ import type { PackageChanges } from './dependency-types';
 const outdent = _outdent({ trimTrailingNewline: false });
 
 const TEST_REPO_URL = 'https://github.com/example-org/example-repo';
+const formatter = async (content: string) => content;
 
 /**
  * Builds a changelog by filling in the header automatically.
@@ -136,6 +137,7 @@ describe('dependency-changelog', () => {
         changes,
         projectRoot,
         TEST_REPO_URL,
+        formatter,
       );
 
       expect(results).toHaveLength(1);
@@ -187,6 +189,7 @@ describe('dependency-changelog', () => {
         changes,
         projectRoot,
         TEST_REPO_URL,
+        formatter,
       );
 
       expect(results).toHaveLength(1);
@@ -231,6 +234,7 @@ describe('dependency-changelog', () => {
         changes,
         projectRoot,
         TEST_REPO_URL,
+        formatter,
       );
 
       expect(results).toHaveLength(1);
@@ -282,6 +286,7 @@ describe('dependency-changelog', () => {
         changes,
         projectRoot,
         TEST_REPO_URL,
+        formatter,
       );
 
       expect(results).toHaveLength(1);
@@ -332,6 +337,7 @@ describe('dependency-changelog', () => {
         changes,
         projectRoot,
         TEST_REPO_URL,
+        formatter,
       );
 
       expect(results).toHaveLength(1);
@@ -377,6 +383,7 @@ describe('dependency-changelog', () => {
         changes,
         projectRoot,
         TEST_REPO_URL,
+        formatter,
       );
 
       expect(results).toHaveLength(1);
@@ -422,6 +429,7 @@ describe('dependency-changelog', () => {
         changes,
         projectRoot,
         TEST_REPO_URL,
+        formatter,
       );
 
       expect(results).toHaveLength(1);
@@ -471,6 +479,7 @@ describe('dependency-changelog', () => {
         changes,
         projectRoot,
         TEST_REPO_URL,
+        formatter,
       );
 
       expect(results).toHaveLength(1);
@@ -505,6 +514,7 @@ describe('dependency-changelog', () => {
         changes,
         projectRoot,
         TEST_REPO_URL,
+        formatter,
       );
 
       expect(results).toHaveLength(1);
@@ -549,6 +559,7 @@ describe('dependency-changelog', () => {
         changes,
         projectRoot,
         TEST_REPO_URL,
+        formatter,
       );
 
       expect(results).toHaveLength(1);
@@ -595,6 +606,7 @@ describe('dependency-changelog', () => {
         changes,
         projectRoot,
         TEST_REPO_URL,
+        formatter,
       );
 
       // Should still work, just without rename info
@@ -642,6 +654,7 @@ describe('dependency-changelog', () => {
         projectRoot,
         prNumber: '123',
         repoUrl: TEST_REPO_URL,
+        formatter,
         stdout,
         stderr,
       });
@@ -698,6 +711,7 @@ describe('dependency-changelog', () => {
         projectRoot,
         prNumber: '123',
         repoUrl: TEST_REPO_URL,
+        formatter,
         stdout,
         stderr,
       });
@@ -747,6 +761,7 @@ describe('dependency-changelog', () => {
         projectRoot,
         prNumber: '200',
         repoUrl: TEST_REPO_URL,
+        formatter,
         stdout,
         stderr,
       });
@@ -795,6 +810,7 @@ describe('dependency-changelog', () => {
         projectRoot,
         // No prNumber
         repoUrl: TEST_REPO_URL,
+        formatter,
         stdout,
         stderr,
       });
@@ -831,6 +847,7 @@ describe('dependency-changelog', () => {
         projectRoot,
         prNumber: '123',
         repoUrl: TEST_REPO_URL,
+        formatter,
         stdout,
         stderr,
       });
@@ -879,6 +896,7 @@ describe('dependency-changelog', () => {
         projectRoot,
         prNumber: '123',
         repoUrl: TEST_REPO_URL,
+        formatter,
         stdout,
         stderr,
       });
@@ -931,6 +949,7 @@ describe('dependency-changelog', () => {
         projectRoot,
         prNumber: '123',
         repoUrl: TEST_REPO_URL,
+        formatter,
         stdout,
         stderr,
       });
@@ -988,6 +1007,7 @@ describe('dependency-changelog', () => {
         projectRoot,
         prNumber: '123',
         repoUrl: TEST_REPO_URL,
+        formatter,
         stdout,
         stderr,
       });
@@ -1065,6 +1085,7 @@ describe('dependency-changelog', () => {
         projectRoot,
         prNumber: '123',
         repoUrl: TEST_REPO_URL,
+        formatter,
         stdout,
         stderr,
       });
@@ -1116,6 +1137,7 @@ describe('dependency-changelog', () => {
         projectRoot,
         prNumber: '789',
         repoUrl: TEST_REPO_URL,
+        formatter,
         stdout,
         stderr,
       });
@@ -1182,6 +1204,7 @@ describe('dependency-changelog', () => {
         projectRoot,
         prNumber: '200',
         repoUrl: TEST_REPO_URL,
+        formatter,
         stdout,
         stderr,
       });
@@ -1248,6 +1271,7 @@ describe('dependency-changelog', () => {
         projectRoot,
         prNumber: '200',
         repoUrl: TEST_REPO_URL,
+        formatter,
         stdout,
         stderr,
       });
@@ -1292,6 +1316,7 @@ describe('dependency-changelog', () => {
         projectRoot,
         prNumber: '123',
         repoUrl: TEST_REPO_URL,
+        formatter,
         stdout,
         stderr,
       });
@@ -1343,6 +1368,7 @@ describe('dependency-changelog', () => {
         projectRoot,
         prNumber: '123',
         repoUrl: TEST_REPO_URL,
+        formatter,
         stdout,
         stderr,
       });

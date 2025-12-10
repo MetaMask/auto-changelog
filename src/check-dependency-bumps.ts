@@ -266,7 +266,7 @@ async function getMergeBase(
  */
 async function resolveRepositoryUrl(
   projectRoot: string,
-  repoUrl?: string,
+  repoUrl?: string | null,
 ): Promise<string> {
   if (repoUrl) {
     return repoUrl;
@@ -306,6 +306,7 @@ async function resolveRepositoryUrl(
  * @param options.toRef - Ending git ref (defaults to HEAD).
  * @param options.remote - Remote name (defaults to 'origin').
  * @param options.baseBranch - Base branch reference (defaults to '<remote>/main').
+ * @param options.formatter - Formatter to use for changelog entries.
  * @param options.fix - Whether to add missing changelog entries.
  * @param options.prNumber - PR number to include when adding entries.
  * @param options.repoUrl - Repository URL override.
@@ -319,6 +320,7 @@ export async function checkDependencyBumps({
   toRef = 'HEAD',
   remote = 'origin',
   baseBranch,
+  formatter,
   fix = false,
   prNumber,
   repoUrl,
@@ -385,6 +387,7 @@ export async function checkDependencyBumps({
     changes,
     projectRoot,
     resolvedRepoUrl,
+    formatter,
   );
 
   let hasErrors = false;
@@ -425,6 +428,7 @@ export async function checkDependencyBumps({
       projectRoot,
       prNumber,
       repoUrl: resolvedRepoUrl,
+      formatter,
       stdout,
       stderr,
     });

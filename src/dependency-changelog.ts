@@ -1,6 +1,7 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 
+import { Formatter } from './changelog';
 import type { DependencyChange, PackageChanges } from './dependency-types';
 import { parseChangelog } from './parse-changelog';
 import type { PackageRename } from './shared-types';
@@ -225,12 +226,14 @@ function hasChangelogEntry(
  * @param changes - Detected package changes.
  * @param projectRoot - Root directory of the project.
  * @param repoUrl - Repository URL used for parsing links.
+ * @param formatter - Formatter to use for changelog entries.
  * @returns Validation results.
  */
 export async function validateDependencyChangelogs(
   changes: PackageChanges,
   projectRoot: string,
   repoUrl: string,
+  formatter: Formatter,
 ): Promise<ChangelogValidationResult[]> {
   const results: ChangelogValidationResult[] = [];
 
@@ -262,6 +265,7 @@ export async function validateDependencyChangelogs(
         changelogContent,
         repoUrl,
         tagPrefix: `${actualPackageName}@`,
+        formatter,
         ...(packageRename && { packageRename }),
       });
 
@@ -314,6 +318,7 @@ export async function validateDependencyChangelogs(
  * @param options.projectRoot - Root directory of the project.
  * @param options.prNumber - PR number to use when adding entries.
  * @param options.repoUrl - Repository URL used for links.
+ * @param options.formatter - Formatter to use for changelog entries.
  * @param options.stdout - Stream for informational output.
  * @param options.stderr - Stream for error output.
  * @returns Number of changelog files modified.
@@ -324,12 +329,14 @@ export async function updateDependencyChangelogs(
     projectRoot,
     prNumber,
     repoUrl,
+    formatter,
     stdout,
     stderr,
   }: {
     projectRoot: string;
     prNumber?: string;
     repoUrl: string;
+    formatter: Formatter;
     stdout: Pick<NodeJS.WriteStream, 'write'>;
     stderr: Pick<NodeJS.WriteStream, 'write'>;
   },
@@ -359,6 +366,7 @@ export async function updateDependencyChangelogs(
         changelogContent,
         repoUrl,
         tagPrefix: `${actualPackageName}@`,
+        formatter,
         ...(packageRename && { packageRename }),
       });
 

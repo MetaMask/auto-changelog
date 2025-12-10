@@ -47,6 +47,7 @@ function createBuffer(): WritableBuffer {
 }
 
 const TEST_REPO_URL = 'https://github.com/example-org/example-repo';
+const formatter = async (content: string) => content;
 
 type PackageDefinition = {
   name: string;
@@ -230,6 +231,7 @@ describe('check-deps functional', () => {
           projectRoot,
           fromRef: baseRef,
           repoUrl: TEST_REPO_URL,
+          formatter,
           stdout,
           stderr,
         });
@@ -299,6 +301,7 @@ describe('check-deps functional', () => {
           fix: true,
           prNumber: '123',
           repoUrl: TEST_REPO_URL,
+          formatter,
           stdout,
           stderr,
         });
@@ -375,6 +378,7 @@ describe('check-deps functional', () => {
           fix: true,
           prNumber: '456',
           repoUrl: TEST_REPO_URL,
+          formatter,
           stdout,
           stderr,
         });
@@ -460,6 +464,7 @@ describe('check-deps functional', () => {
           fix: true,
           prNumber: '999',
           repoUrl: TEST_REPO_URL,
+          formatter,
           stdout,
           stderr,
         });
@@ -544,6 +549,7 @@ describe('check-deps functional', () => {
           projectRoot,
           fromRef: baseRef,
           repoUrl: TEST_REPO_URL,
+          formatter,
           stdout,
           stderr,
         });
@@ -614,6 +620,7 @@ describe('check-deps functional', () => {
           fix: true,
           prNumber: '777',
           repoUrl: TEST_REPO_URL,
+          formatter,
           stdout,
           stderr,
         });
@@ -711,6 +718,7 @@ describe('check-deps functional', () => {
           fix: true,
           prNumber: '111',
           repoUrl: TEST_REPO_URL,
+          formatter,
           stdout,
           stderr,
         });
@@ -806,6 +814,7 @@ describe('check-deps functional', () => {
           fix: true,
           prNumber: '200',
           repoUrl: TEST_REPO_URL,
+          formatter,
           stdout,
           stderr,
         });
@@ -921,6 +930,7 @@ describe('check-deps functional', () => {
           fix: true,
           prNumber: '300',
           repoUrl: TEST_REPO_URL,
+          formatter,
           stdout,
           stderr,
         });
@@ -1021,6 +1031,7 @@ describe('check-deps functional', () => {
           fix: true,
           prNumber: '400',
           repoUrl: TEST_REPO_URL,
+          formatter,
           stdout,
           stderr,
         });
@@ -1104,6 +1115,7 @@ describe('check-deps functional', () => {
           fix: true,
           prNumber: '789',
           repoUrl: TEST_REPO_URL,
+          formatter,
           stdout,
           stderr,
         });
@@ -1153,6 +1165,7 @@ describe('check-deps functional', () => {
           projectRoot,
           fromRef: baseRef,
           repoUrl: TEST_REPO_URL,
+          formatter,
           stdout,
           stderr,
         });

@@ -2,6 +2,8 @@
  * Shared type definitions for dependency bump checking.
  */
 
+import { Formatter } from './changelog';
+
 /**
  * Represents a single dependency version change.
  */
@@ -44,12 +46,14 @@ export type CheckDependencyBumpsOptions = {
   remote?: string;
   /** Base branch reference for auto-detection (defaults to '<remote>/main'). */
   baseBranch?: string;
+  /** Formatter to use for changelog entries. */
+  formatter: Formatter;
   /** Whether to automatically add missing changelog entries. */
   fix?: boolean;
   /** PR number to include in changelog entries. */
   prNumber?: string;
   /** Repository URL override. */
-  repoUrl?: string;
+  repoUrl?: string | null;
   /** Output stream for status messages. */
   stdout: Pick<NodeJS.WriteStream, 'write'>;
   /** Error stream for error messages. */
