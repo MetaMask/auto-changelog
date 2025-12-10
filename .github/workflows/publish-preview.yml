@@ -68,7 +68,7 @@ jobs:
       - name: Get commit SHA
         id: commit-sha
         run: echo "COMMIT_SHA=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
-      - name: Prepare preview build 
+      - name: Prepare preview build
         run: ./scripts/prepare-preview-builds.sh @metamask-previews "$COMMIT_SHA"
         env:
           COMMIT_SHA: ${{ steps.commit-sha.outputs.COMMIT_SHA }}
