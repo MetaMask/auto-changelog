@@ -6,6 +6,7 @@ import { hideBin } from 'yargs/helpers';
 import yargs from 'yargs/yargs';
 
 import { format, Formatter } from './changelog';
+import { checkDependencyBumps } from './check-dependency-bumps';
 import { unreleased, Version } from './constants';
 import { generateDiff } from './generate-diff';
 import { createEmptyChangelog } from './init';
@@ -405,6 +406,56 @@ async function main() {
           })
           .epilog(validateEpilog),
     )
+    .command(
+      'check-deps',
+      'Check dependency version bumps between git references and ensure changelog entries exist.\nUsage: $0 check-deps [options]',
+      (_yargs) =>
+        _yargs
+          .option('from', {
+            describe:
+              'The starting git reference (commit, branch, or tag). If not provided, auto-detects from merge base with the default branch.',
+            type: 'string',
+          })
+          .option('to', {
+            describe: 'The ending git reference (commit, branch, or tag).',
+            type: 'string',
+            default: 'HEAD',
+          })
+          .option('remote', {
+            alias: 'r',
+            describe:
+              'The remote name to use when auto-detecting the base branch.',
+            default: 'origin',
+            type: 'string',
+          })
+          .option('baseBranch', {
+            alias: 'b',
+            describe:
+              'The base branch reference to compare against (defaults to <remote>/main).',
+            type: 'string',
+          })
+          .option('fix', {
+            describe:
+              'Automatically update changelogs with missing dependency bump entries.',
+            type: 'boolean',
+            default: false,
+          })
+          .option('currentPr', {
+            describe:
+              'PR number to use in changelog entries (uses placeholder if not provided).',
+            type: 'string',
+          })
+          .option('repo', {
+            default: getRepositoryUrl(),
+            description: `The GitHub repository URL`,
+            type: 'string',
+          })
+          .option('prettier', {
+            default: false,
+            description: `Expect the changelog to be formatted with Prettier.`,
+            type: 'boolean',
+          }),
+    )
     .command('init', 'Initialize a new empty changelog', (_yargs) => {
       configureCommonCommandOptions(_yargs);
     })
@@ -455,6 +506,37 @@ async function main() {
       }
       throw error;
     }
+  }
+
+  if (!argv._) {
+    throw new Error('No command provided');
+  }
+  const command = argv._[0];
+
+  const formatter = async (changelog: string) => {
+    return usePrettier ? await format(changelog) : changelog;
+  };
+
+  if (command === 'check-deps') {
+    const resolvedRoot = projectRootDirectory
+      ? path.resolve(projectRootDirectory)
+      : process.cwd();
+
+    await checkDependencyBumps({
+      projectRoot: resolvedRoot,
+      fromRef: argv.from,
+      toRef: argv.to,
+      remote: argv.remote,
+      baseBranch: argv.baseBranch,
+      formatter,
+      fix: argv.fix,
+      prNumber: argv.currentPr,
+      repoUrl: argv.repo,
+      stdout: process.stdout,
+      stderr: process.stderr,
+    });
+
+    return undefined;
   }
 
   if (!currentVersion) {
@@ -520,11 +602,6 @@ async function main() {
     changelogPath = path.resolve(projectRootDirectory, changelogFilename);
   }
 
-  if (!argv._) {
-    throw new Error('No command provided');
-  }
-  const command = argv._[0];
-
   if (command !== 'init') {
     try {
       // eslint-disable-next-line no-bitwise
@@ -536,10 +613,6 @@ async function main() {
       return exitWithError(`File is not writable: '${changelogPath}'`);
     }
   }
-
-  const formatter = async (changelog: string) => {
-    return usePrettier ? await format(changelog) : changelog;
-  };
 
   if (command === 'update') {
     let packageRename: PackageRename | undefined;
