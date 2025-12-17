@@ -49,9 +49,9 @@ async function getManifestGitDiff(
 }
 
 /**
- * Result of parsing a package.json diff.
+ * Result of checking for dependency changes in a package.
  */
-export type DiffParseResult = {
+export type DependencyCheckResult = {
   /** Dependency changes detected in the diff. */
   dependencyChanges: DependencyChange[];
   /** New version if the package version was bumped in this diff. */
@@ -64,7 +64,7 @@ export type DiffParseResult = {
  * @param diff - Raw git diff output for a single package.json.
  * @returns Dependency changes and version bump info.
  */
-function parseDependencyDiff(diff: string): DiffParseResult {
+function parseDependencyDiff(diff: string): DependencyCheckResult {
   const lines = diff.split('\n');
   const dependencyChanges: DependencyChange[] = [];
   let versionBump: string | undefined;
@@ -212,7 +212,7 @@ type GetDependencyChangesOptions = {
  * @param options.toRef - Ending git reference (defaults to HEAD).
  * @param options.remote - Remote name for auto-detection.
  * @param options.baseBranch - Base branch for auto-detection.
- * @returns Diff parse result with dependency changes and version bump, or null if on base branch.
+ * @returns Dependency check result with dependency changes and version bump, or null if on base branch.
  */
 export async function getDependencyChangesForPackage({
   manifestPath,
@@ -220,7 +220,7 @@ export async function getDependencyChangesForPackage({
   toRef = 'HEAD',
   remote = 'origin',
   baseBranch,
-}: GetDependencyChangesOptions): Promise<DiffParseResult | null> {
+}: GetDependencyChangesOptions): Promise<DependencyCheckResult | null> {
   const workingDir = path.dirname(manifestPath);
   const actualBaseBranch = baseBranch ?? `${remote}/main`;
   let actualFromRef = fromRef ?? '';

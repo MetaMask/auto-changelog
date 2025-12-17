@@ -9,9 +9,9 @@ import { format, Formatter } from './changelog';
 import {
   getDependencyChangesForPackage,
   updateSinglePackageChangelog,
+  type DependencyCheckResult,
 } from './check-dependency-bumps';
 import { unreleased, Version } from './constants';
-import type { DependencyChange } from './dependency-types';
 import { generateDiff } from './generate-diff';
 import { createEmptyChangelog } from './init';
 import { getRepositoryUrl } from './repo';
@@ -263,8 +263,7 @@ async function validate({
   const changelogContent = await readChangelog(changelogPath);
 
   // Fetch dependency changes if checkDeps is enabled
-  let dependencyChanges: DependencyChange[] | undefined;
-  let versionFromDiff: string | undefined;
+  let dependencyResult: DependencyCheckResult | undefined;
   if (checkDeps && manifestPath) {
     const result = await getDependencyChangesForPackage({
       manifestPath,
@@ -281,12 +280,8 @@ async function validate({
       );
     }
 
-    dependencyChanges = result.dependencyChanges;
-    versionFromDiff = result.versionBump;
+    dependencyResult = result;
   }
-
-  // Use version from diff if the package is being bumped, otherwise undefined for Unreleased
-  const effectiveVersion = versionFromDiff;
 
   try {
     await validateChangelog({
@@ -298,7 +293,7 @@ async function validate({
       formatter,
       packageRename,
       ensureValidPrLinksPresent,
-      dependencyChanges,
+      dependencyResult,
     });
     return undefined;
   } catch (error) {
@@ -316,7 +311,7 @@ async function validate({
         await updateSinglePackageChangelog({
           changelogPath,
           dependencyChanges: error.missingEntries,
-          currentVersion: effectiveVersion,
+          currentVersion: dependencyResult?.versionBump,
           prNumber: currentPr,
           repoUrl,
           formatter,

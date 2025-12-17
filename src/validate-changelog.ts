@@ -1,4 +1,5 @@
 import { Change, Formatter } from './changelog';
+import type { DependencyCheckResult } from './check-dependency-bumps';
 import { Version, ChangeCategory } from './constants';
 import type { DependencyChange } from './dependency-types';
 import { parseChangelog } from './parse-changelog';
@@ -114,11 +115,12 @@ type ValidateChangelogOptions = {
    */
   ensureValidPrLinksPresent?: boolean;
   /**
-   * Dependency changes to validate are present in the changelog.
+   * Dependency changes result from git diff analysis.
    * When provided, the changelog will be checked for entries corresponding to
-   * each dependency bump.
+   * each dependency bump. The versionBump field determines which section to check:
+   * if provided, entries are checked in that version's section; otherwise Unreleased.
    */
-  dependencyChanges?: DependencyChange[];
+  dependencyResult?: DependencyCheckResult;
 };
 
 type ChangeEntry = { description: string; prNumbers?: string[] };
@@ -189,8 +191,10 @@ function hasChangelogEntry(
  * @param options.ensureValidPrLinksPresent - Whether to validate that each
  * changelog entry has one or more links to associated pull requests within the
  * repository (true) or not (false).
- * @param options.dependencyChanges - Dependency changes to validate are present
- * in the changelog.
+ * @param options.dependencyResult - Dependency changes result from git diff analysis.
+ * When provided, the changelog will be checked for entries corresponding to
+ * each dependency bump. The versionBump field determines which section to check:
+ * if provided, entries are checked in that version's section; otherwise Unreleased.
  * @throws `InvalidChangelogError` - Will throw if the changelog is invalid
  * @throws `MissingCurrentVersionError` - Will throw if `isReleaseCandidate` is
  * `true` and the changelog is missing the release header for the current
@@ -214,7 +218,7 @@ export async function validateChangelog({
   formatter = undefined,
   packageRename,
   ensureValidPrLinksPresent,
-  dependencyChanges,
+  dependencyResult,
 }: ValidateChangelogOptions) {
   const changelog = parseChangelog({
     changelogContent,
@@ -267,10 +271,11 @@ export async function validateChangelog({
   }
 
   // Validate dependency bump entries if provided
+  const dependencyChanges = dependencyResult?.dependencyChanges;
   if (dependencyChanges && dependencyChanges.length > 0) {
-    // Check in the appropriate section: release version if provided, otherwise Unreleased
-    const changesSection = currentVersion
-      ? changelog.getReleaseChanges(currentVersion)
+    // Check in the appropriate section: use versionBump if provided, otherwise Unreleased
+    const changesSection = dependencyResult.versionBump
+      ? changelog.getReleaseChanges(dependencyResult.versionBump)
       : changelog.getUnreleasedChanges();
 
     const missingEntries: DependencyChange[] = [];

@@ -929,14 +929,16 @@ describe('validateChangelog', () => {
           changelogContent,
           repoUrl,
           isReleaseCandidate: false,
-          dependencyChanges: [
-            {
-              dependency: '@scope/b',
-              type: 'dependencies',
-              oldVersion: '1.0.0',
-              newVersion: '2.0.0',
-            },
-          ],
+          dependencyResult: {
+            dependencyChanges: [
+              {
+                dependency: '@scope/b',
+                type: 'dependencies',
+                oldVersion: '1.0.0',
+                newVersion: '2.0.0',
+              },
+            ],
+          },
         }),
       ).resolves.not.toThrow();
     });
@@ -959,14 +961,16 @@ describe('validateChangelog', () => {
           changelogContent,
           repoUrl,
           isReleaseCandidate: false,
-          dependencyChanges: [
-            {
-              dependency: '@scope/b',
-              type: 'dependencies',
-              oldVersion: '1.0.0',
-              newVersion: '2.0.0',
-            },
-          ],
+          dependencyResult: {
+            dependencyChanges: [
+              {
+                dependency: '@scope/b',
+                type: 'dependencies',
+                oldVersion: '1.0.0',
+                newVersion: '2.0.0',
+              },
+            ],
+          },
         }),
       ).rejects.toThrow('Missing changelog entries for dependency bumps');
     });
@@ -991,14 +995,16 @@ describe('validateChangelog', () => {
           changelogContent,
           repoUrl,
           isReleaseCandidate: false,
-          dependencyChanges: [
-            {
-              dependency: '@scope/b',
-              type: 'peerDependencies',
-              oldVersion: '1.0.0',
-              newVersion: '2.0.0',
-            },
-          ],
+          dependencyResult: {
+            dependencyChanges: [
+              {
+                dependency: '@scope/b',
+                type: 'peerDependencies',
+                oldVersion: '1.0.0',
+                newVersion: '2.0.0',
+              },
+            ],
+          },
         }),
       ).resolves.not.toThrow();
     });
@@ -1023,19 +1029,21 @@ describe('validateChangelog', () => {
           changelogContent,
           repoUrl,
           isReleaseCandidate: false,
-          dependencyChanges: [
-            {
-              dependency: '@scope/b',
-              type: 'peerDependencies',
-              oldVersion: '1.0.0',
-              newVersion: '2.0.0',
-            },
-          ],
+          dependencyResult: {
+            dependencyChanges: [
+              {
+                dependency: '@scope/b',
+                type: 'peerDependencies',
+                oldVersion: '1.0.0',
+                newVersion: '2.0.0',
+              },
+            ],
+          },
         }),
       ).rejects.toThrow('Missing changelog entries for dependency bumps');
     });
 
-    it('validates entry in release version section when currentVersion provided', async () => {
+    it('validates entry in release version section when versionBump provided', async () => {
       const changelogContent = outdent`
         # Changelog
         All notable changes to this project will be documented in this file.
@@ -1059,14 +1067,17 @@ describe('validateChangelog', () => {
           currentVersion: '2.0.0',
           repoUrl,
           isReleaseCandidate: false,
-          dependencyChanges: [
-            {
-              dependency: '@scope/b',
-              type: 'dependencies',
-              oldVersion: '1.0.0',
-              newVersion: '2.0.0',
-            },
-          ],
+          dependencyResult: {
+            dependencyChanges: [
+              {
+                dependency: '@scope/b',
+                type: 'dependencies',
+                oldVersion: '1.0.0',
+                newVersion: '2.0.0',
+              },
+            ],
+            versionBump: '2.0.0',
+          },
         }),
       ).resolves.not.toThrow();
     });
@@ -1089,14 +1100,16 @@ describe('validateChangelog', () => {
           changelogContent,
           repoUrl,
           isReleaseCandidate: false,
-          dependencyChanges: [
-            {
-              dependency: '@scope/b',
-              type: 'dependencies',
-              oldVersion: '1.0.0',
-              newVersion: '2.0.0',
-            },
-          ],
+          dependencyResult: {
+            dependencyChanges: [
+              {
+                dependency: '@scope/b',
+                type: 'dependencies',
+                oldVersion: '1.0.0',
+                newVersion: '2.0.0',
+              },
+            ],
+          },
         }),
       ).rejects.toThrow('Missing changelog entries for dependency bumps');
     });
@@ -1122,14 +1135,16 @@ describe('validateChangelog', () => {
           changelogContent,
           repoUrl,
           isReleaseCandidate: false,
-          dependencyChanges: [
-            {
-              dependency: '@scope/b',
-              type: 'dependencies',
-              oldVersion: '1.0.0',
-              newVersion: '2.0.0',
-            },
-          ],
+          dependencyResult: {
+            dependencyChanges: [
+              {
+                dependency: '@scope/b',
+                type: 'dependencies',
+                oldVersion: '1.0.0',
+                newVersion: '2.0.0',
+              },
+            ],
+          },
         }),
       ).rejects.toThrow('Missing changelog entries for dependency bumps');
     });
