@@ -128,27 +128,29 @@ or
 
 #### Check and validate dependency bump changelog entries
 
-This command detects dependency and peerDependency version changes from git diffs and validates that corresponding changelog entries exist.
+The `validate` command supports checking that changelog entries exist for dependency version bumps. This works on a single package's changelog at a time.
 
-`yarn run auto-changelog check-deps --from <git-ref>`
+`yarn run auto-changelog validate --checkDeps`
 
 or
 
-`npm run auto-changelog check-deps --from <git-ref>`
+`npm run auto-changelog validate --checkDeps`
 
 #### Auto-fix missing dependency bump entries
 
-Use the `--fix` flag to automatically add missing changelog entries for detected dependency bumps:
+Use the `--fix` and `--currentPr` flags to automatically add missing changelog entries for detected dependency bumps:
 
-`yarn run auto-changelog check-deps --from <git-ref> --fix --pr 123`
+`yarn run auto-changelog validate --checkDeps --fix --currentPr 123`
 
 Options:
 
-- `--from <ref>` - Starting git reference (commit, branch, or tag). If not provided, auto-detects from merge base with default branch.
-- `--to <ref>` - Ending git reference (default: HEAD)
-- `--default-branch <branch>` - Default branch name for auto-detection (default: main)
+- `--checkDeps` - Enable dependency bump changelog entry checking
+- `--fromRef <ref>` - Starting git reference (commit, branch, or tag). If not provided, auto-detects from merge base with default branch.
+- `--toRef <ref>` - Ending git reference (default: HEAD)
+- `--remote <name>` - Remote name for auto-detection (default: origin)
+- `--baseBranch <branch>` - Base branch reference for auto-detection
 - `--fix` - Automatically update changelogs with missing dependency bump entries
-- `--pr <number>` - PR number to use in changelog entries (uses placeholder if not provided)
+- `--currentPr <number>` - PR number to use in changelog entries (required when using --fix with --checkDeps)
 
 Features:
 
@@ -210,26 +212,58 @@ try {
 }
 ```
 
-### `checkDependencyBumps`
+### `getDependencyChangesForPackage`
 
-This command checks for dependency version bumps and validates/updates changelog entries.
+This function detects dependency version changes for a single package.
 
 ```javascript
-import { checkDependencyBumps } from '@metamask/auto-changelog';
+import { getDependencyChangesForPackage } from '@metamask/auto-changelog';
 
-const result = await checkDependencyBumps({
+const changes = await getDependencyChangesForPackage({
   projectRoot: '/path/to/project',
-  fromRef: 'main', // or a commit SHA
+  packageDir: 'controller-utils', // package directory name
+  fromRef: 'main', // or a commit SHA (optional, auto-detects if not provided)
   toRef: 'HEAD',
-  fix: true, // automatically update changelogs
-  prNumber: '123', // PR number for changelog entries
-  repoUrl: 'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
-  stdout: process.stdout,
-  stderr: process.stderr,
 });
 
-// result contains detected dependency changes per package
-console.log(result);
+// changes is an array of DependencyChange objects
+console.log(changes);
+```
+
+### `validateChangelog` with dependency checking
+
+The `validateChangelog` function accepts a `dependencyChanges` option to validate that changelog entries exist for dependency bumps:
+
+```javascript
+import { promises as fs } from 'fs';
+import {
+  validateChangelog,
+  getDependencyChangesForPackage,
+  MissingDependencyEntriesError,
+} from '@metamask/auto-changelog';
+
+const changelog = await fs.readFile('CHANGELOG.md', { encoding: 'utf8' });
+const dependencyChanges = await getDependencyChangesForPackage({
+  projectRoot: '/path/to/project',
+  packageDir: 'controller-utils',
+  fromRef: 'main',
+});
+
+try {
+  await validateChangelog({
+    changelogContent: changelog,
+    currentVersion: '1.0.0',
+    repoUrl:
+      'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+    isReleaseCandidate: false,
+    dependencyChanges,
+  });
+  // changelog is valid!
+} catch (error) {
+  if (error instanceof MissingDependencyEntriesError) {
+    console.log('Missing entries for:', error.missingEntries);
+  }
+}
 ```
 
 ## Contributing

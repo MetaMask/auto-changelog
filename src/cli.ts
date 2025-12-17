@@ -6,8 +6,12 @@ import { hideBin } from 'yargs/helpers';
 import yargs from 'yargs/yargs';
 
 import { format, Formatter } from './changelog';
-import { checkDependencyBumps } from './check-dependency-bumps';
+import {
+  getDependencyChangesForPackage,
+  updateSinglePackageChangelog,
+} from './check-dependency-bumps';
 import { unreleased, Version } from './constants';
+import type { DependencyChange } from './dependency-types';
 import { generateDiff } from './generate-diff';
 import { createEmptyChangelog } from './init';
 import { getRepositoryUrl } from './repo';
@@ -16,6 +20,7 @@ import { updateChangelog } from './update-changelog';
 import {
   ChangelogFormattingError,
   InvalidChangelogError,
+  MissingDependencyEntriesError,
   validateChangelog,
 } from './validate-changelog';
 
@@ -184,6 +189,34 @@ type ValidateOptions = {
    * associated pull requests within the repository (true) or not (false).
    */
   ensureValidPrLinksPresent: boolean;
+  /**
+   * Whether to check for dependency bump changelog entries.
+   */
+  checkDeps?: boolean;
+  /**
+   * Path to the package.json file for dependency checking.
+   */
+  manifestPath?: string;
+  /**
+   * Starting git reference for dependency checking (auto-detects if not provided).
+   */
+  fromRef?: string;
+  /**
+   * Ending git reference for dependency checking.
+   */
+  toRef?: string;
+  /**
+   * Remote name for auto-detection (defaults to 'origin').
+   */
+  remote?: string;
+  /**
+   * Base branch reference for auto-detection.
+   */
+  baseBranch?: string;
+  /**
+   * PR number to use when fixing missing dependency entries.
+   */
+  currentPr?: string;
 };
 
 /**
@@ -201,6 +234,13 @@ type ValidateOptions = {
  * @param options.ensureValidPrLinksPresent - Whether to validate that each
  * changelog entry has one or more links to associated pull requests within the
  * repository (true) or not (false).
+ * @param options.checkDeps - Whether to check for dependency bump entries.
+ * @param options.manifestPath - Path to package.json for dependency checking.
+ * @param options.fromRef - Starting git reference for dependency checking.
+ * @param options.toRef - Ending git reference for dependency checking.
+ * @param options.remote - Remote name for auto-detection.
+ * @param options.baseBranch - Base branch for auto-detection.
+ * @param options.currentPr - PR number to use when fixing missing entries.
  */
 async function validate({
   changelogPath,
@@ -212,8 +252,41 @@ async function validate({
   formatter,
   packageRename,
   ensureValidPrLinksPresent,
+  checkDeps,
+  manifestPath,
+  fromRef,
+  toRef,
+  remote,
+  baseBranch,
+  currentPr,
 }: ValidateOptions) {
   const changelogContent = await readChangelog(changelogPath);
+
+  // Fetch dependency changes if checkDeps is enabled
+  let dependencyChanges: DependencyChange[] | undefined;
+  let versionFromDiff: string | undefined;
+  if (checkDeps && manifestPath) {
+    const result = await getDependencyChangesForPackage({
+      manifestPath,
+      fromRef,
+      toRef,
+      remote,
+      baseBranch,
+    });
+
+    // null means we're on the base branch or couldn't auto-detect
+    if (result === null) {
+      return exitWithError(
+        'Could not auto-detect git reference. Provide --fromRef or switch to a feature branch.',
+      );
+    }
+
+    dependencyChanges = result.dependencyChanges;
+    versionFromDiff = result.versionBump;
+  }
+
+  // Use version from diff if the package is being bumped, otherwise undefined for Unreleased
+  const effectiveVersion = versionFromDiff;
 
   try {
     await validateChangelog({
@@ -225,6 +298,7 @@ async function validate({
       formatter,
       packageRename,
       ensureValidPrLinksPresent,
+      dependencyChanges,
     });
     return undefined;
   } catch (error) {
@@ -237,6 +311,29 @@ async function validate({
 
       const diff = generateDiff(validChangelog, invalidChangelog);
       return exitWithError(`Changelog not well-formatted. Diff:\n\n${diff}`);
+    } else if (error instanceof MissingDependencyEntriesError) {
+      if (fix && currentPr) {
+        await updateSinglePackageChangelog({
+          changelogPath,
+          dependencyChanges: error.missingEntries,
+          currentVersion: effectiveVersion,
+          prNumber: currentPr,
+          repoUrl,
+          formatter,
+          tagPrefix,
+          packageRename,
+        });
+        console.log(
+          `Added ${error.missingEntries.length} missing dependency changelog entries.`,
+        );
+        return undefined;
+      }
+      const deps = error.missingEntries
+        .map((entry) => entry.dependency)
+        .join(', ');
+      return exitWithError(
+        `Changelog is missing dependency bump entries for: ${deps}\nRun with --fix --currentPr <pr-number> to add them automatically.`,
+      );
     } else if (error instanceof InvalidChangelogError) {
       return exitWithError(`Changelog is invalid: ${error.message}`);
     }
@@ -404,57 +501,42 @@ async function main() {
               'Verify that each changelog entry has one or more links to associated pull requests within the repository',
             type: 'boolean',
           })
-          .epilog(validateEpilog),
-    )
-    .command(
-      'check-deps',
-      'Check dependency version bumps between git references and ensure changelog entries exist.\nUsage: $0 check-deps [options]',
-      (_yargs) =>
-        _yargs
-          .option('from', {
+          // Dependency bump checking options
+          .option('checkDeps', {
+            default: false,
+            description:
+              'Check that changelog has entries for dependency version bumps.',
+            type: 'boolean',
+          })
+          .option('fromRef', {
             describe:
-              'The starting git reference (commit, branch, or tag). If not provided, auto-detects from merge base with the default branch.',
+              'Starting git reference for dependency checking. If not provided, auto-detects from merge base with the base branch.',
             type: 'string',
           })
-          .option('to', {
-            describe: 'The ending git reference (commit, branch, or tag).',
+          .option('toRef', {
+            describe: 'Ending git reference for dependency checking.',
             type: 'string',
             default: 'HEAD',
           })
           .option('remote', {
             alias: 'r',
             describe:
-              'The remote name to use when auto-detecting the base branch.',
+              'Remote name for auto-detecting the base branch (used with --checkDeps).',
             default: 'origin',
             type: 'string',
           })
           .option('baseBranch', {
             alias: 'b',
             describe:
-              'The base branch reference to compare against (defaults to <remote>/main).',
+              'Base branch reference to compare against (defaults to <remote>/main).',
             type: 'string',
-          })
-          .option('fix', {
-            describe:
-              'Automatically update changelogs with missing dependency bump entries.',
-            type: 'boolean',
-            default: false,
           })
           .option('currentPr', {
             describe:
-              'PR number to use in changelog entries (uses placeholder if not provided).',
+              'PR number to use in changelog entries. Required when --checkDeps and --fix are both enabled.',
             type: 'string',
           })
-          .option('repo', {
-            default: getRepositoryUrl(),
-            description: `The GitHub repository URL`,
-            type: 'string',
-          })
-          .option('prettier', {
-            default: false,
-            description: `Expect the changelog to be formatted with Prettier.`,
-            type: 'boolean',
-          }),
+          .epilog(validateEpilog),
     )
     .command('init', 'Initialize a new empty changelog', (_yargs) => {
       configureCommonCommandOptions(_yargs);
@@ -481,9 +563,15 @@ async function main() {
     useChangelogEntry,
     useShortPrLink,
     requirePrNumbers,
+    // Dependency checking options
+    checkDeps,
+    fromRef,
+    toRef,
+    remote,
+    baseBranch,
+    currentPr,
   } = argv;
   let { currentVersion } = argv;
-
   if (projectRootDirectory) {
     try {
       const stat = await fs.stat(projectRootDirectory);
@@ -516,28 +604,6 @@ async function main() {
   const formatter = async (changelog: string) => {
     return usePrettier ? await format(changelog) : changelog;
   };
-
-  if (command === 'check-deps') {
-    const resolvedRoot = projectRootDirectory
-      ? path.resolve(projectRootDirectory)
-      : process.cwd();
-
-    await checkDependencyBumps({
-      projectRoot: resolvedRoot,
-      fromRef: argv.from,
-      toRef: argv.to,
-      remote: argv.remote,
-      baseBranch: argv.baseBranch,
-      formatter,
-      fix: argv.fix,
-      prNumber: argv.currentPr,
-      repoUrl: argv.repo,
-      stdout: process.stdout,
-      stderr: process.stderr,
-    });
-
-    return undefined;
-  }
 
   if (!currentVersion) {
     const manifestPath = projectRootDirectory
@@ -644,6 +710,16 @@ async function main() {
         tagPrefixBeforeRename: tagPrefixBeforePackageRename,
       };
     }
+
+    if (checkDeps && fix && !currentPr) {
+      return exitWithError(
+        '--currentPr is required when --checkDeps and --fix are both enabled.',
+      );
+    }
+
+    // Derive manifestPath from changelogPath (package.json is in same directory)
+    const manifestPath = path.join(path.dirname(changelogPath), 'package.json');
+
     await validate({
       changelogPath,
       currentVersion,
@@ -654,6 +730,13 @@ async function main() {
       formatter,
       packageRename,
       ensureValidPrLinksPresent: prLinks,
+      checkDeps,
+      manifestPath,
+      fromRef,
+      toRef,
+      remote,
+      baseBranch,
+      currentPr,
     });
   } else if (command === 'init') {
     await init({

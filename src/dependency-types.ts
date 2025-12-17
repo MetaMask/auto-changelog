@@ -8,10 +8,13 @@ import { Formatter } from './changelog';
  * Represents a single dependency version change.
  */
 export type DependencyChange = {
-  package: string;
+  /** Name of the dependency that changed. */
   dependency: string;
+  /** Type of dependency. */
   type: 'dependencies' | 'peerDependencies';
+  /** Previous version of the dependency. */
   oldVersion: string;
+  /** New version of the dependency. */
   newVersion: string;
 };
 

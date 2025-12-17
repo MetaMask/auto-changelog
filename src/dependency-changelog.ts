@@ -1,28 +1,8 @@
 import { promises as fs } from 'fs';
-import path from 'path';
 
 import { Formatter } from './changelog';
-import type { DependencyChange, PackageChanges } from './dependency-types';
+import type { DependencyChange } from './dependency-types';
 import { parseChangelog } from './parse-changelog';
-import type { PackageRename } from './shared-types';
-
-/**
- * Result of validating a changelog for dependency bump entries.
- */
-type ChangelogValidationResult = {
-  /** Package directory name. */
-  package: string;
-  /** Whether the changelog file exists. */
-  hasChangelog: boolean;
-  /** Whether the changelog has an Unreleased section. */
-  hasUnreleasedSection: boolean;
-  /** Dependency changes missing from the changelog. */
-  missingEntries: DependencyChange[];
-  /** Existing changelog entries that match dependency bumps. */
-  existingEntries: string[];
-  /** Version that was checked (null for [Unreleased] section). */
-  checkedVersion?: string | null;
-};
 
 /**
  * Checks if a file exists.
@@ -40,19 +20,6 @@ async function fileExists(filePath: string): Promise<boolean> {
 }
 
 /**
- * Reads and parses a JSON file.
- *
- * @param filePath - Path to the JSON file.
- * @returns The parsed JSON content.
- */
-async function readJsonFile<T = Record<string, unknown>>(
-  filePath: string,
-): Promise<T> {
-  const fileContent = await fs.readFile(filePath, 'utf8');
-  return JSON.parse(fileContent) as T;
-}
-
-/**
  * Reads a changelog file, returning null if it does not exist.
  *
  * @param changelogPath - Path to the changelog.
@@ -67,52 +34,6 @@ async function readChangelog(changelogPath: string): Promise<string | null> {
 }
 
 /**
- * Extract package rename flags from package.json scripts if present.
- *
- * @param packagePath - Path to the package directory.
- * @returns Package rename info, if detected.
- */
-async function getPackageRenameInfo(
-  packagePath: string,
-): Promise<PackageRename | undefined> {
-  const manifestPath = path.join(packagePath, 'package.json');
-
-  if (!(await fileExists(manifestPath))) {
-    return undefined;
-  }
-
-  try {
-    const manifest = await readJsonFile<{
-      scripts?: Record<string, string>;
-    }>(manifestPath);
-
-    if (!manifest.scripts) {
-      return undefined;
-    }
-
-    for (const script of Object.values(manifest.scripts)) {
-      const tagPrefixMatch = script.match(
-        /--tag-prefix-before-package-rename\s+(\S+)/u,
-      );
-      const versionMatch = script.match(
-        /--version-before-package-rename\s+(\S+)/u,
-      );
-
-      if (tagPrefixMatch && versionMatch) {
-        return {
-          tagPrefixBeforeRename: tagPrefixMatch[1],
-          versionBeforeRename: versionMatch[1],
-        };
-      }
-    }
-  } catch {
-    return undefined;
-  }
-
-  return undefined;
-}
-
-/**
  * Format a changelog entry describing a dependency bump.
  *
  * @param change - Dependency change to describe.
@@ -122,11 +43,10 @@ async function getPackageRenameInfo(
  */
 function formatChangelogEntry(
   change: DependencyChange,
-  prNumber: string | undefined,
+  prNumber: string,
   repoUrl: string,
 ): string {
-  const pr = prNumber ?? 'XXXXX';
-  const prLink = `[#${pr}](${repoUrl}/pull/${pr})`;
+  const prLink = `[#${prNumber}](${repoUrl}/pull/${prNumber})`;
   const prefix = change.type === 'peerDependencies' ? '**BREAKING:** ' : '';
 
   return `${prefix}Bump \`${change.dependency}\` from \`${change.oldVersion}\` to \`${change.newVersion}\` (${prLink})`;
@@ -221,314 +141,165 @@ function hasChangelogEntry(
 }
 
 /**
- * Validate changelogs for all packages that had dependency bumps.
- *
- * @param changes - Detected package changes.
- * @param projectRoot - Root directory of the project.
- * @param repoUrl - Repository URL used for parsing links.
- * @param formatter - Formatter to use for changelog entries.
- * @returns Validation results.
+ * Options for updating a single changelog with dependency entries.
  */
-export async function validateDependencyChangelogs(
-  changes: PackageChanges,
-  projectRoot: string,
-  repoUrl: string,
-  formatter: Formatter,
-): Promise<ChangelogValidationResult[]> {
-  const results: ChangelogValidationResult[] = [];
-
-  for (const [packageDirName, packageInfo] of Object.entries(changes)) {
-    const packageChanges = packageInfo.dependencyChanges;
-    const packageVersion = packageInfo.newVersion;
-    const packagePath = path.join(projectRoot, 'packages', packageDirName);
-    const changelogPath = path.join(packagePath, 'CHANGELOG.md');
-
-    const changelogContent = await readChangelog(changelogPath);
-
-    if (!changelogContent) {
-      results.push({
-        package: packageDirName,
-        hasChangelog: false,
-        hasUnreleasedSection: false,
-        missingEntries: packageChanges,
-        existingEntries: [],
-        checkedVersion: packageVersion ?? null,
-      });
-      continue;
-    }
-
-    try {
-      const actualPackageName = packageInfo.packageName;
-      const packageRename = await getPackageRenameInfo(packagePath);
-
-      const changelog = parseChangelog({
-        changelogContent,
-        repoUrl,
-        tagPrefix: `${actualPackageName}@`,
-        formatter,
-        ...(packageRename && { packageRename }),
-      });
-
-      const changesSection = packageVersion
-        ? changelog.getReleaseChanges(packageVersion)
-        : changelog.getUnreleasedChanges();
-
-      const hasUnreleasedSection = Object.keys(changesSection).length > 0;
-
-      const missingEntries: DependencyChange[] = [];
-      const existingEntries: string[] = [];
-
-      for (const change of packageChanges) {
-        const entryCheck = hasChangelogEntry(changesSection, change);
-        if (entryCheck.hasExactMatch) {
-          existingEntries.push(change.dependency);
-        } else {
-          missingEntries.push(change);
-        }
-      }
-
-      results.push({
-        package: packageDirName,
-        hasChangelog: true,
-        hasUnreleasedSection,
-        missingEntries,
-        existingEntries,
-        checkedVersion: packageVersion ?? null,
-      });
-    } catch {
-      results.push({
-        package: packageDirName,
-        hasChangelog: true,
-        hasUnreleasedSection: false,
-        missingEntries: packageChanges,
-        existingEntries: [],
-        checkedVersion: packageVersion ?? null,
-      });
-    }
-  }
-
-  return results;
-}
+type UpdateChangelogWithDependenciesOptions = {
+  /** Path to the changelog file. */
+  changelogPath: string;
+  /** Dependency changes to add. */
+  dependencyChanges: DependencyChange[];
+  /** Current version of the package (if being released). */
+  currentVersion?: string;
+  /** PR number to use in entries (required). */
+  prNumber: string;
+  /** Repository URL for PR links. */
+  repoUrl: string;
+  /** Formatter for changelog content. */
+  formatter: Formatter;
+  /** Tag prefix for the package. */
+  tagPrefix: string;
+  /** Package rename info if applicable. */
+  packageRename?: {
+    versionBeforeRename: string;
+    tagPrefixBeforeRename: string;
+  };
+};
 
 /**
- * Update changelogs with dependency bump entries when missing or outdated.
+ * Update a single changelog with dependency bump entries.
  *
- * @param changes - Detected package changes.
- * @param options - Update options.
- * @param options.projectRoot - Root directory of the project.
- * @param options.prNumber - PR number to use when adding entries.
- * @param options.repoUrl - Repository URL used for links.
- * @param options.formatter - Formatter to use for changelog entries.
- * @param options.stdout - Stream for informational output.
- * @param options.stderr - Stream for error output.
- * @returns Number of changelog files modified.
+ * @param options - Options.
+ * @param options.changelogPath - Path to the changelog file.
+ * @param options.dependencyChanges - Dependency changes to add.
+ * @param options.currentVersion - Current version of the package (if being released).
+ * @param options.prNumber - PR number to use in entries.
+ * @param options.repoUrl - Repository URL for PR links.
+ * @param options.formatter - Formatter for changelog content.
+ * @param options.tagPrefix - Tag prefix for the package.
+ * @param options.packageRename - Package rename info if applicable.
+ * @returns The updated changelog content.
  */
-export async function updateDependencyChangelogs(
-  changes: PackageChanges,
-  {
-    projectRoot,
-    prNumber,
+export async function updateChangelogWithDependencies({
+  changelogPath,
+  dependencyChanges,
+  currentVersion,
+  prNumber,
+  repoUrl,
+  formatter,
+  tagPrefix,
+  packageRename,
+}: UpdateChangelogWithDependenciesOptions): Promise<string> {
+  const changelogContent = await readChangelog(changelogPath);
+
+  if (!changelogContent) {
+    throw new Error(`Changelog not found at ${changelogPath}`);
+  }
+
+  const changelog = parseChangelog({
+    changelogContent,
     repoUrl,
+    tagPrefix,
     formatter,
-    stdout,
-    stderr,
-  }: {
-    projectRoot: string;
-    prNumber?: string;
-    repoUrl: string;
-    formatter: Formatter;
-    stdout: Pick<NodeJS.WriteStream, 'write'>;
-    stderr: Pick<NodeJS.WriteStream, 'write'>;
-  },
-): Promise<number> {
-  let updatedCount = 0;
+    ...(packageRename && { packageRename }),
+  });
 
-  for (const [packageDirName, packageInfo] of Object.entries(changes)) {
-    const packageChanges = packageInfo.dependencyChanges;
-    const packageVersion = packageInfo.newVersion;
-    const packagePath = path.join(projectRoot, 'packages', packageDirName);
-    const changelogPath = path.join(packagePath, 'CHANGELOG.md');
+  // Check which entries are missing
+  const changesSection = currentVersion
+    ? changelog.getReleaseChanges(currentVersion)
+    : changelog.getUnreleasedChanges();
 
-    const changelogContent = await readChangelog(changelogPath);
+  const entriesToAdd: DependencyChange[] = [];
+  const entriesToUpdate: {
+    change: DependencyChange;
+    existingEntry: string;
+  }[] = [];
 
-    if (!changelogContent) {
-      stderr.write(
-        `⚠️  No CHANGELOG.md found for ${packageDirName} at ${changelogPath}\n`,
-      );
+  for (const change of dependencyChanges) {
+    const entryCheck = hasChangelogEntry(changesSection, change);
+    if (entryCheck.hasExactMatch) {
       continue;
     }
 
-    try {
-      const actualPackageName = packageInfo.packageName;
-      const packageRename = await getPackageRenameInfo(packagePath);
-
-      const changelog = parseChangelog({
-        changelogContent,
-        repoUrl,
-        tagPrefix: `${actualPackageName}@`,
-        formatter,
-        ...(packageRename && { packageRename }),
+    if (entryCheck.existingEntry === undefined) {
+      entriesToAdd.push(change);
+    } else {
+      entriesToUpdate.push({
+        change,
+        existingEntry: entryCheck.existingEntry,
       });
-
-      const changesSection = packageVersion
-        ? changelog.getReleaseChanges(packageVersion)
-        : changelog.getUnreleasedChanges();
-
-      const entriesToAdd: DependencyChange[] = [];
-      const entriesToUpdate: {
-        change: DependencyChange;
-        existingEntry: string;
-      }[] = [];
-
-      for (const change of packageChanges) {
-        const entryCheck = hasChangelogEntry(changesSection, change);
-
-        if (entryCheck.hasExactMatch) {
-          continue;
-        } else if (entryCheck.existingEntry) {
-          entriesToUpdate.push({
-            change,
-            existingEntry: entryCheck.existingEntry,
-          });
-        } else {
-          entriesToAdd.push(change);
-        }
-      }
-
-      if (entriesToAdd.length === 0 && entriesToUpdate.length === 0) {
-        stdout.write(`✅ ${packageDirName}: All entries already exist\n`);
-        continue;
-      }
-
-      let updatedContent = changelogContent;
-
-      for (const { change, existingEntry } of entriesToUpdate) {
-        const prMatches = existingEntry.matchAll(/\[#(\d+|XXXXX)\]/gu);
-        const existingPRs = Array.from(prMatches, (match) => match[1]);
-        const newPR = prNumber ?? 'XXXXX';
-
-        if (!existingPRs.includes(newPR)) {
-          existingPRs.push(newPR);
-        }
-
-        const prLinks = existingPRs
-          .map((pr) => `[#${pr}](${repoUrl}/pull/${pr})`)
-          .join(', ');
-
-        const prefix =
-          change.type === 'peerDependencies' ? '**BREAKING:** ' : '';
-        const updatedEntry = `${prefix}Bump \`${change.dependency}\` from \`${change.oldVersion}\` to \`${change.newVersion}\` (${prLinks})`;
-
-        updatedContent = updatedContent.replace(existingEntry, updatedEntry);
-      }
-
-      if (entriesToUpdate.length > 0) {
-        await fs.writeFile(changelogPath, updatedContent);
-
-        if (entriesToAdd.length === 0) {
-          stdout.write(
-            `✅ ${packageDirName}: Updated ${entriesToUpdate.length} existing ${
-              entriesToUpdate.length === 1 ? 'entry' : 'entries'
-            }\n`,
-          );
-          updatedCount += 1;
-          continue;
-        }
-
-        const updatedChangelogContent = await fs.readFile(
-          changelogPath,
-          'utf8',
-        );
-        const updatedChangelog = parseChangelog({
-          changelogContent: updatedChangelogContent,
-          repoUrl,
-          tagPrefix: `${actualPackageName}@`,
-          ...(packageRename && { packageRename }),
-        });
-
-        const deps = entriesToAdd.filter(
-          (change) => change.type === 'dependencies',
-        );
-        const peerDeps = entriesToAdd.filter(
-          (change) => change.type === 'peerDependencies',
-        );
-
-        for (let i = deps.length - 1; i >= 0; i--) {
-          const description = formatChangelogEntry(deps[i], prNumber, repoUrl);
-          updatedChangelog.addChange({
-            category: 'Changed' as any,
-            description,
-            ...(packageVersion && { version: packageVersion }),
-          });
-        }
-
-        for (let i = peerDeps.length - 1; i >= 0; i--) {
-          const description = formatChangelogEntry(
-            peerDeps[i],
-            prNumber,
-            repoUrl,
-          );
-          updatedChangelog.addChange({
-            category: 'Changed' as any,
-            description,
-            ...(packageVersion && { version: packageVersion }),
-          });
-        }
-
-        await fs.writeFile(changelogPath, await updatedChangelog.toString());
-
-        stdout.write(
-          `✅ ${packageDirName}: Updated ${entriesToUpdate.length} and added ${entriesToAdd.length} changelog ${
-            entriesToAdd.length === 1 ? 'entry' : 'entries'
-          }\n`,
-        );
-      } else {
-        const deps = entriesToAdd.filter(
-          (change) => change.type === 'dependencies',
-        );
-        const peerDeps = entriesToAdd.filter(
-          (change) => change.type === 'peerDependencies',
-        );
-
-        for (let i = deps.length - 1; i >= 0; i--) {
-          const description = formatChangelogEntry(deps[i], prNumber, repoUrl);
-          changelog.addChange({
-            category: 'Changed' as any,
-            description,
-            ...(packageVersion && { version: packageVersion }),
-          });
-        }
-
-        for (let i = peerDeps.length - 1; i >= 0; i--) {
-          const description = formatChangelogEntry(
-            peerDeps[i],
-            prNumber,
-            repoUrl,
-          );
-          changelog.addChange({
-            category: 'Changed' as any,
-            description,
-            ...(packageVersion && { version: packageVersion }),
-          });
-        }
-
-        const updatedChangelogContent = await changelog.toString();
-        await fs.writeFile(changelogPath, updatedChangelogContent);
-
-        stdout.write(
-          `✅ ${packageDirName}: Added ${entriesToAdd.length} changelog ${
-            entriesToAdd.length === 1 ? 'entry' : 'entries'
-          }\n`,
-        );
-      }
-
-      updatedCount += 1;
-    } catch (error) {
-      stderr.write(
-        `⚠️  Error updating CHANGELOG.md for ${packageDirName}: ${String(error)}\n`,
-      );
     }
   }
 
-  return updatedCount;
+  // Update existing entries using string replacement
+  let updatedContent = changelogContent;
+  for (const { change, existingEntry } of entriesToUpdate) {
+    const prMatches = existingEntry.matchAll(/\[#(\d+)\]/gu);
+    const existingPRs = Array.from(prMatches, (match) => match[1]);
+
+    if (!existingPRs.includes(prNumber)) {
+      existingPRs.push(prNumber);
+    }
+
+    const prLinks = existingPRs
+      .map((pr) => `[#${pr}](${repoUrl}/pull/${pr})`)
+      .join(', ');
+
+    const prefix = change.type === 'peerDependencies' ? '**BREAKING:** ' : '';
+    const updatedEntry = `${prefix}Bump \`${change.dependency}\` from \`${change.oldVersion}\` to \`${change.newVersion}\` (${prLinks})`;
+
+    updatedContent = updatedContent.replace(existingEntry, updatedEntry);
+  }
+
+  if (entriesToUpdate.length > 0) {
+    await fs.writeFile(changelogPath, updatedContent);
+  }
+
+  // Add missing entries
+  if (entriesToAdd.length > 0) {
+    // Re-read the changelog if we updated it
+    const latestContent =
+      entriesToUpdate.length > 0
+        ? await fs.readFile(changelogPath, 'utf8')
+        : changelogContent;
+
+    const latestChangelog = parseChangelog({
+      changelogContent: latestContent,
+      repoUrl,
+      tagPrefix,
+      formatter,
+      ...(packageRename && { packageRename }),
+    });
+
+    // Sort: BREAKING (peerDependencies) first
+    const deps = entriesToAdd.filter((entry) => entry.type === 'dependencies');
+    const peerDeps = entriesToAdd.filter(
+      (entry) => entry.type === 'peerDependencies',
+    );
+
+    // Add in reverse order so they appear in correct order
+    for (let i = deps.length - 1; i >= 0; i--) {
+      const description = formatChangelogEntry(deps[i], prNumber, repoUrl);
+      latestChangelog.addChange({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        category: 'Changed' as any,
+        description,
+        ...(currentVersion && { version: currentVersion }),
+      });
+    }
+
+    for (let i = peerDeps.length - 1; i >= 0; i--) {
+      const description = formatChangelogEntry(peerDeps[i], prNumber, repoUrl);
+      latestChangelog.addChange({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        category: 'Changed' as any,
+        description,
+        ...(currentVersion && { version: currentVersion }),
+      });
+    }
+
+    updatedContent = await latestChangelog.toString();
+    await fs.writeFile(changelogPath, updatedContent);
+  }
+
+  return updatedContent;
 }
