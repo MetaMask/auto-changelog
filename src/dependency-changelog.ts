@@ -1,6 +1,7 @@
 import { promises as fs } from 'fs';
 
 import { Formatter } from './changelog';
+import { ChangeCategory } from './constants';
 import type { DependencyChange } from './dependency-types';
 import { parseChangelog } from './parse-changelog';
 
@@ -285,8 +286,7 @@ export async function updateChangelogWithDependencies({
     for (let i = deps.length - 1; i >= 0; i--) {
       const description = formatChangelogEntry(deps[i], prNumber, repoUrl);
       latestChangelog.addChange({
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        category: 'Changed' as any,
+        category: ChangeCategory.Changed,
         description,
         ...(currentVersion && { version: currentVersion }),
       });
@@ -295,8 +295,7 @@ export async function updateChangelogWithDependencies({
     for (let i = peerDeps.length - 1; i >= 0; i--) {
       const description = formatChangelogEntry(peerDeps[i], prNumber, repoUrl);
       latestChangelog.addChange({
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        category: 'Changed' as any,
+        category: ChangeCategory.Changed,
         description,
         ...(currentVersion && { version: currentVersion }),
       });
