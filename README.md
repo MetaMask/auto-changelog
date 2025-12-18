@@ -212,60 +212,6 @@ try {
 }
 ```
 
-### `getDependencyChangesForPackage`
-
-This function detects dependency version changes for a single package.
-
-```javascript
-import { getDependencyChangesForPackage } from '@metamask/auto-changelog';
-
-const changes = await getDependencyChangesForPackage({
-  projectRoot: '/path/to/project',
-  packageDir: 'controller-utils', // package directory name
-  fromRef: 'main', // or a commit SHA (optional, auto-detects if not provided)
-  toRef: 'HEAD',
-});
-
-// changes is an array of DependencyChange objects
-console.log(changes);
-```
-
-### `validateChangelog` with dependency checking
-
-The `validateChangelog` function accepts a `dependencyChanges` option to validate that changelog entries exist for dependency bumps:
-
-```javascript
-import { promises as fs } from 'fs';
-import {
-  validateChangelog,
-  getDependencyChangesForPackage,
-  MissingDependencyEntriesError,
-} from '@metamask/auto-changelog';
-
-const changelog = await fs.readFile('CHANGELOG.md', { encoding: 'utf8' });
-const dependencyChanges = await getDependencyChangesForPackage({
-  projectRoot: '/path/to/project',
-  packageDir: 'controller-utils',
-  fromRef: 'main',
-});
-
-try {
-  await validateChangelog({
-    changelogContent: changelog,
-    currentVersion: '1.0.0',
-    repoUrl:
-      'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
-    isReleaseCandidate: false,
-    dependencyChanges,
-  });
-  // changelog is valid!
-} catch (error) {
-  if (error instanceof MissingDependencyEntriesError) {
-    console.log('Missing entries for:', error.missingEntries);
-  }
-}
-```
-
 ## Contributing
 
 ### Setup
