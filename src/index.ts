@@ -4,5 +4,6 @@ export { parseChangelog } from './parse-changelog';
 export { updateChangelog } from './update-changelog';
 export {
   ChangelogFormattingError,
+  MissingDependencyEntriesError,
   validateChangelog,
 } from './validate-changelog';

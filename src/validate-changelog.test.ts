@@ -904,4 +904,259 @@ describe('validateChangelog', () => {
       ).resolves.not.toThrow();
     });
   });
+
+  describe('dependency bump validation', () => {
+    const repoUrl =
+      'https://github.com/ExampleUsernameOrOrganization/ExampleRepository';
+
+    it('passes when dependency changes are found in changelog', async () => {
+      const changelogContent = outdent`
+        # Changelog
+        All notable changes to this project will be documented in this file.
+
+        The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+        and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+        ## [Unreleased]
+        ### Changed
+        - Bump \`@scope/b\` from \`1.0.0\` to \`2.0.0\` ([#123](${repoUrl}/pull/123))
+
+        [Unreleased]: ${repoUrl}/
+      `;
+
+      await expect(
+        validateChangelog({
+          changelogContent,
+          repoUrl,
+          isReleaseCandidate: false,
+          dependencyResult: {
+            dependencyChanges: [
+              {
+                dependency: '@scope/b',
+                type: 'dependencies',
+                oldVersion: '1.0.0',
+                newVersion: '2.0.0',
+              },
+            ],
+          },
+        }),
+      ).resolves.not.toThrow();
+    });
+
+    it('throws MissingDependencyEntriesError when dependency entry is missing', async () => {
+      const changelogContent = outdent`
+        # Changelog
+        All notable changes to this project will be documented in this file.
+
+        The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+        and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+        ## [Unreleased]
+
+        [Unreleased]: ${repoUrl}/
+      `;
+
+      await expect(
+        validateChangelog({
+          changelogContent,
+          repoUrl,
+          isReleaseCandidate: false,
+          dependencyResult: {
+            dependencyChanges: [
+              {
+                dependency: '@scope/b',
+                type: 'dependencies',
+                oldVersion: '1.0.0',
+                newVersion: '2.0.0',
+              },
+            ],
+          },
+        }),
+      ).rejects.toThrow('Missing changelog entries for dependency bumps');
+    });
+
+    it('validates peerDependency entry with BREAKING prefix', async () => {
+      const changelogContent = outdent`
+        # Changelog
+        All notable changes to this project will be documented in this file.
+
+        The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+        and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+        ## [Unreleased]
+        ### Changed
+        - **BREAKING:** Bump \`@scope/b\` from \`1.0.0\` to \`2.0.0\` ([#123](${repoUrl}/pull/123))
+
+        [Unreleased]: ${repoUrl}/
+      `;
+
+      await expect(
+        validateChangelog({
+          changelogContent,
+          repoUrl,
+          isReleaseCandidate: false,
+          dependencyResult: {
+            dependencyChanges: [
+              {
+                dependency: '@scope/b',
+                type: 'peerDependencies',
+                oldVersion: '1.0.0',
+                newVersion: '2.0.0',
+              },
+            ],
+          },
+        }),
+      ).resolves.not.toThrow();
+    });
+
+    it('fails when peerDependency entry lacks BREAKING prefix', async () => {
+      const changelogContent = outdent`
+        # Changelog
+        All notable changes to this project will be documented in this file.
+
+        The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+        and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+        ## [Unreleased]
+        ### Changed
+        - Bump \`@scope/b\` from \`1.0.0\` to \`2.0.0\` ([#123](${repoUrl}/pull/123))
+
+        [Unreleased]: ${repoUrl}/
+      `;
+
+      await expect(
+        validateChangelog({
+          changelogContent,
+          repoUrl,
+          isReleaseCandidate: false,
+          dependencyResult: {
+            dependencyChanges: [
+              {
+                dependency: '@scope/b',
+                type: 'peerDependencies',
+                oldVersion: '1.0.0',
+                newVersion: '2.0.0',
+              },
+            ],
+          },
+        }),
+      ).rejects.toThrow('Missing changelog entries for dependency bumps');
+    });
+
+    it('validates entry in release version section when versionBump provided', async () => {
+      const changelogContent = outdent`
+        # Changelog
+        All notable changes to this project will be documented in this file.
+
+        The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+        and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+        ## [Unreleased]
+
+        ## [2.0.0]
+        ### Changed
+        - Bump \`@scope/b\` from \`1.0.0\` to \`2.0.0\` ([#123](${repoUrl}/pull/123))
+
+        [Unreleased]: ${repoUrl}/compare/v2.0.0...HEAD
+        [2.0.0]: ${repoUrl}/releases/tag/v2.0.0
+      `;
+
+      await expect(
+        validateChangelog({
+          changelogContent,
+          currentVersion: '2.0.0',
+          repoUrl,
+          isReleaseCandidate: false,
+          dependencyResult: {
+            dependencyChanges: [
+              {
+                dependency: '@scope/b',
+                type: 'dependencies',
+                oldVersion: '1.0.0',
+                newVersion: '2.0.0',
+              },
+            ],
+            versionBump: '2.0.0',
+          },
+        }),
+      ).resolves.not.toThrow();
+    });
+
+    it('treats all entries as missing when Unreleased section is empty', async () => {
+      const changelogContent = outdent`
+        # Changelog
+        All notable changes to this project will be documented in this file.
+
+        The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+        and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+        ## [Unreleased]
+
+        [Unreleased]: ${repoUrl}/
+      `;
+
+      await expect(
+        validateChangelog({
+          changelogContent,
+          repoUrl,
+          isReleaseCandidate: false,
+          dependencyResult: {
+            dependencyChanges: [
+              {
+                dependency: '@scope/b',
+                type: 'dependencies',
+                oldVersion: '1.0.0',
+                newVersion: '2.0.0',
+              },
+            ],
+          },
+        }),
+      ).rejects.toThrow('Missing changelog entries for dependency bumps');
+    });
+
+    it('rejects regular dependency entry that has BREAKING prefix', async () => {
+      const changelogContent = outdent`
+        # Changelog
+        All notable changes to this project will be documented in this file.
+
+        The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+        and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+        ## [Unreleased]
+        ### Changed
+        - **BREAKING:** Bump \`@scope/b\` from \`1.0.0\` to \`2.0.0\` ([#123](${repoUrl}/pull/123))
+
+        [Unreleased]: ${repoUrl}/
+      `;
+
+      // Regular dependency should NOT have BREAKING prefix
+      await expect(
+        validateChangelog({
+          changelogContent,
+          repoUrl,
+          isReleaseCandidate: false,
+          dependencyResult: {
+            dependencyChanges: [
+              {
+                dependency: '@scope/b',
+                type: 'dependencies',
+                oldVersion: '1.0.0',
+                newVersion: '2.0.0',
+              },
+            ],
+          },
+        }),
+      ).rejects.toThrow('Missing changelog entries for dependency bumps');
+    });
+
+    it('does not validate dependency changes when none provided', async () => {
+      await expect(
+        validateChangelog({
+          changelogContent: emptyChangelog,
+          repoUrl,
+          isReleaseCandidate: false,
+        }),
+      ).resolves.not.toThrow();
+    });
+  });
 });

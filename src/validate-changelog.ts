@@ -1,5 +1,8 @@
 import { Change, Formatter } from './changelog';
+import type { DependencyCheckResult } from './check-dependency-bumps';
 import { Version, ChangeCategory } from './constants';
+import type { DependencyChange } from './dependency-types';
+import { hasChangelogEntry } from './dependency-utils';
 import { parseChangelog } from './parse-changelog';
 import { PackageRename } from './shared-types';
 
@@ -78,6 +81,24 @@ export class ChangelogFormattingError extends InvalidChangelogError {
   }
 }
 
+/**
+ * Indicates that changelog entries for dependency bumps are missing.
+ */
+export class MissingDependencyEntriesError extends InvalidChangelogError {
+  public missingEntries: DependencyChange[];
+
+  /**
+   * Construct a missing dependency entries error.
+   *
+   * @param missingEntries - The dependency changes missing from the changelog.
+   */
+  constructor(missingEntries: DependencyChange[]) {
+    const deps = missingEntries.map((entry) => entry.dependency).join(', ');
+    super(`Missing changelog entries for dependency bumps: ${deps}`);
+    this.missingEntries = missingEntries;
+  }
+}
+
 type ValidateChangelogOptions = {
   changelogContent: string;
   currentVersion?: Version;
@@ -94,7 +115,22 @@ type ValidateChangelogOptions = {
    * associated pull requests within the repository (true) or not (false).
    */
   ensureValidPrLinksPresent?: boolean;
+  /**
+   * Dependency changes result from git diff analysis.
+   * When provided, the changelog will be checked for entries corresponding to
+   * each dependency bump. The versionBump field determines which section to check:
+   * if provided, entries are checked in that version's section; otherwise Unreleased.
+   */
+  dependencyResult?: DependencyCheckResult;
 };
+
+/**
+ * Checks if a changelog already has an entry for a dependency change.
+ *
+ * @param releaseChanges - The release changes to search.
+ * @param change - The dependency change to look for.
+ * @returns True if an entry exists for this dependency bump.
+ */
 
 /**
  * Validates that a changelog is well-formatted.
@@ -116,6 +152,10 @@ type ValidateChangelogOptions = {
  * @param options.ensureValidPrLinksPresent - Whether to validate that each
  * changelog entry has one or more links to associated pull requests within the
  * repository (true) or not (false).
+ * @param options.dependencyResult - Dependency changes result from git diff analysis.
+ * When provided, the changelog will be checked for entries corresponding to
+ * each dependency bump. The versionBump field determines which section to check:
+ * if provided, entries are checked in that version's section; otherwise Unreleased.
  * @throws `InvalidChangelogError` - Will throw if the changelog is invalid
  * @throws `MissingCurrentVersionError` - Will throw if `isReleaseCandidate` is
  * `true` and the changelog is missing the release header for the current
@@ -127,6 +167,8 @@ type ValidateChangelogOptions = {
  * @throws `ChangelogFormattingError` - Will throw if there is a formatting error.
  * @throws `MissingPullRequestLinkError` if a changelog entry is missing a pull
  * request link.
+ * @throws `MissingDependencyEntriesError` if dependency changes are provided
+ * but the changelog is missing entries for them.
  */
 export async function validateChangelog({
   changelogContent,
@@ -137,6 +179,7 @@ export async function validateChangelog({
   formatter = undefined,
   packageRename,
   ensureValidPrLinksPresent,
+  dependencyResult,
 }: ValidateChangelogOptions) {
   const changelog = parseChangelog({
     changelogContent,
@@ -185,6 +228,32 @@ export async function validateChangelog({
           }
         }
       }
+    }
+  }
+
+  // Validate dependency bump entries if provided
+  const dependencyChanges = dependencyResult?.dependencyChanges;
+  if (dependencyChanges && dependencyChanges.length > 0) {
+    // Check in the appropriate section: use versionBump if provided, otherwise Unreleased
+    const changesSection = dependencyResult.versionBump
+      ? changelog.getReleaseChanges(dependencyResult.versionBump)
+      : changelog.getUnreleasedChanges();
+
+    const missingEntries: DependencyChange[] = [];
+
+    // If changesSection is undefined/empty, all entries are missing
+    if (!changesSection || Object.keys(changesSection).length === 0) {
+      missingEntries.push(...dependencyChanges);
+    } else {
+      for (const depChange of dependencyChanges) {
+        if (!hasChangelogEntry(changesSection, depChange).hasExactMatch) {
+          missingEntries.push(depChange);
+        }
+      }
+    }
+
+    if (missingEntries.length > 0) {
+      throw new MissingDependencyEntriesError(missingEntries);
     }
   }
 

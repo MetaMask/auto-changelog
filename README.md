@@ -124,6 +124,43 @@ or
 
 `npm run auto-changelog validate --pr-links`
 
+### Check Dependencies
+
+#### Check and validate dependency bump changelog entries
+
+The `validate` command supports checking that changelog entries exist for dependency version bumps. This works on a single package's changelog at a time.
+
+`yarn run auto-changelog validate --checkDeps`
+
+or
+
+`npm run auto-changelog validate --checkDeps`
+
+#### Auto-fix missing dependency bump entries
+
+Use the `--fix` and `--currentPr` flags to automatically add missing changelog entries for detected dependency bumps:
+
+`yarn run auto-changelog validate --checkDeps --fix --currentPr 123`
+
+Options:
+
+- `--checkDeps` - Enable dependency bump changelog entry checking
+- `--fromRef <ref>` - Starting git reference (commit, branch, or tag). If not provided, auto-detects from merge base with default branch.
+- `--toRef <ref>` - Ending git reference (default: HEAD)
+- `--remote <name>` - Remote name for auto-detection (default: origin)
+- `--baseBranch <branch>` - Base branch reference for auto-detection
+- `--fix` - Automatically update changelogs with missing dependency bump entries
+- `--currentPr <number>` - PR number to use in changelog entries (required when using --fix with --checkDeps)
+
+Features:
+
+- Automatically detects dependency/peerDependency version changes (skips devDependencies/optionalDependencies)
+- Validates changelog entries with exact version matching (catches stale entries)
+- Marks peerDependency bumps as **BREAKING** changes
+- Smart PR concatenation when same dependency is bumped multiple times
+- Detects package releases and adds entries to correct section (Unreleased vs specific version)
+- Handles renamed packages via package.json script hints
+
 ## API Usage
 
 Each supported command is a separate named export.
