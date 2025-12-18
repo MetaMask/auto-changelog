@@ -1,9 +1,9 @@
 import { Formatter } from './changelog';
 import { ChangeCategory } from './constants';
 import type { DependencyChange } from './dependency-types';
+import { hasChangelogEntry } from './dependency-utils';
 import { readFile, writeFile } from './fs';
 import { parseChangelog } from './parse-changelog';
-
 /**
  * Format a changelog entry describing a dependency bump.
  *
@@ -24,92 +24,12 @@ function formatChangelogEntry(
 }
 
 /**
- * Determine whether a changelog already contains a dependency bump entry.
- *
- * @param releaseChanges - Changes for a release or the unreleased section.
- * @param change - The dependency change to look for.
- * @returns Match information.
- */
-type ChangeEntry = { description: string; prNumbers?: string[] };
-type ReleaseChanges = Partial<Record<string, ChangeEntry[]>>;
-
-/**
  * Checks if a changelog already has an entry for a dependency change.
  *
  * @param releaseChanges - The release changes to search.
  * @param change - The dependency change to look for.
  * @returns Match information including whether an exact match was found.
  */
-function hasChangelogEntry(
-  releaseChanges: ReleaseChanges,
-  change: DependencyChange,
-): {
-  hasExactMatch: boolean;
-  existingEntry?: string;
-  entryIndex?: number;
-} {
-  const changedEntries = (releaseChanges.Changed ?? []).map(
-    (entry) => entry.description,
-  );
-
-  const escapedDep = change.dependency.replace(/[/\\^$*+?.()|[\]{}]/gu, '\\$&');
-  const escapedOldVer = change.oldVersion.replace(
-    /[/\\^$*+?.()|[\]{}]/gu,
-    '\\$&',
-  );
-  const escapedNewVer = change.newVersion.replace(
-    /[/\\^$*+?.()|[\]{}]/gu,
-    '\\$&',
-  );
-
-  const breakingPrefix =
-    change.type === 'peerDependencies' ? '\\*\\*BREAKING:\\*\\* ' : '';
-  const isBreaking = change.type === 'peerDependencies';
-
-  const exactPattern = new RegExp(
-    `${breakingPrefix}Bump \`${escapedDep}\` from \`${escapedOldVer}\` to \`${escapedNewVer}\``,
-    'u',
-  );
-
-  const exactIndex = changedEntries.findIndex((entry) => {
-    const matchesPattern = exactPattern.test(entry);
-    if (!isBreaking) {
-      return matchesPattern && !entry.startsWith('**BREAKING:**');
-    }
-    return matchesPattern;
-  });
-
-  if (exactIndex !== -1) {
-    return {
-      hasExactMatch: true,
-      existingEntry: changedEntries[exactIndex],
-      entryIndex: exactIndex,
-    };
-  }
-
-  const anyVersionPattern = new RegExp(
-    `${breakingPrefix}Bump \\x60${escapedDep}\\x60 from \\x60[^\\x60]+\\x60 to \\x60[^\\x60]+\\x60`,
-    'u',
-  );
-
-  const anyIndex = changedEntries.findIndex((entry) => {
-    const matchesPattern = anyVersionPattern.test(entry);
-    if (!isBreaking) {
-      return matchesPattern && !entry.startsWith('**BREAKING:**');
-    }
-    return matchesPattern;
-  });
-
-  if (anyIndex !== -1) {
-    return {
-      hasExactMatch: false,
-      existingEntry: changedEntries[anyIndex],
-      entryIndex: anyIndex,
-    };
-  }
-
-  return { hasExactMatch: false };
-}
 
 /**
  * Options for updating a single changelog with dependency entries.

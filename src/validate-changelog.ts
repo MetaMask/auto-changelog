@@ -2,6 +2,7 @@ import { Change, Formatter } from './changelog';
 import type { DependencyCheckResult } from './check-dependency-bumps';
 import { Version, ChangeCategory } from './constants';
 import type { DependencyChange } from './dependency-types';
+import { hasChangelogEntry } from './dependency-utils';
 import { parseChangelog } from './parse-changelog';
 import { PackageRename } from './shared-types';
 
@@ -123,9 +124,6 @@ type ValidateChangelogOptions = {
   dependencyResult?: DependencyCheckResult;
 };
 
-type ChangeEntry = { description: string; prNumbers?: string[] };
-type ReleaseChanges = Partial<Record<string, ChangeEntry[]>>;
-
 /**
  * Checks if a changelog already has an entry for a dependency change.
  *
@@ -133,43 +131,6 @@ type ReleaseChanges = Partial<Record<string, ChangeEntry[]>>;
  * @param change - The dependency change to look for.
  * @returns True if an entry exists for this dependency bump.
  */
-function hasChangelogEntry(
-  releaseChanges: ReleaseChanges,
-  change: DependencyChange,
-): boolean {
-  const changedEntries = (releaseChanges.Changed ?? []).map(
-    (entry) => entry.description,
-  );
-
-  const escapedDep = change.dependency.replace(/[/\\^$*+?.()|[\]{}]/gu, '\\$&');
-  const escapedOldVer = change.oldVersion.replace(
-    /[/\\^$*+?.()|[\]{}]/gu,
-    '\\$&',
-  );
-  const escapedNewVer = change.newVersion.replace(
-    /[/\\^$*+?.()|[\]{}]/gu,
-    '\\$&',
-  );
-
-  const breakingPrefix =
-    change.type === 'peerDependencies' ? '\\*\\*BREAKING:\\*\\* ' : '';
-  const isBreaking = change.type === 'peerDependencies';
-
-  const exactPattern = new RegExp(
-    `${breakingPrefix}Bump \`${escapedDep}\` from \`${escapedOldVer}\` to \`${escapedNewVer}\``,
-    'u',
-  );
-
-  const exactMatch = changedEntries.some((entry) => {
-    const matchesPattern = exactPattern.test(entry);
-    if (!isBreaking) {
-      return matchesPattern && !entry.startsWith('**BREAKING:**');
-    }
-    return matchesPattern;
-  });
-
-  return exactMatch;
-}
 
 /**
  * Validates that a changelog is well-formatted.
@@ -285,7 +246,7 @@ export async function validateChangelog({
       missingEntries.push(...dependencyChanges);
     } else {
       for (const depChange of dependencyChanges) {
-        if (!hasChangelogEntry(changesSection, depChange)) {
+        if (!hasChangelogEntry(changesSection, depChange).hasExactMatch) {
           missingEntries.push(depChange);
         }
       }
