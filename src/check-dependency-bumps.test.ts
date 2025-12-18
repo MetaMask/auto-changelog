@@ -8,6 +8,7 @@ import {
   getDependencyChangesForPackage,
   updateSinglePackageChangelog,
 } from './check-dependency-bumps';
+import { writeFile } from './fs';
 
 const outdent = _outdent({ trimTrailingNewline: false });
 
@@ -581,7 +582,7 @@ describe('updateSinglePackageChangelog', () => {
       [Unreleased]: https://github.com/test/repo/
     `;
 
-    await fs.writeFile(changelogPath, initialChangelog);
+    await writeFile(changelogPath, initialChangelog);
 
     const result = await updateSinglePackageChangelog({
       changelogPath,

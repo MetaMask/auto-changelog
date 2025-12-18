@@ -1,5 +1,3 @@
-import { promises as fs } from 'fs';
-
 import { Formatter } from './changelog';
 import {
   getDependencyChangesForPackage,
@@ -7,6 +5,7 @@ import {
   type DependencyCheckResult,
 } from './check-dependency-bumps';
 import { Version } from './constants';
+import { readFile, writeFile } from './fs';
 import { generateDiff } from './generate-diff';
 import { PackageRename } from './shared-types';
 import {
@@ -27,18 +26,6 @@ function exitWithError(errorMessage: string) {
 }
 
 /**
- * Read the changelog contents from the filesystem.
- *
- * @param changelogPath - The path to the changelog file.
- * @returns The changelog contents.
- */
-async function readChangelog(changelogPath: string) {
-  return await fs.readFile(changelogPath, {
-    encoding: 'utf8',
-  });
-}
-
-/**
  * Save the changelog to the filesystem.
  *
  * @param changelogPath - The path to the changelog file.
@@ -48,7 +35,7 @@ async function saveChangelog(
   changelogPath: string,
   newChangelogContent: string,
 ) {
-  await fs.writeFile(changelogPath, newChangelogContent);
+  await writeFile(changelogPath, newChangelogContent);
 }
 
 /**
@@ -142,7 +129,7 @@ export async function validate({
   baseBranch,
   currentPr,
 }: ValidateOptions) {
-  const changelogContent = await readChangelog(changelogPath);
+  const changelogContent = await readFile(changelogPath);
 
   // Fetch dependency changes if checkDeps is enabled
   let dependencyResult: DependencyCheckResult | undefined;

@@ -1,38 +1,8 @@
-import { promises as fs } from 'fs';
-
 import { Formatter } from './changelog';
 import { ChangeCategory } from './constants';
 import type { DependencyChange } from './dependency-types';
+import { readFile, writeFile } from './fs';
 import { parseChangelog } from './parse-changelog';
-
-/**
- * Checks if a file exists.
- *
- * @param filePath - Path to the file.
- * @returns True if the file exists, false otherwise.
- */
-async function fileExists(filePath: string): Promise<boolean> {
-  try {
-    await fs.access(filePath);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Reads a changelog file, returning null if it does not exist.
- *
- * @param changelogPath - Path to the changelog.
- * @returns The changelog contents or null.
- */
-async function readChangelog(changelogPath: string): Promise<string | null> {
-  if (!(await fileExists(changelogPath))) {
-    return null;
-  }
-
-  return await fs.readFile(changelogPath, 'utf8');
-}
 
 /**
  * Format a changelog entry describing a dependency bump.
@@ -190,9 +160,10 @@ export async function updateChangelogWithDependencies({
   tagPrefix,
   packageRename,
 }: UpdateChangelogWithDependenciesOptions): Promise<string> {
-  const changelogContent = await readChangelog(changelogPath);
-
-  if (!changelogContent) {
+  let changelogContent: string;
+  try {
+    changelogContent = await readFile(changelogPath);
+  } catch {
     throw new Error(`Changelog not found at ${changelogPath}`);
   }
 
@@ -257,7 +228,7 @@ export async function updateChangelogWithDependencies({
   }
 
   if (entriesToUpdate.length > 0) {
-    await fs.writeFile(changelogPath, updatedContent);
+    await writeFile(changelogPath, updatedContent);
   }
 
   // Add missing entries
@@ -265,7 +236,7 @@ export async function updateChangelogWithDependencies({
     // Re-read the changelog if we updated it
     const latestContent =
       entriesToUpdate.length > 0
-        ? await fs.readFile(changelogPath, 'utf8')
+        ? await readFile(changelogPath)
         : changelogContent;
 
     const latestChangelog = parseChangelog({
@@ -302,7 +273,7 @@ export async function updateChangelogWithDependencies({
     }
 
     updatedContent = await latestChangelog.toString();
-    await fs.writeFile(changelogPath, updatedContent);
+    await writeFile(changelogPath, updatedContent);
   }
 
   return updatedContent;

@@ -7,6 +7,7 @@ import yargs from 'yargs/yargs';
 
 import { format, Formatter } from './changelog';
 import { unreleased, Version } from './constants';
+import { readFile, writeFile } from './fs';
 import { createEmptyChangelog } from './init';
 import { getRepositoryUrl } from './repo';
 import { PackageRename } from './shared-types';
@@ -52,18 +53,6 @@ function exitWithError(errorMessage: string) {
 }
 
 /**
- * Read the changelog contents from the filesystem.
- *
- * @param changelogPath - The path to the changelog file.
- * @returns The changelog contents.
- */
-async function readChangelog(changelogPath: string) {
-  return await fs.readFile(changelogPath, {
-    encoding: 'utf8',
-  });
-}
-
-/**
  * Save the changelog to the filesystem.
  *
  * @param changelogPath - The path to the changelog file.
@@ -73,7 +62,7 @@ async function saveChangelog(
   changelogPath: string,
   newChangelogContent: string,
 ) {
-  await fs.writeFile(changelogPath, newChangelogContent);
+  await writeFile(changelogPath, newChangelogContent);
 }
 
 type UpdateOptions = {
@@ -136,7 +125,7 @@ async function update({
   useShortPrLink,
   requirePrNumbers,
 }: UpdateOptions) {
-  const changelogContent = await readChangelog(changelogPath);
+  const changelogContent = await readFile(changelogPath);
 
   const newChangelogContent = await updateChangelog({
     changelogContent,
@@ -431,9 +420,7 @@ async function main() {
       : path.resolve('package.json');
 
     try {
-      const manifestText = await fs.readFile(manifestPath, {
-        encoding: 'utf-8',
-      });
+      const manifestText = await readFile(manifestPath);
       const manifest = JSON.parse(manifestText);
       currentVersion = manifest.version;
     } catch (error) {

@@ -5,6 +5,7 @@ import path from 'path';
 
 import { updateChangelogWithDependencies } from './dependency-changelog';
 import type { DependencyChange } from './dependency-types';
+import { readFile, writeFile } from './fs';
 
 const outdent = _outdent({ trimTrailingNewline: false });
 
@@ -45,7 +46,7 @@ describe('updateChangelogWithDependencies', () => {
   });
 
   it('adds missing dependency entry to changelog', async () => {
-    await fs.writeFile(
+    await writeFile(
       changelogPath,
       buildChangelog(outdent`
 
@@ -73,7 +74,7 @@ describe('updateChangelogWithDependencies', () => {
       tagPrefix: '@scope/a@',
     });
 
-    const changelog = await fs.readFile(changelogPath, 'utf8');
+    const changelog = await readFile(changelogPath);
     expect(changelog).toBe(
       buildChangelog(outdent`
         ## [Unreleased]
@@ -86,7 +87,7 @@ describe('updateChangelogWithDependencies', () => {
   });
 
   it('adds BREAKING prefix for peerDependency bumps', async () => {
-    await fs.writeFile(
+    await writeFile(
       changelogPath,
       buildChangelog(outdent`
 
@@ -114,7 +115,7 @@ describe('updateChangelogWithDependencies', () => {
       tagPrefix: '@scope/a@',
     });
 
-    const changelog = await fs.readFile(changelogPath, 'utf8');
+    const changelog = await readFile(changelogPath);
     expect(changelog).toBe(
       buildChangelog(outdent`
         ## [Unreleased]
@@ -127,7 +128,7 @@ describe('updateChangelogWithDependencies', () => {
   });
 
   it('updates existing entry with new version and concatenates PRs', async () => {
-    await fs.writeFile(
+    await writeFile(
       changelogPath,
       buildChangelog(outdent`
 
@@ -157,7 +158,7 @@ describe('updateChangelogWithDependencies', () => {
       tagPrefix: '@scope/a@',
     });
 
-    const changelog = await fs.readFile(changelogPath, 'utf8');
+    const changelog = await readFile(changelogPath);
     expect(changelog).toBe(
       buildChangelog(outdent`
 
@@ -171,7 +172,7 @@ describe('updateChangelogWithDependencies', () => {
   });
 
   it('adds entry to release version section when currentVersion is provided', async () => {
-    await fs.writeFile(
+    await writeFile(
       changelogPath,
       buildChangelog(outdent`
 
@@ -205,7 +206,7 @@ describe('updateChangelogWithDependencies', () => {
       tagPrefix: '@scope/a@',
     });
 
-    const changelog = await fs.readFile(changelogPath, 'utf8');
+    const changelog = await readFile(changelogPath);
     expect(changelog).toBe(
       buildChangelog(outdent`
         ## [Unreleased]
@@ -224,7 +225,7 @@ describe('updateChangelogWithDependencies', () => {
   });
 
   it('adds peerDependency entry to release section with currentVersion', async () => {
-    await fs.writeFile(
+    await writeFile(
       changelogPath,
       buildChangelog(outdent`
 
@@ -258,7 +259,7 @@ describe('updateChangelogWithDependencies', () => {
       tagPrefix: '@scope/a@',
     });
 
-    const changelog = await fs.readFile(changelogPath, 'utf8');
+    const changelog = await readFile(changelogPath);
     expect(changelog).toBe(
       buildChangelog(outdent`
         ## [Unreleased]
@@ -279,7 +280,7 @@ describe('updateChangelogWithDependencies', () => {
   it('throws error when currentVersion provided but version section does not exist', async () => {
     // This tests that an error is thrown when currentVersion is provided
     // but the version section doesn't exist in the changelog
-    await fs.writeFile(
+    await writeFile(
       changelogPath,
       buildChangelog(outdent`
 
@@ -312,7 +313,7 @@ describe('updateChangelogWithDependencies', () => {
   });
 
   it('orders BREAKING changes before regular dependency changes', async () => {
-    await fs.writeFile(
+    await writeFile(
       changelogPath,
       buildChangelog(outdent`
 
@@ -346,7 +347,7 @@ describe('updateChangelogWithDependencies', () => {
       tagPrefix: '@scope/a@',
     });
 
-    const changelog = await fs.readFile(changelogPath, 'utf8');
+    const changelog = await readFile(changelogPath);
     expect(changelog).toBe(
       buildChangelog(outdent`
         ## [Unreleased]
@@ -360,7 +361,7 @@ describe('updateChangelogWithDependencies', () => {
   });
 
   it('handles multiple dependency bumps', async () => {
-    await fs.writeFile(
+    await writeFile(
       changelogPath,
       buildChangelog(outdent`
 
@@ -394,7 +395,7 @@ describe('updateChangelogWithDependencies', () => {
       tagPrefix: '@scope/a@',
     });
 
-    const changelog = await fs.readFile(changelogPath, 'utf8');
+    const changelog = await readFile(changelogPath);
     expect(changelog).toBe(
       buildChangelog(outdent`
         ## [Unreleased]
@@ -408,7 +409,7 @@ describe('updateChangelogWithDependencies', () => {
   });
 
   it('handles non-scoped package dependency bumps', async () => {
-    await fs.writeFile(
+    await writeFile(
       changelogPath,
       buildChangelog(outdent`
 
@@ -436,7 +437,7 @@ describe('updateChangelogWithDependencies', () => {
       tagPrefix: '@scope/a@',
     });
 
-    const changelog = await fs.readFile(changelogPath, 'utf8');
+    const changelog = await readFile(changelogPath);
     expect(changelog).toBe(
       buildChangelog(outdent`
         ## [Unreleased]
@@ -482,7 +483,7 @@ describe('updateChangelogWithDependencies', () => {
       [Unreleased]: ${TEST_REPO_URL}/
     `);
 
-    await fs.writeFile(changelogPath, initialChangelog);
+    await writeFile(changelogPath, initialChangelog);
 
     const dependencyChanges: DependencyChange[] = [
       {
@@ -502,13 +503,13 @@ describe('updateChangelogWithDependencies', () => {
       tagPrefix: '@scope/a@',
     });
 
-    const changelog = await fs.readFile(changelogPath, 'utf8');
+    const changelog = await readFile(changelogPath);
     // Changelog should remain unchanged
     expect(changelog).toBe(initialChangelog);
   });
 
   it('updates existing entry AND adds new entry simultaneously', async () => {
-    await fs.writeFile(
+    await writeFile(
       changelogPath,
       buildChangelog(outdent`
 
@@ -546,7 +547,7 @@ describe('updateChangelogWithDependencies', () => {
       tagPrefix: '@scope/a@',
     });
 
-    const changelog = await fs.readFile(changelogPath, 'utf8');
+    const changelog = await readFile(changelogPath);
     expect(changelog).toBe(
       buildChangelog(outdent`
         ## [Unreleased]
@@ -560,7 +561,7 @@ describe('updateChangelogWithDependencies', () => {
   });
 
   it('uses packageRename when provided', async () => {
-    await fs.writeFile(
+    await writeFile(
       changelogPath,
       buildChangelog(outdent`
 
@@ -592,7 +593,7 @@ describe('updateChangelogWithDependencies', () => {
       },
     });
 
-    const changelog = await fs.readFile(changelogPath, 'utf8');
+    const changelog = await readFile(changelogPath);
     expect(changelog).toBe(
       buildChangelog(outdent`
         ## [Unreleased]
@@ -605,7 +606,7 @@ describe('updateChangelogWithDependencies', () => {
   });
 
   it('updates existing peerDependency entry with exact match to new versions', async () => {
-    await fs.writeFile(
+    await writeFile(
       changelogPath,
       buildChangelog(outdent`
 
@@ -633,7 +634,7 @@ describe('updateChangelogWithDependencies', () => {
       tagPrefix: 'v',
     });
 
-    const changelog = await fs.readFile(changelogPath, 'utf8');
+    const changelog = await readFile(changelogPath);
     expect(changelog).toBe(
       buildChangelog(outdent`
 
@@ -648,7 +649,7 @@ describe('updateChangelogWithDependencies', () => {
 
   it('updates existing peerDependency entry with stale version match', async () => {
     // Test the branch where we have a non-exact match (stale entry) for a BREAKING peerDependency
-    await fs.writeFile(
+    await writeFile(
       changelogPath,
       buildChangelog(outdent`
 
@@ -676,7 +677,7 @@ describe('updateChangelogWithDependencies', () => {
       tagPrefix: 'v',
     });
 
-    const changelog = await fs.readFile(changelogPath, 'utf8');
+    const changelog = await readFile(changelogPath);
     expect(changelog).toBe(
       buildChangelog(outdent`
 
