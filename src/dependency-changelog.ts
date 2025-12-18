@@ -214,19 +214,24 @@ export async function updateChangelogWithDependencies({
     existingEntry: string;
   }[] = [];
 
-  for (const change of dependencyChanges) {
-    const entryCheck = hasChangelogEntry(changesSection, change);
-    if (entryCheck.hasExactMatch) {
-      continue;
-    }
+  // If changesSection is undefined/empty, all entries need to be added
+  if (!changesSection || Object.keys(changesSection).length === 0) {
+    entriesToAdd.push(...dependencyChanges);
+  } else {
+    for (const change of dependencyChanges) {
+      const entryCheck = hasChangelogEntry(changesSection, change);
+      if (entryCheck.hasExactMatch) {
+        continue;
+      }
 
-    if (entryCheck.existingEntry === undefined) {
-      entriesToAdd.push(change);
-    } else {
-      entriesToUpdate.push({
-        change,
-        existingEntry: entryCheck.existingEntry,
-      });
+      if (entryCheck.existingEntry === undefined) {
+        entriesToAdd.push(change);
+      } else {
+        entriesToUpdate.push({
+          change,
+          existingEntry: entryCheck.existingEntry,
+        });
+      }
     }
   }
 

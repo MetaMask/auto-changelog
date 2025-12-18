@@ -276,6 +276,41 @@ describe('updateChangelogWithDependencies', () => {
     );
   });
 
+  it('throws error when currentVersion provided but version section does not exist', async () => {
+    // This tests that an error is thrown when currentVersion is provided
+    // but the version section doesn't exist in the changelog
+    await fs.writeFile(
+      changelogPath,
+      buildChangelog(outdent`
+
+        ## [Unreleased]
+
+        [Unreleased]: ${TEST_REPO_URL}/
+      `),
+    );
+
+    const dependencyChanges: DependencyChange[] = [
+      {
+        dependency: '@scope/b',
+        type: 'dependencies',
+        oldVersion: '1.0.0',
+        newVersion: '2.0.0',
+      },
+    ];
+
+    await expect(
+      updateChangelogWithDependencies({
+        changelogPath,
+        dependencyChanges,
+        currentVersion: '2.0.0', // Version section doesn't exist yet
+        prNumber: '123',
+        repoUrl: TEST_REPO_URL,
+        formatter,
+        tagPrefix: '@scope/a@',
+      }),
+    ).rejects.toThrow("Specified release version does not exist: '2.0.0'");
+  });
+
   it('orders BREAKING changes before regular dependency changes', async () => {
     await fs.writeFile(
       changelogPath,
