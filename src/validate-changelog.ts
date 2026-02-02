@@ -97,6 +97,18 @@ type ValidateChangelogOptions = {
 };
 
 /**
+ * Normalize line endings to Unix style (LF).
+ *
+ * This ensures changelog validation behaves consistently across platforms.
+ *
+ * @param value - The string to normalize.
+ * @returns The string with all CRLF/CR converted to LF.
+ */
+function normalizeLineEndings(value: string): string {
+  return value.replace(/\r\n/gu, '\n').replace(/\r/gu, '\n');
+}
+
+/**
  * Validates that a changelog is well-formatted.
  *
  * @param options - Validation options.
@@ -138,8 +150,9 @@ export async function validateChangelog({
   packageRename,
   ensureValidPrLinksPresent,
 }: ValidateChangelogOptions) {
+  const normalizedChangelogContent = normalizeLineEndings(changelogContent);
   const changelog = parseChangelog({
-    changelogContent,
+    changelogContent: normalizedChangelogContent,
     repoUrl,
     tagPrefix,
     formatter,
@@ -189,10 +202,10 @@ export async function validateChangelog({
   }
 
   const validChangelog = await changelog.toString();
-  if (validChangelog !== changelogContent) {
+  if (normalizeLineEndings(validChangelog) !== normalizedChangelogContent) {
     throw new ChangelogFormattingError({
       validChangelog,
-      invalidChangelog: changelogContent,
+      invalidChangelog: normalizedChangelogContent,
     });
   }
 }
