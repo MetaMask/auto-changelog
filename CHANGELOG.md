@@ -7,12 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [5.3.1]
-
-### Fixed
-
-- Fixed problems with validate on Windows with CRLF ([#269](https://github.com/MetaMask/auto-changelog/pull/269))
-
 ## [5.3.0]
 
 ### Added
@@ -278,8 +272,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Monorepo support ([#41](https://github.com/MetaMask/auto-changelog/pull/41))
   - Configurable repository URL, version, and changelog file path ([#33](https://github.com/MetaMask/auto-changelog/pull/33), [#31](https://github.com/MetaMask/auto-changelog/pull/31), [#30](https://github.com/MetaMask/auto-changelog/pull/30))
 
-[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v5.3.1...HEAD
-[5.4.0]: https://github.com/MetaMask/auto-changelog/compare/v5.3.0...v5.3.1
+[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v5.3.0...HEAD
 [5.3.0]: https://github.com/MetaMask/auto-changelog/compare/v5.2.0...v5.3.0
 [5.2.0]: https://github.com/MetaMask/auto-changelog/compare/v5.1.0...v5.2.0
 [5.1.0]: https://github.com/MetaMask/auto-changelog/compare/v5.0.2...v5.1.0
