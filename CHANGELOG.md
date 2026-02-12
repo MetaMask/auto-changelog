@@ -9,9 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [5.3.2]
 
-### Uncategorized
+### Fixed
 
-- fix: Force fetch tags ([#273](https://github.com/MetaMask/auto-changelog/pull/273))
+- Force fetch tags ([#273](https://github.com/MetaMask/auto-changelog/pull/273))
 
 ## [5.3.1]
 
