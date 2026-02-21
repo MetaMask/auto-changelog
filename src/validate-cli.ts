@@ -1,11 +1,12 @@
 import { Formatter } from './changelog';
 import {
   getDependencyChangesForPackage,
-  updateSinglePackageChangelog,
   type DependencyCheckResult,
 } from './check-dependency-bumps';
+import { exitWithError, saveChangelog } from './cli-utils';
 import { Version } from './constants';
-import { readFile, writeFile } from './fs';
+import { updateChangelogWithDependencies } from './dependency-changelog';
+import { readFile } from './fs';
 import { generateDiff } from './generate-diff';
 import { PackageRename } from './shared-types';
 import {
@@ -14,29 +15,6 @@ import {
   MissingDependencyEntriesError,
   validateChangelog,
 } from './validate-changelog';
-
-/**
- * Exit the process with the given error.
- *
- * @param errorMessage - The error message to exit with.
- */
-function exitWithError(errorMessage: string) {
-  console.error(errorMessage);
-  process.exitCode = 1;
-}
-
-/**
- * Save the changelog to the filesystem.
- *
- * @param changelogPath - The path to the changelog file.
- * @param newChangelogContent - The new changelog contents to save.
- */
-async function saveChangelog(
-  changelogPath: string,
-  newChangelogContent: string,
-) {
-  await writeFile(changelogPath, newChangelogContent);
-}
 
 /**
  * Options for validating a changelog.
@@ -65,7 +43,7 @@ export type ValidateOptions = {
   /**
    * Path to the package.json file for dependency checking.
    */
-  manifestPath?: string;
+  manifestPath: string;
   /**
    * Starting git reference for dependency checking (auto-detects if not provided).
    */
@@ -131,9 +109,8 @@ export async function validate({
 }: ValidateOptions) {
   const changelogContent = await readFile(changelogPath);
 
-  // Fetch dependency changes if checkDeps is enabled
   let dependencyResult: DependencyCheckResult | undefined;
-  if (checkDeps && manifestPath) {
+  if (checkDeps) {
     const result = await getDependencyChangesForPackage({
       manifestPath,
       fromRef,
@@ -177,11 +154,15 @@ export async function validate({
       return exitWithError(`Changelog not well-formatted. Diff:\n\n${diff}`);
     } else if (error instanceof MissingDependencyEntriesError) {
       if (fix && currentPr) {
-        await updateSinglePackageChangelog({
+        const prNumbers =
+          dependencyResult?.prNumbers && dependencyResult.prNumbers.length > 0
+            ? dependencyResult.prNumbers
+            : [currentPr];
+        await updateChangelogWithDependencies({
           changelogPath,
           dependencyChanges: error.missingEntries,
           currentVersion: dependencyResult?.versionBump,
-          prNumber: currentPr,
+          prNumbers,
           repoUrl,
           formatter,
           tagPrefix,

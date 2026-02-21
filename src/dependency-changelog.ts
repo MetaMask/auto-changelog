@@ -1,35 +1,9 @@
-import { Formatter } from './changelog';
+import type { Formatter } from './changelog';
 import { ChangeCategory } from './constants';
 import type { DependencyChange } from './dependency-types';
 import { hasChangelogEntry } from './dependency-utils';
 import { readFile, writeFile } from './fs';
 import { parseChangelog } from './parse-changelog';
-/**
- * Format a changelog entry describing a dependency bump.
- *
- * @param change - Dependency change to describe.
- * @param prNumber - PR number to include, if provided.
- * @param repoUrl - Repository URL for PR links.
- * @returns Formatted changelog entry string.
- */
-function formatChangelogEntry(
-  change: DependencyChange,
-  prNumber: string,
-  repoUrl: string,
-): string {
-  const prLink = `[#${prNumber}](${repoUrl}/pull/${prNumber})`;
-  const prefix = change.type === 'peerDependencies' ? '**BREAKING:** ' : '';
-
-  return `${prefix}Bump \`${change.dependency}\` from \`${change.oldVersion}\` to \`${change.newVersion}\` (${prLink})`;
-}
-
-/**
- * Checks if a changelog already has an entry for a dependency change.
- *
- * @param releaseChanges - The release changes to search.
- * @param change - The dependency change to look for.
- * @returns Match information including whether an exact match was found.
- */
 
 /**
  * Options for updating a single changelog with dependency entries.
@@ -41,8 +15,8 @@ type UpdateChangelogWithDependenciesOptions = {
   dependencyChanges: DependencyChange[];
   /** Current version of the package (if being released). */
   currentVersion?: string;
-  /** PR number to use in entries (required). */
-  prNumber: string;
+  /** PR numbers to use in entries. */
+  prNumbers: string[];
   /** Repository URL for PR links. */
   repoUrl: string;
   /** Formatter for changelog content. */
@@ -59,11 +33,15 @@ type UpdateChangelogWithDependenciesOptions = {
 /**
  * Update a single changelog with dependency bump entries.
  *
+ * Parses the changelog once, checks for existing entries, updates stale ones,
+ * adds missing ones, then stringifies and writes. Uses the Changelog API
+ * exclusively — no string replacement.
+ *
  * @param options - Options.
  * @param options.changelogPath - Path to the changelog file.
  * @param options.dependencyChanges - Dependency changes to add.
  * @param options.currentVersion - Current version of the package (if being released).
- * @param options.prNumber - PR number to use in entries.
+ * @param options.prNumbers - PR numbers to use in entries.
  * @param options.repoUrl - Repository URL for PR links.
  * @param options.formatter - Formatter for changelog content.
  * @param options.tagPrefix - Tag prefix for the package.
@@ -74,7 +52,7 @@ export async function updateChangelogWithDependencies({
   changelogPath,
   dependencyChanges,
   currentVersion,
-  prNumber,
+  prNumbers,
   repoUrl,
   formatter,
   tagPrefix,
@@ -93,108 +71,81 @@ export async function updateChangelogWithDependencies({
     tagPrefix,
     formatter,
     ...(packageRename && { packageRename }),
+    shouldExtractPrLinks: true,
   });
 
-  // Check which entries are missing
+  // Check which entries are missing or need updating
   const changesSection = currentVersion
     ? changelog.getReleaseChanges(currentVersion)
     : changelog.getUnreleasedChanges();
 
   const entriesToAdd: DependencyChange[] = [];
-  const entriesToUpdate: {
-    change: DependencyChange;
-    existingEntry: string;
-  }[] = [];
+  let hasUpdates = false;
 
-  // If changesSection is undefined/empty, all entries need to be added
-  if (!changesSection || Object.keys(changesSection).length === 0) {
-    entriesToAdd.push(...dependencyChanges);
-  } else {
-    for (const change of dependencyChanges) {
-      const entryCheck = hasChangelogEntry(changesSection, change);
-      if (entryCheck.hasExactMatch) {
-        continue;
-      }
+  for (const change of dependencyChanges) {
+    if (!changesSection || Object.keys(changesSection).length === 0) {
+      entriesToAdd.push(change);
+      continue;
+    }
 
-      if (entryCheck.existingEntry === undefined) {
-        entriesToAdd.push(change);
-      } else {
-        entriesToUpdate.push({
-          change,
-          existingEntry: entryCheck.existingEntry,
-        });
-      }
+    const entryCheck = hasChangelogEntry(changesSection, change);
+    if (entryCheck.hasExactMatch) {
+      continue;
+    }
+
+    if (
+      entryCheck.existingEntry !== undefined &&
+      entryCheck.entryIndex !== undefined
+    ) {
+      // Update existing entry with new versions and merge PR numbers
+      const mergedPrNumbers = [
+        ...new Set([...entryCheck.existingEntry.prNumbers, ...prNumbers]),
+      ];
+      changelog.updateChange({
+        version: currentVersion,
+        category: ChangeCategory.Changed,
+        entryIndex: entryCheck.entryIndex,
+        dependencyBump: change,
+        prNumbers: mergedPrNumbers,
+      });
+      hasUpdates = true;
+    } else {
+      entriesToAdd.push(change);
     }
   }
 
-  // Update existing entries using string replacement
-  let updatedContent = changelogContent;
-  for (const { change, existingEntry } of entriesToUpdate) {
-    const prMatches = existingEntry.matchAll(/\[#(\d+)\]/gu);
-    const existingPRs = Array.from(prMatches, (match) => match[1]);
-
-    if (!existingPRs.includes(prNumber)) {
-      existingPRs.push(prNumber);
-    }
-
-    const prLinks = existingPRs
-      .map((pr) => `[#${pr}](${repoUrl}/pull/${pr})`)
-      .join(', ');
-
-    const prefix = change.type === 'peerDependencies' ? '**BREAKING:** ' : '';
-    const updatedEntry = `${prefix}Bump \`${change.dependency}\` from \`${change.oldVersion}\` to \`${change.newVersion}\` (${prLinks})`;
-
-    updatedContent = updatedContent.replace(existingEntry, updatedEntry);
+  // If nothing changed, return original content without rewriting
+  if (!hasUpdates && entriesToAdd.length === 0) {
+    return changelogContent;
   }
 
-  if (entriesToUpdate.length > 0) {
-    await writeFile(changelogPath, updatedContent);
-  }
+  // Add new entries: deps first, then peerDeps
+  // (since addToStart=true, peerDeps added last end up on top)
+  const deps = entriesToAdd.filter((entry) => entry.type === 'dependencies');
+  const peerDeps = entriesToAdd.filter(
+    (entry) => entry.type === 'peerDependencies',
+  );
 
-  // Add missing entries
-  if (entriesToAdd.length > 0) {
-    // Re-read the changelog if we updated it
-    const latestContent =
-      entriesToUpdate.length > 0
-        ? await readFile(changelogPath)
-        : changelogContent;
-
-    const latestChangelog = parseChangelog({
-      changelogContent: latestContent,
-      repoUrl,
-      tagPrefix,
-      formatter,
-      ...(packageRename && { packageRename }),
+  // Add in reverse order so they appear in correct order
+  for (let i = deps.length - 1; i >= 0; i--) {
+    changelog.addChange({
+      category: ChangeCategory.Changed,
+      ...(currentVersion && { version: currentVersion }),
+      prNumbers,
+      dependencyBump: deps[i],
     });
-
-    // Sort: BREAKING (peerDependencies) first
-    const deps = entriesToAdd.filter((entry) => entry.type === 'dependencies');
-    const peerDeps = entriesToAdd.filter(
-      (entry) => entry.type === 'peerDependencies',
-    );
-
-    // Add in reverse order so they appear in correct order
-    for (let i = deps.length - 1; i >= 0; i--) {
-      const description = formatChangelogEntry(deps[i], prNumber, repoUrl);
-      latestChangelog.addChange({
-        category: ChangeCategory.Changed,
-        description,
-        ...(currentVersion && { version: currentVersion }),
-      });
-    }
-
-    for (let i = peerDeps.length - 1; i >= 0; i--) {
-      const description = formatChangelogEntry(peerDeps[i], prNumber, repoUrl);
-      latestChangelog.addChange({
-        category: ChangeCategory.Changed,
-        description,
-        ...(currentVersion && { version: currentVersion }),
-      });
-    }
-
-    updatedContent = await latestChangelog.toString();
-    await writeFile(changelogPath, updatedContent);
   }
 
+  for (let i = peerDeps.length - 1; i >= 0; i--) {
+    changelog.addChange({
+      category: ChangeCategory.Changed,
+      ...(currentVersion && { version: currentVersion }),
+      prNumbers,
+      dependencyBump: peerDeps[i],
+    });
+  }
+
+  const updatedContent = await changelog.toString();
+  await writeFile(changelogPath, updatedContent);
   return updatedContent;
 }

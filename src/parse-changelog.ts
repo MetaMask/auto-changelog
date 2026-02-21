@@ -1,8 +1,40 @@
 import semver from 'semver';
 
-import Changelog, { Formatter } from './changelog';
+import Changelog, { DependencyBump, Formatter } from './changelog';
 import { ChangeCategory, unreleased } from './constants';
 import { PackageRename } from './shared-types';
+
+/**
+ * Parse a dependency bump description into structured data.
+ *
+ * Detects the pattern `[**BREAKING:** ]Bump \`dep\` from \`old\` to \`new\``.
+ *
+ * Note: The dependency type is inferred heuristically from the description:
+ * entries with `**BREAKING:**` prefix are classified as `peerDependencies`,
+ * all others as `dependencies`. This can be incorrect if a peerDependency
+ * bump was manually written without the prefix, or a regular dependency
+ * bump was manually given the prefix. This is an inherent limitation of
+ * round-tripping structured data through free-text descriptions.
+ *
+ * @param description - The change description to parse.
+ * @returns A DependencyBump if the description matches, undefined otherwise.
+ */
+function parseDependencyBumpDescription(
+  description: string,
+): DependencyBump | undefined {
+  const match = description.match(
+    /^(\*\*BREAKING:\*\*\s+)?Bump `([^`]+)` from `([^`]+)` to `([^`]+)`/u,
+  );
+  if (!match) {
+    return undefined;
+  }
+  return {
+    dependency: match[2],
+    type: match[1] ? 'peerDependencies' : 'dependencies',
+    oldVersion: match[3],
+    newVersion: match[4],
+  };
+}
 
 /**
  * Truncate the given string at 80 characters.
@@ -133,12 +165,15 @@ export function parseChangelog({
           prNumbers: [],
         };
 
+    const dependencyBump = parseDependencyBumpDescription(description);
+
     changelog.addChange({
       addToStart: false,
       category: mostRecentCategory,
       description,
       version: mostRecentRelease,
       prNumbers,
+      dependencyBump,
     });
     currentChangeEntry = undefined;
   }

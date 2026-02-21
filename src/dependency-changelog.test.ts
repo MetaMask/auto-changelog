@@ -68,7 +68,7 @@ describe('updateChangelogWithDependencies', () => {
     await updateChangelogWithDependencies({
       changelogPath,
       dependencyChanges,
-      prNumber: '123',
+      prNumbers: ['123'],
       repoUrl: TEST_REPO_URL,
       formatter,
       tagPrefix: '@scope/a@',
@@ -109,7 +109,7 @@ describe('updateChangelogWithDependencies', () => {
     await updateChangelogWithDependencies({
       changelogPath,
       dependencyChanges,
-      prNumber: '123',
+      prNumbers: ['123'],
       repoUrl: TEST_REPO_URL,
       formatter,
       tagPrefix: '@scope/a@',
@@ -152,7 +152,7 @@ describe('updateChangelogWithDependencies', () => {
     await updateChangelogWithDependencies({
       changelogPath,
       dependencyChanges,
-      prNumber: '200',
+      prNumbers: ['200'],
       repoUrl: TEST_REPO_URL,
       formatter,
       tagPrefix: '@scope/a@',
@@ -161,7 +161,6 @@ describe('updateChangelogWithDependencies', () => {
     const changelog = await readFile(changelogPath);
     expect(changelog).toBe(
       buildChangelog(outdent`
-
         ## [Unreleased]
         ### Changed
         - Bump \`@scope/b\` from \`1.5.0\` to \`2.0.0\` ([#100](${TEST_REPO_URL}/pull/100), [#200](${TEST_REPO_URL}/pull/200))
@@ -200,7 +199,7 @@ describe('updateChangelogWithDependencies', () => {
       changelogPath,
       dependencyChanges,
       currentVersion: '2.0.0',
-      prNumber: '123',
+      prNumbers: ['123'],
       repoUrl: TEST_REPO_URL,
       formatter,
       tagPrefix: '@scope/a@',
@@ -253,7 +252,7 @@ describe('updateChangelogWithDependencies', () => {
       changelogPath,
       dependencyChanges,
       currentVersion: '2.0.0',
-      prNumber: '123',
+      prNumbers: ['123'],
       repoUrl: TEST_REPO_URL,
       formatter,
       tagPrefix: '@scope/a@',
@@ -304,7 +303,7 @@ describe('updateChangelogWithDependencies', () => {
         changelogPath,
         dependencyChanges,
         currentVersion: '2.0.0', // Version section doesn't exist yet
-        prNumber: '123',
+        prNumbers: ['123'],
         repoUrl: TEST_REPO_URL,
         formatter,
         tagPrefix: '@scope/a@',
@@ -341,7 +340,7 @@ describe('updateChangelogWithDependencies', () => {
     await updateChangelogWithDependencies({
       changelogPath,
       dependencyChanges,
-      prNumber: '123',
+      prNumbers: ['123'],
       repoUrl: TEST_REPO_URL,
       formatter,
       tagPrefix: '@scope/a@',
@@ -389,7 +388,7 @@ describe('updateChangelogWithDependencies', () => {
     await updateChangelogWithDependencies({
       changelogPath,
       dependencyChanges,
-      prNumber: '777',
+      prNumbers: ['777'],
       repoUrl: TEST_REPO_URL,
       formatter,
       tagPrefix: '@scope/a@',
@@ -431,7 +430,7 @@ describe('updateChangelogWithDependencies', () => {
     await updateChangelogWithDependencies({
       changelogPath,
       dependencyChanges,
-      prNumber: '789',
+      prNumbers: ['789'],
       repoUrl: TEST_REPO_URL,
       formatter,
       tagPrefix: '@scope/a@',
@@ -465,7 +464,7 @@ describe('updateChangelogWithDependencies', () => {
       updateChangelogWithDependencies({
         changelogPath: nonExistentPath,
         dependencyChanges,
-        prNumber: '123',
+        prNumbers: ['123'],
         repoUrl: TEST_REPO_URL,
         formatter,
         tagPrefix: '@scope/a@',
@@ -497,7 +496,7 @@ describe('updateChangelogWithDependencies', () => {
     await updateChangelogWithDependencies({
       changelogPath,
       dependencyChanges,
-      prNumber: '123',
+      prNumbers: ['123'],
       repoUrl: TEST_REPO_URL,
       formatter,
       tagPrefix: '@scope/a@',
@@ -541,7 +540,7 @@ describe('updateChangelogWithDependencies', () => {
     await updateChangelogWithDependencies({
       changelogPath,
       dependencyChanges,
-      prNumber: '200',
+      prNumbers: ['200'],
       repoUrl: TEST_REPO_URL,
       formatter,
       tagPrefix: '@scope/a@',
@@ -583,7 +582,7 @@ describe('updateChangelogWithDependencies', () => {
     await updateChangelogWithDependencies({
       changelogPath,
       dependencyChanges,
-      prNumber: '123',
+      prNumbers: ['123'],
       repoUrl: TEST_REPO_URL,
       formatter,
       tagPrefix: '@scope/a@',
@@ -628,7 +627,7 @@ describe('updateChangelogWithDependencies', () => {
           newVersion: '3.0.0', // Updated version
         },
       ],
-      prNumber: '200',
+      prNumbers: ['200'],
       repoUrl: TEST_REPO_URL,
       formatter,
       tagPrefix: 'v',
@@ -637,7 +636,6 @@ describe('updateChangelogWithDependencies', () => {
     const changelog = await readFile(changelogPath);
     expect(changelog).toBe(
       buildChangelog(outdent`
-
         ## [Unreleased]
         ### Changed
         - **BREAKING:** Bump \`@scope/b\` from \`1.0.0\` to \`3.0.0\` ([#100](${TEST_REPO_URL}/pull/100), [#200](${TEST_REPO_URL}/pull/200))
@@ -671,7 +669,7 @@ describe('updateChangelogWithDependencies', () => {
           newVersion: '2.0.0', // New target version
         },
       ],
-      prNumber: '200',
+      prNumbers: ['200'],
       repoUrl: TEST_REPO_URL,
       formatter,
       tagPrefix: 'v',
@@ -680,7 +678,6 @@ describe('updateChangelogWithDependencies', () => {
     const changelog = await readFile(changelogPath);
     expect(changelog).toBe(
       buildChangelog(outdent`
-
         ## [Unreleased]
         ### Changed
         - **BREAKING:** Bump \`@scope/b\` from \`1.0.0\` to \`2.0.0\` ([#100](${TEST_REPO_URL}/pull/100), [#200](${TEST_REPO_URL}/pull/200))

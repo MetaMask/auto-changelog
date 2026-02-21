@@ -1,49 +1,52 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 import execa from 'execa';
-import fs from 'fs/promises';
-import os from 'os';
-import _outdent from 'outdent';
-import path from 'path';
 
-import {
-  getDependencyChangesForPackage,
-  updateSinglePackageChangelog,
-} from './check-dependency-bumps';
-import { writeFile } from './fs';
-
-const outdent = _outdent({ trimTrailingNewline: false });
+import { getDependencyChangesForPackage } from './check-dependency-bumps';
 
 jest.mock('execa');
 
 const execaMock = execa as jest.MockedFunction<typeof execa>;
 
-const testFormatter = async (content: string) => content;
+/**
+ * Helper to build a mock for execa calls. Enqueues responses in order.
+ *
+ * @param responses - The mock responses to enqueue.
+ */
+function mockExecaResponses(...responses: ({ stdout: string } | Error)[]) {
+  for (const response of responses) {
+    if (response instanceof Error) {
+      execaMock.mockRejectedValueOnce(response as never);
+    } else {
+      execaMock.mockResolvedValueOnce(response as never);
+    }
+  }
+}
 
 describe('getDependencyChangesForPackage', () => {
   beforeEach(() => {
     jest.resetAllMocks();
   });
 
-  it('returns null when on base branch without fromRef', async () => {
-    // Mock getCurrentBranchName to return 'origin/main'
-    execaMock.mockResolvedValueOnce({ stdout: 'origin/main' } as never);
+  it('returns null when on base branch without fromRef (SHA comparison)', async () => {
+    // Mock rev-parse HEAD, rev-parse origin/main (same SHA → on base branch)
+    mockExecaResponses(
+      { stdout: 'abc123' }, // rev-parse HEAD
+      { stdout: 'abc123' }, // rev-parse origin/main
+    );
 
     const result = await getDependencyChangesForPackage({
       manifestPath: '/repo/packages/a/package.json',
     });
 
     expect(result).toBeNull();
-    expect(execaMock).toHaveBeenCalledWith(
-      'git',
-      ['rev-parse', '--abbrev-ref', 'HEAD'],
-      expect.objectContaining({ cwd: '/repo/packages/a' }),
-    );
   });
 
   it('returns null when merge-base fails', async () => {
-    // Mock getCurrentBranchName to return a feature branch
-    execaMock.mockResolvedValueOnce({ stdout: 'feature-branch' } as never);
-    // Mock getMergeBase to fail
-    execaMock.mockRejectedValueOnce(new Error('no merge base'));
+    mockExecaResponses(
+      { stdout: 'abc123' }, // rev-parse HEAD
+      { stdout: 'def456' }, // rev-parse origin/main (different SHA)
+      new Error('no merge base'), // merge-base fails
+    );
 
     const result = await getDependencyChangesForPackage({
       manifestPath: '/repo/packages/a/package.json',
@@ -52,8 +55,24 @@ describe('getDependencyChangesForPackage', () => {
     expect(result).toBeNull();
   });
 
-  it('returns empty when no diff is found', async () => {
-    execaMock.mockResolvedValueOnce({ stdout: '' } as never);
+  it('returns null when base branch ref cannot be resolved', async () => {
+    mockExecaResponses(
+      { stdout: 'abc123' }, // rev-parse HEAD
+      new Error('unknown revision'), // rev-parse origin/main fails
+    );
+
+    const result = await getDependencyChangesForPackage({
+      manifestPath: '/repo/packages/a/package.json',
+    });
+
+    expect(result).toBeNull();
+  });
+
+  it('returns empty when old file does not exist (new package)', async () => {
+    mockExecaResponses(
+      { stdout: '/repo' }, // rev-parse --show-toplevel
+      new Error('does not exist'), // git show fromRef:path (old file missing)
+    );
 
     const result = await getDependencyChangesForPackage({
       manifestPath: '/repo/packages/a/package.json',
@@ -63,24 +82,28 @@ describe('getDependencyChangesForPackage', () => {
     expect(result).toStrictEqual({
       dependencyChanges: [],
       versionBump: undefined,
+      prNumbers: [],
     });
   });
 
-  it('returns empty array when diff has no dependency changes', async () => {
-    const diff = `
-diff --git a/packages/a/package.json b/packages/a/package.json
-index 1234567..890abcd 100644
---- a/packages/a/package.json
-+++ b/packages/a/package.json
-@@ -1,5 +1,5 @@
- {
-   "name": "@scope/a",
--  "version": "1.0.0"
-+  "version": "1.0.1"
- }
-`;
+  it('returns empty array when no dependency changes', async () => {
+    const oldPkg = JSON.stringify({
+      name: '@scope/a',
+      version: '1.0.0',
+      dependencies: { '@scope/b': '1.0.0' },
+    });
+    const newPkg = JSON.stringify({
+      name: '@scope/a',
+      version: '1.0.0',
+      dependencies: { '@scope/b': '1.0.0' },
+    });
 
-    execaMock.mockResolvedValueOnce({ stdout: diff } as never);
+    mockExecaResponses(
+      { stdout: '/repo' }, // rev-parse --show-toplevel
+      { stdout: oldPkg }, // git show fromRef:path
+      { stdout: newPkg }, // git show toRef:path
+      { stdout: '' }, // git log (no PRs)
+    );
 
     const result = await getDependencyChangesForPackage({
       manifestPath: '/repo/packages/a/package.json',
@@ -91,22 +114,21 @@ index 1234567..890abcd 100644
   });
 
   it('detects dependency version bump', async () => {
-    const diff = `
-diff --git a/packages/a/package.json b/packages/a/package.json
-index 1234567..890abcd 100644
---- a/packages/a/package.json
-+++ b/packages/a/package.json
-@@ -1,7 +1,7 @@
- {
-   "name": "@scope/a",
-   "dependencies": {
--    "@scope/b": "1.0.0"
-+    "@scope/b": "2.0.0"
-   }
- }
-`;
+    const oldPkg = JSON.stringify({
+      name: '@scope/a',
+      dependencies: { '@scope/b': '1.0.0' },
+    });
+    const newPkg = JSON.stringify({
+      name: '@scope/a',
+      dependencies: { '@scope/b': '2.0.0' },
+    });
 
-    execaMock.mockResolvedValueOnce({ stdout: diff } as never);
+    mockExecaResponses(
+      { stdout: '/repo' },
+      { stdout: oldPkg },
+      { stdout: newPkg },
+      { stdout: '' },
+    );
 
     const result = await getDependencyChangesForPackage({
       manifestPath: '/repo/packages/a/package.json',
@@ -123,26 +145,26 @@ index 1234567..890abcd 100644
         },
       ],
       versionBump: undefined,
+      prNumbers: [],
     });
   });
 
   it('detects peerDependency version bump', async () => {
-    const diff = `
-diff --git a/packages/a/package.json b/packages/a/package.json
-index 1234567..890abcd 100644
---- a/packages/a/package.json
-+++ b/packages/a/package.json
-@@ -1,7 +1,7 @@
- {
-   "name": "@scope/a",
-   "peerDependencies": {
--    "@scope/b": "1.0.0"
-+    "@scope/b": "2.0.0"
-   }
- }
-`;
+    const oldPkg = JSON.stringify({
+      name: '@scope/a',
+      peerDependencies: { '@scope/b': '1.0.0' },
+    });
+    const newPkg = JSON.stringify({
+      name: '@scope/a',
+      peerDependencies: { '@scope/b': '2.0.0' },
+    });
 
-    execaMock.mockResolvedValueOnce({ stdout: diff } as never);
+    mockExecaResponses(
+      { stdout: '/repo' },
+      { stdout: oldPkg },
+      { stdout: newPkg },
+      { stdout: '' },
+    );
 
     const result = await getDependencyChangesForPackage({
       manifestPath: '/repo/packages/a/package.json',
@@ -159,28 +181,26 @@ index 1234567..890abcd 100644
         },
       ],
       versionBump: undefined,
+      prNumbers: [],
     });
   });
 
   it('detects multiple dependency bumps', async () => {
-    const diff = `
-diff --git a/packages/a/package.json b/packages/a/package.json
-index 1234567..890abcd 100644
---- a/packages/a/package.json
-+++ b/packages/a/package.json
-@@ -1,8 +1,8 @@
- {
-   "name": "@scope/a",
-   "dependencies": {
--    "@scope/b": "1.0.0",
--    "@scope/c": "1.0.0"
-+    "@scope/b": "2.0.0",
-+    "@scope/c": "2.0.0"
-   }
- }
-`;
+    const oldPkg = JSON.stringify({
+      name: '@scope/a',
+      dependencies: { '@scope/b': '1.0.0', '@scope/c': '1.0.0' },
+    });
+    const newPkg = JSON.stringify({
+      name: '@scope/a',
+      dependencies: { '@scope/b': '2.0.0', '@scope/c': '2.0.0' },
+    });
 
-    execaMock.mockResolvedValueOnce({ stdout: diff } as never);
+    mockExecaResponses(
+      { stdout: '/repo' },
+      { stdout: oldPkg },
+      { stdout: newPkg },
+      { stdout: '' },
+    );
 
     const result = await getDependencyChangesForPackage({
       manifestPath: '/repo/packages/a/package.json',
@@ -203,26 +223,23 @@ index 1234567..890abcd 100644
   });
 
   it('detects both dependency and peerDependency bumps', async () => {
-    const diff = `
-diff --git a/packages/a/package.json b/packages/a/package.json
-index 1234567..890abcd 100644
---- a/packages/a/package.json
-+++ b/packages/a/package.json
-@@ -1,10 +1,10 @@
- {
-   "name": "@scope/a",
-   "dependencies": {
--    "@scope/b": "1.0.0"
-+    "@scope/b": "2.0.0"
-   },
-   "peerDependencies": {
--    "@scope/c": "1.0.0"
-+    "@scope/c": "2.0.0"
-   }
- }
-`;
+    const oldPkg = JSON.stringify({
+      name: '@scope/a',
+      dependencies: { '@scope/b': '1.0.0' },
+      peerDependencies: { '@scope/c': '1.0.0' },
+    });
+    const newPkg = JSON.stringify({
+      name: '@scope/a',
+      dependencies: { '@scope/b': '2.0.0' },
+      peerDependencies: { '@scope/c': '2.0.0' },
+    });
 
-    execaMock.mockResolvedValueOnce({ stdout: diff } as never);
+    mockExecaResponses(
+      { stdout: '/repo' },
+      { stdout: oldPkg },
+      { stdout: newPkg },
+      { stdout: '' },
+    );
 
     const result = await getDependencyChangesForPackage({
       manifestPath: '/repo/packages/a/package.json',
@@ -245,22 +262,21 @@ index 1234567..890abcd 100644
   });
 
   it('ignores devDependencies changes', async () => {
-    const diff = `
-diff --git a/packages/a/package.json b/packages/a/package.json
-index 1234567..890abcd 100644
---- a/packages/a/package.json
-+++ b/packages/a/package.json
-@@ -1,7 +1,7 @@
- {
-   "name": "@scope/a",
-   "devDependencies": {
--    "jest": "28.0.0"
-+    "jest": "29.0.0"
-   }
- }
-`;
+    const oldPkg = JSON.stringify({
+      name: '@scope/a',
+      devDependencies: { jest: '28.0.0' },
+    });
+    const newPkg = JSON.stringify({
+      name: '@scope/a',
+      devDependencies: { jest: '29.0.0' },
+    });
 
-    execaMock.mockResolvedValueOnce({ stdout: diff } as never);
+    mockExecaResponses(
+      { stdout: '/repo' },
+      { stdout: oldPkg },
+      { stdout: newPkg },
+      { stdout: '' },
+    );
 
     const result = await getDependencyChangesForPackage({
       manifestPath: '/repo/packages/a/package.json',
@@ -271,22 +287,21 @@ index 1234567..890abcd 100644
   });
 
   it('ignores optionalDependencies changes', async () => {
-    const diff = `
-diff --git a/packages/a/package.json b/packages/a/package.json
-index 1234567..890abcd 100644
---- a/packages/a/package.json
-+++ b/packages/a/package.json
-@@ -1,7 +1,7 @@
- {
-   "name": "@scope/a",
-   "optionalDependencies": {
--    "fsevents": "2.0.0"
-+    "fsevents": "2.1.0"
-   }
- }
-`;
+    const oldPkg = JSON.stringify({
+      name: '@scope/a',
+      optionalDependencies: { fsevents: '2.0.0' },
+    });
+    const newPkg = JSON.stringify({
+      name: '@scope/a',
+      optionalDependencies: { fsevents: '2.1.0' },
+    });
 
-    execaMock.mockResolvedValueOnce({ stdout: diff } as never);
+    mockExecaResponses(
+      { stdout: '/repo' },
+      { stdout: oldPkg },
+      { stdout: newPkg },
+      { stdout: '' },
+    );
 
     const result = await getDependencyChangesForPackage({
       manifestPath: '/repo/packages/a/package.json',
@@ -297,20 +312,21 @@ index 1234567..890abcd 100644
   });
 
   it('detects package version bump', async () => {
-    const diff = `
-diff --git a/packages/a/package.json b/packages/a/package.json
-index 1234567..890abcd 100644
---- a/packages/a/package.json
-+++ b/packages/a/package.json
-@@ -1,5 +1,5 @@
- {
-   "name": "@scope/a",
--  "version": "1.0.0"
-+  "version": "2.0.0"
- }
-`;
+    const oldPkg = JSON.stringify({
+      name: '@scope/a',
+      version: '1.0.0',
+    });
+    const newPkg = JSON.stringify({
+      name: '@scope/a',
+      version: '2.0.0',
+    });
 
-    execaMock.mockResolvedValueOnce({ stdout: diff } as never);
+    mockExecaResponses(
+      { stdout: '/repo' },
+      { stdout: oldPkg },
+      { stdout: newPkg },
+      { stdout: '' },
+    );
 
     const result = await getDependencyChangesForPackage({
       manifestPath: '/repo/packages/a/package.json',
@@ -321,24 +337,23 @@ index 1234567..890abcd 100644
   });
 
   it('detects both package version bump and dependency changes', async () => {
-    const diff = `
-diff --git a/packages/a/package.json b/packages/a/package.json
-index 1234567..890abcd 100644
---- a/packages/a/package.json
-+++ b/packages/a/package.json
-@@ -1,8 +1,8 @@
- {
-   "name": "@scope/a",
--  "version": "1.0.0",
-+  "version": "2.0.0",
-   "dependencies": {
--    "@scope/b": "1.0.0"
-+    "@scope/b": "2.0.0"
-   }
- }
-`;
+    const oldPkg = JSON.stringify({
+      name: '@scope/a',
+      version: '1.0.0',
+      dependencies: { '@scope/b': '1.0.0' },
+    });
+    const newPkg = JSON.stringify({
+      name: '@scope/a',
+      version: '2.0.0',
+      dependencies: { '@scope/b': '2.0.0' },
+    });
 
-    execaMock.mockResolvedValueOnce({ stdout: diff } as never);
+    mockExecaResponses(
+      { stdout: '/repo' },
+      { stdout: oldPkg },
+      { stdout: newPkg },
+      { stdout: '' },
+    );
 
     const result = await getDependencyChangesForPackage({
       manifestPath: '/repo/packages/a/package.json',
@@ -357,22 +372,21 @@ index 1234567..890abcd 100644
   });
 
   it('handles non-scoped package dependencies', async () => {
-    const diff = `
-diff --git a/packages/a/package.json b/packages/a/package.json
-index 1234567..890abcd 100644
---- a/packages/a/package.json
-+++ b/packages/a/package.json
-@@ -1,7 +1,7 @@
- {
-   "name": "@scope/a",
-   "dependencies": {
--    "lodash": "4.17.20"
-+    "lodash": "4.17.21"
-   }
- }
-`;
+    const oldPkg = JSON.stringify({
+      name: '@scope/a',
+      dependencies: { lodash: '4.17.20' },
+    });
+    const newPkg = JSON.stringify({
+      name: '@scope/a',
+      dependencies: { lodash: '4.17.21' },
+    });
 
-    execaMock.mockResolvedValueOnce({ stdout: diff } as never);
+    mockExecaResponses(
+      { stdout: '/repo' },
+      { stdout: oldPkg },
+      { stdout: newPkg },
+      { stdout: '' },
+    );
 
     const result = await getDependencyChangesForPackage({
       manifestPath: '/repo/packages/a/package.json',
@@ -390,22 +404,21 @@ index 1234567..890abcd 100644
   });
 
   it('handles caret version ranges', async () => {
-    const diff = `
-diff --git a/packages/a/package.json b/packages/a/package.json
-index 1234567..890abcd 100644
---- a/packages/a/package.json
-+++ b/packages/a/package.json
-@@ -1,7 +1,7 @@
- {
-   "name": "@scope/a",
-   "dependencies": {
--    "@scope/b": "^1.0.0"
-+    "@scope/b": "^2.0.0"
-   }
- }
-`;
+    const oldPkg = JSON.stringify({
+      name: '@scope/a',
+      dependencies: { '@scope/b': '^1.0.0' },
+    });
+    const newPkg = JSON.stringify({
+      name: '@scope/a',
+      dependencies: { '@scope/b': '^2.0.0' },
+    });
 
-    execaMock.mockResolvedValueOnce({ stdout: diff } as never);
+    mockExecaResponses(
+      { stdout: '/repo' },
+      { stdout: oldPkg },
+      { stdout: newPkg },
+      { stdout: '' },
+    );
 
     const result = await getDependencyChangesForPackage({
       manifestPath: '/repo/packages/a/package.json',
@@ -423,24 +436,21 @@ index 1234567..890abcd 100644
   });
 
   it('does not detect change when version is the same', async () => {
-    // This simulates a diff where a line was removed and re-added with same version
-    // (e.g., due to reordering)
-    const diff = `
-diff --git a/packages/a/package.json b/packages/a/package.json
-index 1234567..890abcd 100644
---- a/packages/a/package.json
-+++ b/packages/a/package.json
-@@ -1,7 +1,7 @@
- {
-   "name": "@scope/a",
-   "dependencies": {
--    "@scope/b": "1.0.0"
-+    "@scope/b": "1.0.0"
-   }
- }
-`;
+    const oldPkg = JSON.stringify({
+      name: '@scope/a',
+      dependencies: { '@scope/b': '1.0.0' },
+    });
+    const newPkg = JSON.stringify({
+      name: '@scope/a',
+      dependencies: { '@scope/b': '1.0.0' },
+    });
 
-    execaMock.mockResolvedValueOnce({ stdout: diff } as never);
+    mockExecaResponses(
+      { stdout: '/repo' },
+      { stdout: oldPkg },
+      { stdout: newPkg },
+      { stdout: '' },
+    );
 
     const result = await getDependencyChangesForPackage({
       manifestPath: '/repo/packages/a/package.json',
@@ -450,55 +460,19 @@ index 1234567..890abcd 100644
     expect(result?.dependencyChanges).toStrictEqual([]);
   });
 
-  it('deduplicates when same dependency appears multiple times in diff', async () => {
-    // This simulates a complex diff where the same dependency change appears in multiple hunks
-    const diff = `
-diff --git a/packages/a/package.json b/packages/a/package.json
-index 1234567..890abcd 100644
---- a/packages/a/package.json
-+++ b/packages/a/package.json
-@@ -1,10 +1,10 @@
- {
-   "name": "@scope/a",
-   "dependencies": {
--    "@scope/b": "1.0.0",
-+    "@scope/b": "2.0.0",
-     "@scope/c": "1.0.0"
-   }
- }
-@@ -15,5 +15,5 @@
-   "dependencies": {
--    "@scope/b": "1.0.0"
-+    "@scope/b": "2.0.0"
-   }
- }
-`;
-
-    execaMock.mockResolvedValueOnce({ stdout: diff } as never);
-
-    const result = await getDependencyChangesForPackage({
-      manifestPath: '/repo/packages/a/package.json',
-      fromRef: 'abc123',
-    });
-
-    // Should only have one entry for @scope/b, not two
-    expect(result?.dependencyChanges).toStrictEqual([
-      {
-        dependency: '@scope/b',
-        type: 'dependencies',
-        oldVersion: '1.0.0',
-        newVersion: '2.0.0',
-      },
-    ]);
-  });
-
   it('auto-detects fromRef using merge-base when on feature branch', async () => {
-    // Mock getCurrentBranchName
-    execaMock.mockResolvedValueOnce({ stdout: 'feature-branch' } as never);
-    // Mock getMergeBase
-    execaMock.mockResolvedValueOnce({ stdout: 'merge-base-sha' } as never);
-    // Mock git diff
-    execaMock.mockResolvedValueOnce({ stdout: '' } as never);
+    const oldPkg = JSON.stringify({ name: '@scope/a' });
+    const newPkg = JSON.stringify({ name: '@scope/a' });
+
+    mockExecaResponses(
+      { stdout: 'abc123' }, // rev-parse HEAD
+      { stdout: 'def456' }, // rev-parse origin/main (different)
+      { stdout: 'merge-base-sha' }, // merge-base
+      { stdout: '/repo' }, // rev-parse --show-toplevel
+      { stdout: oldPkg }, // git show merge-base-sha:path
+      { stdout: newPkg }, // git show HEAD:path
+      { stdout: '' }, // git log
+    );
 
     const result = await getDependencyChangesForPackage({
       manifestPath: '/repo/packages/a/package.json',
@@ -507,6 +481,7 @@ index 1234567..890abcd 100644
     expect(result).toStrictEqual({
       dependencyChanges: [],
       versionBump: undefined,
+      prNumbers: [],
     });
     expect(execaMock).toHaveBeenCalledWith(
       'git',
@@ -516,12 +491,18 @@ index 1234567..890abcd 100644
   });
 
   it('uses custom baseBranch for auto-detection', async () => {
-    // Mock getCurrentBranchName
-    execaMock.mockResolvedValueOnce({ stdout: 'feature-branch' } as never);
-    // Mock getMergeBase
-    execaMock.mockResolvedValueOnce({ stdout: 'merge-base-sha' } as never);
-    // Mock git diff
-    execaMock.mockResolvedValueOnce({ stdout: '' } as never);
+    const oldPkg = JSON.stringify({ name: '@scope/a' });
+    const newPkg = JSON.stringify({ name: '@scope/a' });
+
+    mockExecaResponses(
+      { stdout: 'abc123' }, // rev-parse HEAD
+      { stdout: 'def456' }, // rev-parse upstream/develop
+      { stdout: 'merge-base-sha' }, // merge-base
+      { stdout: '/repo' }, // rev-parse --show-toplevel
+      { stdout: oldPkg },
+      { stdout: newPkg },
+      { stdout: '' },
+    );
 
     await getDependencyChangesForPackage({
       manifestPath: '/repo/packages/a/package.json',
@@ -536,12 +517,18 @@ index 1234567..890abcd 100644
   });
 
   it('uses custom remote for auto-detection', async () => {
-    // Mock getCurrentBranchName
-    execaMock.mockResolvedValueOnce({ stdout: 'feature-branch' } as never);
-    // Mock getMergeBase
-    execaMock.mockResolvedValueOnce({ stdout: 'merge-base-sha' } as never);
-    // Mock git diff
-    execaMock.mockResolvedValueOnce({ stdout: '' } as never);
+    const oldPkg = JSON.stringify({ name: '@scope/a' });
+    const newPkg = JSON.stringify({ name: '@scope/a' });
+
+    mockExecaResponses(
+      { stdout: 'abc123' }, // rev-parse HEAD
+      { stdout: 'def456' }, // rev-parse upstream/main
+      { stdout: 'merge-base-sha' }, // merge-base
+      { stdout: '/repo' }, // rev-parse --show-toplevel
+      { stdout: oldPkg },
+      { stdout: newPkg },
+      { stdout: '' },
+    );
 
     await getDependencyChangesForPackage({
       manifestPath: '/repo/packages/a/package.json',
@@ -554,53 +541,154 @@ index 1234567..890abcd 100644
       expect.objectContaining({ cwd: '/repo/packages/a' }),
     );
   });
-});
 
-describe('updateSinglePackageChangelog', () => {
-  let tempDir: string;
-  let changelogPath: string;
+  it('throws error when new file cannot be read', async () => {
+    const oldPkg = JSON.stringify({ name: '@scope/a' });
 
-  beforeEach(async () => {
-    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'changelog-test-'));
-    changelogPath = path.join(tempDir, 'CHANGELOG.md');
+    mockExecaResponses(
+      { stdout: '/repo' }, // rev-parse --show-toplevel
+      { stdout: oldPkg }, // git show fromRef:path (exists)
+      new Error('does not exist'), // git show toRef:path (missing)
+    );
+
+    await expect(
+      getDependencyChangesForPackage({
+        manifestPath: '/repo/packages/a/package.json',
+        fromRef: 'abc123',
+      }),
+    ).rejects.toThrow('Could not read');
   });
 
-  afterEach(async () => {
-    await fs.rm(tempDir, { recursive: true, force: true });
-  });
-
-  it('updates changelog with dependency changes', async () => {
-    const initialChangelog = outdent`
-      # Changelog
-      All notable changes to this project will be documented in this file.
-
-      The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-      and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-      ## [Unreleased]
-
-      [Unreleased]: https://github.com/test/repo/
-    `;
-
-    await writeFile(changelogPath, initialChangelog);
-
-    const result = await updateSinglePackageChangelog({
-      changelogPath,
-      dependencyChanges: [
-        {
-          dependency: '@scope/b',
-          type: 'dependencies',
-          oldVersion: '1.0.0',
-          newVersion: '2.0.0',
-        },
-      ],
-      prNumber: '123',
-      repoUrl: 'https://github.com/test/repo',
-      formatter: testFormatter,
-      tagPrefix: 'v',
+  it('extracts PR numbers from commit history', async () => {
+    const oldPkg = JSON.stringify({
+      name: '@scope/a',
+      dependencies: { '@scope/b': '1.0.0' },
+    });
+    const newPkg = JSON.stringify({
+      name: '@scope/a',
+      dependencies: { '@scope/b': '2.0.0' },
     });
 
-    expect(result).toContain('Bump `@scope/b` from `1.0.0` to `2.0.0`');
-    expect(result).toContain('#123');
+    mockExecaResponses(
+      { stdout: '/repo' },
+      { stdout: oldPkg },
+      { stdout: newPkg },
+      { stdout: 'Bump @scope/b (#100)\nBump @scope/b (#200)' },
+    );
+
+    const result = await getDependencyChangesForPackage({
+      manifestPath: '/repo/packages/a/package.json',
+      fromRef: 'abc123',
+    });
+
+    expect(result?.prNumbers).toStrictEqual(['100', '200']);
+  });
+
+  it('deduplicates PR numbers', async () => {
+    const oldPkg = JSON.stringify({
+      name: '@scope/a',
+      dependencies: { '@scope/b': '1.0.0' },
+    });
+    const newPkg = JSON.stringify({
+      name: '@scope/a',
+      dependencies: { '@scope/b': '2.0.0' },
+    });
+
+    mockExecaResponses(
+      { stdout: '/repo' },
+      { stdout: oldPkg },
+      { stdout: newPkg },
+      { stdout: 'Bump deps (#100)\nAnother bump (#100)' },
+    );
+
+    const result = await getDependencyChangesForPackage({
+      manifestPath: '/repo/packages/a/package.json',
+      fromRef: 'abc123',
+    });
+
+    expect(result?.prNumbers).toStrictEqual(['100']);
+  });
+
+  it('extracts multiple PR numbers from a single commit line', async () => {
+    const oldPkg = JSON.stringify({
+      name: '@scope/a',
+      dependencies: { '@scope/b': '1.0.0' },
+    });
+    const newPkg = JSON.stringify({
+      name: '@scope/a',
+      dependencies: { '@scope/b': '2.0.0' },
+    });
+
+    mockExecaResponses(
+      { stdout: '/repo' },
+      { stdout: oldPkg },
+      { stdout: newPkg },
+      { stdout: 'Bump deps (#100) (#200)' },
+    );
+
+    const result = await getDependencyChangesForPackage({
+      manifestPath: '/repo/packages/a/package.json',
+      fromRef: 'abc123',
+    });
+
+    expect(result?.prNumbers).toStrictEqual(['100', '200']);
+  });
+
+  it('throws error when old package.json contains malformed JSON', async () => {
+    mockExecaResponses(
+      { stdout: '/repo' }, // rev-parse --show-toplevel
+      { stdout: 'not valid json{' }, // git show fromRef:path
+      { stdout: '{}' }, // git show toRef:path (would not be reached)
+    );
+
+    await expect(
+      getDependencyChangesForPackage({
+        manifestPath: '/repo/packages/a/package.json',
+        fromRef: 'abc123',
+      }),
+    ).rejects.toThrow('Could not parse');
+  });
+
+  it('throws error when new package.json contains malformed JSON', async () => {
+    const oldPkg = JSON.stringify({ name: '@scope/a' });
+
+    mockExecaResponses(
+      { stdout: '/repo' }, // rev-parse --show-toplevel
+      { stdout: oldPkg }, // git show fromRef:path
+      { stdout: 'not valid json{' }, // git show toRef:path
+    );
+
+    await expect(
+      getDependencyChangesForPackage({
+        manifestPath: '/repo/packages/a/package.json',
+        fromRef: 'abc123',
+      }),
+    ).rejects.toThrow('Could not parse');
+  });
+
+  it('returns empty prNumbers when git log fails', async () => {
+    const oldPkg = JSON.stringify({
+      name: '@scope/a',
+      dependencies: { '@scope/b': '1.0.0' },
+    });
+    const newPkg = JSON.stringify({
+      name: '@scope/a',
+      dependencies: { '@scope/b': '2.0.0' },
+    });
+
+    mockExecaResponses(
+      { stdout: '/repo' },
+      { stdout: oldPkg },
+      { stdout: newPkg },
+      new Error('git log failed'), // git log fails
+    );
+
+    const result = await getDependencyChangesForPackage({
+      manifestPath: '/repo/packages/a/package.json',
+      fromRef: 'abc123',
+    });
+
+    expect(result?.prNumbers).toStrictEqual([]);
+    expect(result?.dependencyChanges).toHaveLength(1);
   });
 });

@@ -1,8 +1,6 @@
 import execa from 'execa';
 import path from 'path';
 
-import type { Formatter } from './changelog';
-import { updateChangelogWithDependencies } from './dependency-changelog';
 import type { DependencyChange } from './dependency-types';
 
 /**
@@ -22,169 +20,152 @@ async function getStdoutFromCommand(
 }
 
 /**
- * Gets the git diff between two refs for a specific package.json file.
+ * Gets the content of a file at a specific git reference.
  *
- * @param manifestPath - Path to the package.json file.
- * @param fromRef - Starting git reference.
- * @param toRef - Ending git reference.
- * @returns The git diff output.
+ * @param filePath - Repo-relative path to the file.
+ * @param ref - Git reference (e.g., commit SHA, branch name, tag).
+ * @param projectRoot - Working directory for the command.
+ * @returns The file content, or null if the file doesn't exist at that ref.
  */
-async function getManifestGitDiff(
-  manifestPath: string,
-  fromRef: string,
-  toRef: string,
-): Promise<string> {
-  return await getStdoutFromCommand(
-    'git',
-    [
-      'diff',
-      '-U9999', // Show maximum context to ensure full dependency lists are visible
-      fromRef,
-      toRef,
-      '--',
-      manifestPath,
-    ],
-    path.dirname(manifestPath),
-  );
+async function getFileAtRef(
+  filePath: string,
+  ref: string,
+  projectRoot: string,
+): Promise<string | null> {
+  try {
+    return await getStdoutFromCommand(
+      'git',
+      ['show', `${ref}:${filePath}`],
+      projectRoot,
+    );
+  } catch {
+    return null;
+  }
 }
+
+/**
+ * Gets the repo-relative path for a file.
+ *
+ * @param absolutePath - Absolute path to the file.
+ * @param projectRoot - Working directory for the git command.
+ * @returns The repo-relative path.
+ */
+async function getRepoRelativePath(
+  absolutePath: string,
+  projectRoot: string,
+): Promise<string> {
+  const topLevel = await getStdoutFromCommand(
+    'git',
+    ['rev-parse', '--show-toplevel'],
+    projectRoot,
+  );
+  return path.relative(topLevel, absolutePath);
+}
+
+/**
+ * Minimal type for the parts of package.json we care about.
+ */
+type PackageJson = {
+  version?: string;
+  dependencies?: Record<string, string>;
+  peerDependencies?: Record<string, string>;
+};
 
 /**
  * Result of checking for dependency changes in a package.
  */
 export type DependencyCheckResult = {
-  /** Dependency changes detected in the diff. */
+  /** Dependency changes detected. */
   dependencyChanges: DependencyChange[];
-  /** New version if the package version was bumped in this diff. */
+  /** New version if the package version was bumped. */
   versionBump?: string;
+  /** PR numbers extracted from commit history for the changed file. */
+  prNumbers: string[];
 };
 
 /**
- * Parse git diff output to find dependency version changes and package version bumps.
+ * Compare two package.json objects to find dependency changes.
+ * Only examines 'dependencies' and 'peerDependencies' — devDependencies
+ * and optionalDependencies are excluded.
  *
- * @param diff - Raw git diff output for a single package.json.
+ * Note: Only version *changes* are detected. Newly added dependencies
+ * (not present in oldPkg) and removed dependencies (not present in newPkg)
+ * are intentionally ignored, as changelog entries are only needed for bumps.
+ *
+ * @param oldPkg - The old package.json content.
+ * @param newPkg - The new package.json content.
  * @returns Dependency changes and version bump info.
  */
-function parseDependencyDiff(diff: string): DependencyCheckResult {
-  const lines = diff.split('\n');
+function compareDependencies(
+  oldPkg: PackageJson,
+  newPkg: PackageJson,
+): { dependencyChanges: DependencyChange[]; versionBump?: string } {
   const dependencyChanges: DependencyChange[] = [];
-  let versionBump: string | undefined;
+  const sections: ('dependencies' | 'peerDependencies')[] = [
+    'dependencies',
+    'peerDependencies',
+  ];
 
-  let currentSection: 'dependencies' | 'peerDependencies' | null = null;
-  const removedDeps = new Map<
-    string,
-    { version: string; section: 'dependencies' | 'peerDependencies' }
-  >();
+  for (const section of sections) {
+    const oldDeps = oldPkg[section] ?? {};
+    const newDeps = newPkg[section] ?? {};
 
-  for (let idx = 0; idx < lines.length; idx++) {
-    const line = lines[idx];
-
-    // Detect package version bump (outside of dependency sections)
-    if (line.startsWith('+') && line.includes('"version":')) {
-      const versionMatch = line.match(/^\+\s*"version":\s*"([^"]+)"/u);
-      if (versionMatch) {
-        versionBump = versionMatch[1];
-      }
-    }
-
-    // Track which dependency section we're in
-    if (line.includes('"peerDependencies"')) {
-      currentSection = 'peerDependencies';
-    } else if (line.includes('"dependencies"')) {
-      currentSection = 'dependencies';
-    } else if (
-      line.includes('"devDependencies"') ||
-      line.includes('"optionalDependencies"')
-    ) {
-      currentSection = null;
-    }
-
-    // Detect end of a section
-    if (currentSection && (line.trim() === '},' || line.trim() === '}')) {
-      const nextLine = lines[idx + 1];
-      const isNextSectionDependencies =
-        nextLine && /^\s*"dependencies"\s*:/u.test(nextLine);
-      const isNextSectionPeerDependencies =
-        nextLine && /^\s*"peerDependencies"\s*:/u.test(nextLine);
-
-      if (!isNextSectionDependencies && !isNextSectionPeerDependencies) {
-        currentSection = null;
-      }
-    }
-
-    // Track removed dependencies
-    if (line.startsWith('-') && currentSection) {
-      const match = line.match(/^-\s*"([^"]+)":\s*"([^"]+)"/u);
-      if (match) {
-        const [, dep, version] = match;
-        removedDeps.set(`${currentSection}:${dep}`, {
-          version,
-          section: currentSection,
+    for (const [dep, newVersion] of Object.entries(newDeps)) {
+      const oldVersion = oldDeps[dep];
+      if (oldVersion !== undefined && oldVersion !== newVersion) {
+        dependencyChanges.push({
+          dependency: dep,
+          type: section,
+          oldVersion,
+          newVersion,
         });
       }
     }
-
-    // Match added dependencies with their removed counterparts
-    if (line.startsWith('+') && currentSection) {
-      const match = line.match(/^\+\s*"([^"]+)":\s*"([^"]+)"/u);
-      if (match) {
-        const [, dep, newVersion] = match;
-        const sectionType = currentSection;
-        const key = `${sectionType}:${dep}`;
-        const removed = removedDeps.get(key);
-
-        if (removed && removed.version !== newVersion) {
-          // Check if we already have this change
-          const alreadyExists = dependencyChanges.some(
-            (change) =>
-              change.dependency === dep && change.type === sectionType,
-          );
-
-          if (!alreadyExists) {
-            dependencyChanges.push({
-              dependency: dep,
-              type: sectionType,
-              oldVersion: removed.version,
-              newVersion,
-            });
-          }
-        }
-      }
-    }
   }
+
+  const versionBump =
+    newPkg.version && oldPkg.version !== newPkg.version
+      ? newPkg.version
+      : undefined;
 
   return { dependencyChanges, versionBump };
 }
 
 /**
- * Gets the current git branch name.
+ * Extracts PR numbers from commit subjects in a range for a given file.
  *
- * @param projectRoot - Working directory for the command.
- * @returns The current branch name.
+ * @param filePath - Repo-relative path to the file.
+ * @param fromRef - Starting git reference.
+ * @param toRef - Ending git reference.
+ * @param projectRoot - Working directory for the git command.
+ * @returns Deduplicated array of PR number strings.
  */
-async function getCurrentBranchName(projectRoot: string): Promise<string> {
-  return await getStdoutFromCommand(
-    'git',
-    ['rev-parse', '--abbrev-ref', 'HEAD'],
-    projectRoot,
-  );
-}
-
-/**
- * Gets the merge base between HEAD and the base branch.
- *
- * @param projectRoot - Working directory for the command.
- * @param baseBranch - The base branch reference (e.g., 'origin/main', 'upstream/develop').
- * @returns The merge base commit SHA.
- */
-async function getMergeBase(
+async function getPrNumbersForFileChanges(
+  filePath: string,
+  fromRef: string,
+  toRef: string,
   projectRoot: string,
-  baseBranch: string,
-): Promise<string> {
-  return await getStdoutFromCommand(
-    'git',
-    ['merge-base', 'HEAD', baseBranch],
-    projectRoot,
-  );
+): Promise<string[]> {
+  try {
+    const log = await getStdoutFromCommand(
+      'git',
+      ['log', '--format=%s', `${fromRef}..${toRef}`, '--', filePath],
+      projectRoot,
+    );
+    if (!log) {
+      return [];
+    }
+    const prNumbers: string[] = [];
+    for (const line of log.split('\n')) {
+      const matches = line.matchAll(/\(#(\d+)\)/gu);
+      for (const match of matches) {
+        prNumbers.push(match[1]);
+      }
+    }
+    return [...new Set(prNumbers)];
+  } catch {
+    return [];
+  }
 }
 
 /**
@@ -199,20 +180,25 @@ type GetDependencyChangesOptions = {
   toRef?: string;
   /** Remote name for auto-detection (defaults to 'origin'). */
   remote?: string;
-  /** Base branch reference for auto-detection (defaults to '<remote>/main'). */
+  /**
+   * Base branch reference for auto-detection (defaults to '<remote>/main').
+   * Only used when `fromRef` is not provided, to compute the merge base.
+   */
   baseBranch?: string;
 };
 
 /**
- * Get dependency changes for a single package.
+ * Get dependency changes for a single package by comparing package.json
+ * at two git references using `git show`.
  *
  * @param options - Options.
  * @param options.manifestPath - Path to the package.json file.
  * @param options.fromRef - Starting git reference (auto-detects if not provided).
  * @param options.toRef - Ending git reference (defaults to HEAD).
  * @param options.remote - Remote name for auto-detection.
- * @param options.baseBranch - Base branch for auto-detection.
- * @returns Dependency check result with dependency changes and version bump, or null if on base branch.
+ * @param options.baseBranch - Base branch for auto-detection (only used when
+ * fromRef is not provided).
+ * @returns Dependency check result, or null if on base branch.
  */
 export async function getDependencyChangesForPackage({
   manifestPath,
@@ -223,90 +209,89 @@ export async function getDependencyChangesForPackage({
 }: GetDependencyChangesOptions): Promise<DependencyCheckResult | null> {
   const workingDir = path.dirname(manifestPath);
   const actualBaseBranch = baseBranch ?? `${remote}/main`;
-  let actualFromRef = fromRef ?? '';
+  let actualFromRef = fromRef;
 
   // Auto-detect fromRef if not provided
   if (!actualFromRef) {
-    const currentBranch = await getCurrentBranchName(workingDir);
+    // Compare HEAD SHA to base branch SHA (avoids "main" vs "origin/main" bug)
+    try {
+      const headSha = await getStdoutFromCommand(
+        'git',
+        ['rev-parse', 'HEAD'],
+        workingDir,
+      );
+      const baseSha = await getStdoutFromCommand(
+        'git',
+        ['rev-parse', actualBaseBranch],
+        workingDir,
+      );
 
-    if (currentBranch === actualBaseBranch) {
-      // On base branch, can't auto-detect
+      if (headSha === baseSha) {
+        return null;
+      }
+    } catch {
+      // Could not resolve base branch ref
       return null;
     }
 
     try {
-      actualFromRef = await getMergeBase(workingDir, actualBaseBranch);
+      actualFromRef = await getStdoutFromCommand(
+        'git',
+        ['merge-base', 'HEAD', actualBaseBranch],
+        workingDir,
+      );
     } catch {
       // Could not find merge base
       return null;
     }
   }
 
-  const diff = await getManifestGitDiff(manifestPath, actualFromRef, toRef);
-  if (!diff) {
-    return { dependencyChanges: [], versionBump: undefined };
+  // Get repo-relative path for git show
+  const relativePath = await getRepoRelativePath(manifestPath, workingDir);
+
+  // Get file contents at both refs
+  const oldContent = await getFileAtRef(
+    relativePath,
+    actualFromRef,
+    workingDir,
+  );
+  if (oldContent === null) {
+    // New package — no previous version to compare against
+    return { dependencyChanges: [], versionBump: undefined, prNumbers: [] };
   }
 
-  return parseDependencyDiff(diff);
-}
+  const newContent = await getFileAtRef(relativePath, toRef, workingDir);
+  if (newContent === null) {
+    throw new Error(`Could not read ${relativePath} at ref ${toRef}`);
+  }
 
-/**
- * Options for updating a single package's changelog with dependency entries.
- */
-type UpdateSinglePackageOptions = {
-  /** Path to the changelog file. */
-  changelogPath: string;
-  /** Dependency changes to add. */
-  dependencyChanges: DependencyChange[];
-  /** Current version of the package (if being released). */
-  currentVersion?: string;
-  /** PR number to use in entries (required). */
-  prNumber: string;
-  /** Repository URL for PR links. */
-  repoUrl: string;
-  /** Formatter for changelog content. */
-  formatter: Formatter;
-  /** Tag prefix for the package. */
-  tagPrefix: string;
-  /** Package rename info if applicable. */
-  packageRename?: {
-    versionBeforeRename: string;
-    tagPrefixBeforeRename: string;
-  };
-};
+  let oldPkg: PackageJson;
+  let newPkg: PackageJson;
+  try {
+    oldPkg = JSON.parse(oldContent);
+  } catch {
+    throw new Error(
+      `Could not parse ${relativePath} at ref ${actualFromRef} as JSON`,
+    );
+  }
+  try {
+    newPkg = JSON.parse(newContent);
+  } catch {
+    throw new Error(`Could not parse ${relativePath} at ref ${toRef} as JSON`);
+  }
 
-/**
- * Update a single package's changelog with missing dependency bump entries.
- *
- * @param options - Options.
- * @param options.changelogPath - Path to the changelog file.
- * @param options.dependencyChanges - Dependency changes to add.
- * @param options.currentVersion - Current version of the package (if being released).
- * @param options.prNumber - PR number to use in entries.
- * @param options.repoUrl - Repository URL for PR links.
- * @param options.formatter - Formatter for changelog content.
- * @param options.tagPrefix - Tag prefix for the package.
- * @param options.packageRename - Package rename info if applicable.
- * @returns The updated changelog content.
- */
-export async function updateSinglePackageChangelog({
-  changelogPath,
-  dependencyChanges,
-  currentVersion,
-  prNumber,
-  repoUrl,
-  formatter,
-  tagPrefix,
-  packageRename,
-}: UpdateSinglePackageOptions): Promise<string> {
-  return updateChangelogWithDependencies({
-    changelogPath,
-    dependencyChanges,
-    currentVersion,
-    prNumber,
-    repoUrl,
-    formatter,
-    tagPrefix,
-    packageRename,
-  });
+  const { dependencyChanges, versionBump } = compareDependencies(
+    oldPkg,
+    newPkg,
+  );
+
+  // Get PR numbers from commit history
+  const prNumbers = await getPrNumbersForFileChanges(
+    relativePath,
+    actualFromRef,
+    toRef,
+    workingDir,
+  );
+
+  return { dependencyChanges, versionBump, prNumbers };
 }

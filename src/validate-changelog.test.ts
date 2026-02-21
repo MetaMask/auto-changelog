@@ -961,6 +961,7 @@ describe('validateChangelog', () => {
           repoUrl,
           isReleaseCandidate: false,
           dependencyResult: {
+            prNumbers: [],
             dependencyChanges: [
               {
                 dependency: '@scope/b',
@@ -993,6 +994,7 @@ describe('validateChangelog', () => {
           repoUrl,
           isReleaseCandidate: false,
           dependencyResult: {
+            prNumbers: [],
             dependencyChanges: [
               {
                 dependency: '@scope/b',
@@ -1027,6 +1029,7 @@ describe('validateChangelog', () => {
           repoUrl,
           isReleaseCandidate: false,
           dependencyResult: {
+            prNumbers: [],
             dependencyChanges: [
               {
                 dependency: '@scope/b',
@@ -1061,6 +1064,7 @@ describe('validateChangelog', () => {
           repoUrl,
           isReleaseCandidate: false,
           dependencyResult: {
+            prNumbers: [],
             dependencyChanges: [
               {
                 dependency: '@scope/b',
@@ -1099,6 +1103,7 @@ describe('validateChangelog', () => {
           repoUrl,
           isReleaseCandidate: false,
           dependencyResult: {
+            prNumbers: [],
             dependencyChanges: [
               {
                 dependency: '@scope/b',
@@ -1132,6 +1137,7 @@ describe('validateChangelog', () => {
           repoUrl,
           isReleaseCandidate: false,
           dependencyResult: {
+            prNumbers: [],
             dependencyChanges: [
               {
                 dependency: '@scope/b',
@@ -1167,6 +1173,7 @@ describe('validateChangelog', () => {
           repoUrl,
           isReleaseCandidate: false,
           dependencyResult: {
+            prNumbers: [],
             dependencyChanges: [
               {
                 dependency: '@scope/b',

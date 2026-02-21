@@ -10,19 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Add `--checkDeps` flag to `validate` command for dependency bump changelog validation ([#267](https://github.com/MetaMask/auto-changelog/pull/267))
-  - Automatically detects dependency/peerDependency version changes from git diffs (skips dev/optional deps)
-  - Validates changelog entries with exact version matching (catches stale entries)
-  - Auto-updates changelogs with `--fix` flag, preserving PR history
-  - Detects package version bumps and validates in correct changelog section (Unreleased vs specific version)
-  - Smart PR concatenation when same dependency is bumped multiple times
-  - New CLI options for dependency checking:
-    - `--checkDeps` - Enable dependency bump changelog validation
-    - `--fromRef <ref>` - Starting git reference for diff comparison (auto-detects from merge-base if not provided)
-    - `--toRef <ref>` - Ending git reference for diff comparison (defaults to `HEAD`)
-    - `--remote <name>` - Remote name for auto-detecting base branch (defaults to `origin`)
-    - `--baseBranch <ref>` - Base branch reference to compare against (defaults to `<remote>/main`)
-    - `--currentPr <number>` - PR number to use in changelog entries (required when `--fix` is enabled)
-  - Usage: `yarn auto-changelog validate --checkDeps [--fromRef <ref>] [--fix --currentPr <number>]`
+  - Compares `dependencies` and `peerDependencies` in `package.json` between git refs to detect version changes
+  - With `--fix --currentPr <number>`, automatically adds missing changelog entries
+  - Additional CLI options: `--fromRef`, `--toRef`, `--remote`, `--baseBranch`
+- Add `dependencyBump` support to `Changelog` class with `addChange()` and new `updateChange()` method ([#267](https://github.com/MetaMask/auto-changelog/pull/267))
+- Export `getDependencyChangesForPackage` and `MissingDependencyEntriesError` from package entry point ([#267](https://github.com/MetaMask/auto-changelog/pull/267))
+
 ## [5.3.2]
 
 ### Fixed

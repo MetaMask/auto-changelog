@@ -6,8 +6,9 @@ import { hideBin } from 'yargs/helpers';
 import yargs from 'yargs/yargs';
 
 import { format, Formatter } from './changelog';
+import { exitWithError, saveChangelog } from './cli-utils';
 import { unreleased, Version } from './constants';
-import { readFile, writeFile } from './fs';
+import { readFile } from './fs';
 import { createEmptyChangelog } from './init';
 import { getRepositoryUrl } from './repo';
 import { PackageRename } from './shared-types';
@@ -40,29 +41,6 @@ function isValidUrl(proposedUrl: string) {
   } catch (error) {
     return false;
   }
-}
-
-/**
- * Exit the process with the given error.
- *
- * @param errorMessage - The error message to exit with.
- */
-function exitWithError(errorMessage: string) {
-  console.error(errorMessage);
-  process.exitCode = 1;
-}
-
-/**
- * Save the changelog to the filesystem.
- *
- * @param changelogPath - The path to the changelog file.
- * @param newChangelogContent - The new changelog contents to save.
- */
-async function saveChangelog(
-  changelogPath: string,
-  newChangelogContent: string,
-) {
-  await writeFile(changelogPath, newChangelogContent);
 }
 
 type UpdateOptions = {
@@ -414,11 +392,11 @@ async function main() {
     return usePrettier ? await format(changelog) : changelog;
   };
 
-  if (!currentVersion) {
-    const manifestPath = projectRootDirectory
-      ? path.join(projectRootDirectory, 'package.json')
-      : path.resolve('package.json');
+  const manifestPath = projectRootDirectory
+    ? path.join(projectRootDirectory, 'package.json')
+    : path.resolve('package.json');
 
+  if (!currentVersion) {
     try {
       const manifestText = await readFile(manifestPath);
       const manifest = JSON.parse(manifestText);
@@ -523,9 +501,6 @@ async function main() {
         '--currentPr is required when --checkDeps and --fix are both enabled.',
       );
     }
-
-    // Derive manifestPath from changelogPath (package.json is in same directory)
-    const manifestPath = path.join(path.dirname(changelogPath), 'package.json');
 
     await validate({
       changelogPath,

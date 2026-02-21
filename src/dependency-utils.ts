@@ -1,12 +1,6 @@
-import type { Change } from './changelog';
+import type { Change, ReleaseChanges } from './changelog';
 import { ChangeCategory } from './constants';
 import type { DependencyChange } from './dependency-types';
-
-/**
- * Release changes structure used for dependency checking.
- * This matches the structure returned by getReleaseChanges/getUnreleasedChanges.
- */
-type ReleaseChanges = Partial<Record<ChangeCategory, Change[]>>;
 
 /**
  * Result of checking for a changelog entry.
@@ -14,15 +8,15 @@ type ReleaseChanges = Partial<Record<ChangeCategory, Change[]>>;
 export type ChangelogEntryCheckResult = {
   /** Whether an exact version match was found. */
   hasExactMatch: boolean;
-  /** The existing entry text, if found. */
-  existingEntry?: string;
+  /** The existing Change object, if found. */
+  existingEntry?: Change;
   /** The index of the entry in the Changed array, if found. */
   entryIndex?: number;
 };
 
 /**
- * Checks if a changelog entry exists for a dependency change.
- * This function checks for both exact version matches and any version matches.
+ * Checks if a changelog entry exists for a dependency change using
+ * structured `dependencyBump` data on Change objects.
  *
  * @param releaseChanges - The release changes to search in.
  * @param change - The dependency change to check for.
@@ -32,64 +26,30 @@ export function hasChangelogEntry(
   releaseChanges: ReleaseChanges,
   change: DependencyChange,
 ): ChangelogEntryCheckResult {
-  const changedEntries = (releaseChanges[ChangeCategory.Changed] ?? []).map(
-    (entry) => entry.description,
-  );
+  const changedEntries = releaseChanges[ChangeCategory.Changed] ?? [];
 
-  const escapedDep = change.dependency.replace(/[/\\^$*+?.()|[\]{}]/gu, '\\$&');
-  const escapedOldVer = change.oldVersion.replace(
-    /[/\\^$*+?.()|[\]{}]/gu,
-    '\\$&',
-  );
-  const escapedNewVer = change.newVersion.replace(
-    /[/\\^$*+?.()|[\]{}]/gu,
-    '\\$&',
-  );
-
-  const breakingPrefix =
-    change.type === 'peerDependencies' ? '\\*\\*BREAKING:\\*\\* ' : '';
-  const isBreaking = change.type === 'peerDependencies';
-
-  const exactPattern = new RegExp(
-    `${breakingPrefix}Bump \`${escapedDep}\` from \`${escapedOldVer}\` to \`${escapedNewVer}\``,
-    'u',
-  );
-
-  const exactIndex = changedEntries.findIndex((entry) => {
-    const matchesPattern = exactPattern.test(entry);
-    if (!isBreaking) {
-      return matchesPattern && !entry.startsWith('**BREAKING:**');
+  for (let i = 0; i < changedEntries.length; i++) {
+    const entry = changedEntries[i];
+    const bump = entry.dependencyBump;
+    if (!bump) {
+      continue;
     }
-    return matchesPattern;
-  });
 
-  if (exactIndex !== -1) {
-    return {
-      hasExactMatch: true,
-      existingEntry: changedEntries[exactIndex],
-      entryIndex: exactIndex,
-    };
-  }
-
-  const anyVersionPattern = new RegExp(
-    `${breakingPrefix}Bump \\x60${escapedDep}\\x60 from \\x60[^\\x60]+\\x60 to \\x60[^\\x60]+\\x60`,
-    'u',
-  );
-
-  const anyIndex = changedEntries.findIndex((entry) => {
-    const matchesPattern = anyVersionPattern.test(entry);
-    if (!isBreaking) {
-      return matchesPattern && !entry.startsWith('**BREAKING:**');
+    if (bump.dependency !== change.dependency || bump.type !== change.type) {
+      continue;
     }
-    return matchesPattern;
-  });
 
-  if (anyIndex !== -1) {
-    return {
-      hasExactMatch: false,
-      existingEntry: changedEntries[anyIndex],
-      entryIndex: anyIndex,
-    };
+    // Same dependency and type
+    if (
+      bump.oldVersion === change.oldVersion &&
+      bump.newVersion === change.newVersion
+    ) {
+      // Exact match
+      return { hasExactMatch: true, existingEntry: entry, entryIndex: i };
+    }
+
+    // Any-version match (same dep + type, different versions)
+    return { hasExactMatch: false, existingEntry: entry, entryIndex: i };
   }
 
   return { hasExactMatch: false };

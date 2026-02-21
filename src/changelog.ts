@@ -73,6 +73,16 @@ type ReleaseMetadata = {
 };
 
 /**
+ * Structured representation of a dependency version bump.
+ */
+export type DependencyBump = {
+  dependency: string;
+  type: 'dependencies' | 'peerDependencies';
+  oldVersion: string;
+  newVersion: string;
+};
+
+/**
  * A single change in the changelog.
  */
 export type Change = {
@@ -85,12 +95,18 @@ export type Change = {
    * Pull requests within the repo that are associated with this change.
    */
   prNumbers: string[];
+
+  /**
+   * Structured dependency bump data. When present, the description
+   * is generated from this data during stringification.
+   */
+  dependencyBump?: DependencyBump;
 };
 
 /**
  * Release changes, organized by category.
  */
-type ReleaseChanges = Partial<Record<ChangeCategory, Change[]>>;
+export type ReleaseChanges = Partial<Record<ChangeCategory, Change[]>>;
 
 /**
  * Changelog changes, organized by release and by category.
@@ -401,6 +417,17 @@ function getReleaseLinkReferenceDefinitions(
   return releaseLinkReferenceDefinitions;
 }
 
+/**
+ * Generate a changelog description from a DependencyBump.
+ *
+ * @param bump - The dependency bump data.
+ * @returns The formatted description string.
+ */
+function formatDependencyBumpDescription(bump: DependencyBump): string {
+  const prefix = bump.type === 'peerDependencies' ? '**BREAKING:** ' : '';
+  return `${prefix}Bump \`${bump.dependency}\` from \`${bump.oldVersion}\` to \`${bump.newVersion}\``;
+}
+
 type AddReleaseOptions = {
   addToStart?: boolean;
   date?: string;
@@ -411,9 +438,10 @@ type AddReleaseOptions = {
 type AddChangeOptions = {
   addToStart?: boolean;
   category: ChangeCategory;
-  description: string;
+  description?: string;
   version?: Version;
   prNumbers?: string[];
+  dependencyBump?: DependencyBump;
 };
 
 /**
@@ -509,11 +537,16 @@ export default class Changelog {
    * `true` because changes should be in reverse-chronological order. This
    * should be set to `false` when parsing a changelog top-to-bottom.
    * @param options.category - The category of the change.
-   * @param options.description - The description of the change.
+   * @param options.description - The description of the change. Optional if
+   * `dependencyBump` is provided, in which case the description is
+   * auto-generated.
    * @param options.version - The version this change was released in. If this
    * is not given, the change is assumed to be unreleased.
    * @param options.prNumbers - The pull request numbers associated with the
    * change.
+   * @param options.dependencyBump - Structured dependency bump data. When
+   * provided and no description is given, the description is auto-generated
+   * from the bump data.
    */
   addChange({
     addToStart = true,
@@ -521,15 +554,22 @@ export default class Changelog {
     description,
     version,
     prNumbers = [],
+    dependencyBump,
   }: AddChangeOptions) {
     if (!category) {
       throw new Error('Category required');
     } else if (!orderedChangeCategories.includes(category)) {
       throw new Error(`Unrecognized category: '${category}'`);
-    } else if (!description) {
+    } else if (!description && !dependencyBump) {
       throw new Error('Description required');
     } else if (version !== undefined && !this.#changes[version]) {
       throw new Error(`Specified release version does not exist: '${version}'`);
+    }
+
+    // Auto-generate description from dependencyBump when not provided
+    let effectiveDescription = description ?? '';
+    if (!effectiveDescription && dependencyBump) {
+      effectiveDescription = formatDependencyBumpDescription(dependencyBump);
     }
 
     const release = version
@@ -537,12 +577,79 @@ export default class Changelog {
       : this.#changes[unreleased];
     const releaseCategory = release[category] ?? [];
 
-    releaseCategory[addToStart ? 'unshift' : 'push']({
-      description,
+    const change: Change = {
+      description: effectiveDescription,
       prNumbers,
-    });
+    };
+    if (dependencyBump) {
+      change.dependencyBump = dependencyBump;
+    }
+    releaseCategory[addToStart ? 'unshift' : 'push'](change);
 
     release[category] = releaseCategory;
+  }
+
+  /**
+   * Update an existing change entry in the changelog.
+   *
+   * @param options - Update options.
+   * @param options.version - The version of the release containing the change.
+   * If not given, the unreleased section is used.
+   * @param options.category - The category of the change.
+   * @param options.entryIndex - The index of the change within the category.
+   * @param options.description - New description (optional).
+   * @param options.prNumbers - New PR numbers (optional).
+   * @param options.dependencyBump - New dependency bump data (optional).
+   */
+  updateChange({
+    version,
+    category,
+    entryIndex,
+    description,
+    prNumbers,
+    dependencyBump,
+  }: {
+    version?: Version;
+    category: ChangeCategory;
+    entryIndex: number;
+    description?: string;
+    prNumbers?: string[];
+    dependencyBump?: DependencyBump;
+  }) {
+    const release = version
+      ? this.#changes[version]
+      : this.#changes[unreleased];
+
+    if (!release) {
+      throw new Error(
+        `Specified release version does not exist: '${String(version)}'`,
+      );
+    }
+
+    const releaseCategory = release[category];
+    if (
+      !releaseCategory ||
+      entryIndex < 0 ||
+      entryIndex >= releaseCategory.length
+    ) {
+      throw new Error(
+        `No change at index ${entryIndex} in category ${category}`,
+      );
+    }
+
+    const change = releaseCategory[entryIndex];
+    if (dependencyBump !== undefined) {
+      change.dependencyBump = dependencyBump;
+      // Auto-update the description to match the new dependencyBump data.
+      // Note: if both description and dependencyBump are provided,
+      // dependencyBump takes precedence for the description.
+      change.description = formatDependencyBumpDescription(dependencyBump);
+    } else if (description !== undefined) {
+      change.description = description;
+    }
+    if (prNumbers !== undefined) {
+      change.prNumbers = prNumbers;
+    }
   }
 
   /**

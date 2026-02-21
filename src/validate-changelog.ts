@@ -85,7 +85,7 @@ export class ChangelogFormattingError extends InvalidChangelogError {
  * Indicates that changelog entries for dependency bumps are missing.
  */
 export class MissingDependencyEntriesError extends InvalidChangelogError {
-  public missingEntries: DependencyChange[];
+  readonly missingEntries: DependencyChange[];
 
   /**
    * Construct a missing dependency entries error.
