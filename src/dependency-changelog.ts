@@ -1,9 +1,30 @@
-import type { Formatter } from './changelog';
+import type { Change, Formatter } from './changelog';
 import { ChangeCategory } from './constants';
 import type { DependencyChange } from './dependency-types';
 import { hasChangelogEntry } from './dependency-utils';
 import { readFile, writeFile } from './fs';
 import { parseChangelog } from './parse-changelog';
+
+/**
+ * Extracts PR numbers from a change entry's description text.
+ * Matches patterns like `[#123](url)` and `(#123)`.
+ *
+ * @param entry - The Change object to extract PR numbers from.
+ * @returns Array of PR number strings.
+ */
+function extractPrNumbersFromEntry(entry: Change): string[] {
+  // If prNumbers were already extracted (via shouldExtractPrLinks), use them
+  if (entry.prNumbers.length > 0) {
+    return entry.prNumbers;
+  }
+  // Otherwise extract from the description text
+  const matches = entry.description.matchAll(/\[#(\d+)\]|(?<!\[)#(\d+)\)/gu);
+  const numbers: string[] = [];
+  for (const match of matches) {
+    numbers.push(match[1] ?? match[2]);
+  }
+  return [...new Set(numbers)];
+}
 
 /**
  * Options for updating a single changelog with dependency entries.
@@ -65,13 +86,15 @@ export async function updateChangelogWithDependencies({
     throw new Error(`Changelog not found at ${changelogPath}`);
   }
 
+  // Parse WITHOUT shouldExtractPrLinks to avoid reformatting PR links
+  // on entries we don't modify. We extract PR numbers inline only for
+  // entries we actually update.
   const changelog = parseChangelog({
     changelogContent,
     repoUrl,
     tagPrefix,
     formatter,
     ...(packageRename && { packageRename }),
-    shouldExtractPrLinks: true,
   });
 
   // Check which entries are missing or need updating
@@ -101,8 +124,11 @@ export async function updateChangelogWithDependencies({
       // Preserve the original oldVersion from the existing entry so the
       // range reflects the full history (e.g., ^62.9.2 → ^62.17.1),
       // not just the latest bump (^62.17.0 → ^62.17.1).
+      const existingPrNumbers = extractPrNumbersFromEntry(
+        entryCheck.existingEntry,
+      );
       const mergedPrNumbers = [
-        ...new Set([...entryCheck.existingEntry.prNumbers, ...prNumbers]),
+        ...new Set([...existingPrNumbers, ...prNumbers]),
       ];
       const existingOldVersion =
         entryCheck.existingEntry.dependencyBump?.oldVersion;
