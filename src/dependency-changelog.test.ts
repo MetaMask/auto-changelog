@@ -159,11 +159,12 @@ describe('updateChangelogWithDependencies', () => {
     });
 
     const changelog = await readFile(changelogPath);
+    // Preserves original oldVersion (1.0.0), updates newVersion (2.0.0)
     expect(changelog).toBe(
       buildChangelog(outdent`
         ## [Unreleased]
         ### Changed
-        - Bump \`@scope/b\` from \`1.5.0\` to \`2.0.0\` ([#100](${TEST_REPO_URL}/pull/100), [#200](${TEST_REPO_URL}/pull/200))
+        - Bump \`@scope/b\` from \`1.0.0\` to \`2.0.0\` ([#100](${TEST_REPO_URL}/pull/100), [#200](${TEST_REPO_URL}/pull/200))
 
         [Unreleased]: ${TEST_REPO_URL}/
       `),
@@ -552,7 +553,7 @@ describe('updateChangelogWithDependencies', () => {
         ## [Unreleased]
         ### Changed
         - Bump \`@scope/c\` from \`1.0.0\` to \`2.0.0\` ([#200](${TEST_REPO_URL}/pull/200))
-        - Bump \`@scope/b\` from \`1.5.0\` to \`2.0.0\` ([#100](${TEST_REPO_URL}/pull/100), [#200](${TEST_REPO_URL}/pull/200))
+        - Bump \`@scope/b\` from \`1.0.0\` to \`2.0.0\` ([#100](${TEST_REPO_URL}/pull/100), [#200](${TEST_REPO_URL}/pull/200))
 
         [Unreleased]: ${TEST_REPO_URL}/
       `),
@@ -680,7 +681,7 @@ describe('updateChangelogWithDependencies', () => {
       buildChangelog(outdent`
         ## [Unreleased]
         ### Changed
-        - **BREAKING:** Bump \`@scope/b\` from \`1.0.0\` to \`2.0.0\` ([#100](${TEST_REPO_URL}/pull/100), [#200](${TEST_REPO_URL}/pull/200))
+        - **BREAKING:** Bump \`@scope/b\` from \`0.9.0\` to \`2.0.0\` ([#100](${TEST_REPO_URL}/pull/100), [#200](${TEST_REPO_URL}/pull/200))
 
         [Unreleased]: ${TEST_REPO_URL}/
       `),

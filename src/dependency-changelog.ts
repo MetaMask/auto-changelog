@@ -97,15 +97,23 @@ export async function updateChangelogWithDependencies({
       entryCheck.existingEntry !== undefined &&
       entryCheck.entryIndex !== undefined
     ) {
-      // Update existing entry with new versions and merge PR numbers
+      // Update existing entry with new version and merge PR numbers.
+      // Preserve the original oldVersion from the existing entry so the
+      // range reflects the full history (e.g., ^62.9.2 → ^62.17.1),
+      // not just the latest bump (^62.17.0 → ^62.17.1).
       const mergedPrNumbers = [
         ...new Set([...entryCheck.existingEntry.prNumbers, ...prNumbers]),
       ];
+      const existingOldVersion =
+        entryCheck.existingEntry.dependencyBump?.oldVersion;
       changelog.updateChange({
         version: currentVersion,
         category: ChangeCategory.Changed,
         entryIndex: entryCheck.entryIndex,
-        dependencyBump: change,
+        dependencyBump: {
+          ...change,
+          oldVersion: existingOldVersion ?? change.oldVersion,
+        },
         prNumbers: mergedPrNumbers,
       });
       hasUpdates = true;
