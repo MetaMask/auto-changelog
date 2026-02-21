@@ -905,6 +905,37 @@ describe('validateChangelog', () => {
     });
   });
 
+  describe('On Windows', () => {
+    it('should not throw for a CRLF changelog with correct content', async () => {
+      const crlfChangelog = changelogWithReleases.replace(/\n/gu, '\r\n');
+
+      await expect(
+        validateChangelog({
+          changelogContent: crlfChangelog,
+          currentVersion: '1.0.0',
+          repoUrl:
+            'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+          isReleaseCandidate: false,
+        }),
+      ).resolves.not.toThrow();
+    });
+
+    it('should not throw for a CRLF changelog when using the Prettier formatter', async () => {
+      const crlfChangelog = prettierChangelog.replace(/\n/gu, '\r\n');
+
+      await expect(
+        validateChangelog({
+          changelogContent: crlfChangelog,
+          currentVersion: '1.1.1',
+          repoUrl:
+            'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
+          isReleaseCandidate: false,
+          formatter: async (value: string) => await format(value),
+        }),
+      ).resolves.not.toThrow();
+    });
+  });
+
   describe('dependency bump validation', () => {
     const repoUrl =
       'https://github.com/ExampleUsernameOrOrganization/ExampleRepository';

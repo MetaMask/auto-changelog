@@ -24,8 +24,8 @@ async function getMostRecentTag({
 }: {
   tagPrefixes: [string, ...string[]];
 }) {
-  // Ensure we have all tags on remote
-  await runCommandAndSplit('git', ['fetch', '--tags']);
+  // Ensure we have all tags on remote (overwrite if necessary)
+  await runCommandAndSplit('git', ['fetch', '--tags', '--force']);
 
   let mostRecentTagCommitHash: string | null = null;
   for (const tagPrefix of tagPrefixes) {

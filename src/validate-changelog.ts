@@ -125,12 +125,16 @@ type ValidateChangelogOptions = {
 };
 
 /**
- * Checks if a changelog already has an entry for a dependency change.
+ * Normalize line endings to Unix style (LF).
  *
- * @param releaseChanges - The release changes to search.
- * @param change - The dependency change to look for.
- * @returns True if an entry exists for this dependency bump.
+ * This ensures changelog validation behaves consistently across platforms.
+ *
+ * @param value - The string to normalize.
+ * @returns The string with all CRLF/CR converted to LF.
  */
+function normalizeLineEndings(value: string): string {
+  return value.replace(/\r\n/gu, '\n').replace(/\r/gu, '\n');
+}
 
 /**
  * Validates that a changelog is well-formatted.
@@ -181,8 +185,9 @@ export async function validateChangelog({
   ensureValidPrLinksPresent,
   dependencyResult,
 }: ValidateChangelogOptions) {
+  const normalizedChangelogContent = normalizeLineEndings(changelogContent);
   const changelog = parseChangelog({
-    changelogContent,
+    changelogContent: normalizedChangelogContent,
     repoUrl,
     tagPrefix,
     formatter,
@@ -258,10 +263,10 @@ export async function validateChangelog({
   }
 
   const validChangelog = await changelog.toString();
-  if (validChangelog !== changelogContent) {
+  if (normalizeLineEndings(validChangelog) !== normalizedChangelogContent) {
     throw new ChangelogFormattingError({
       validChangelog,
-      invalidChangelog: changelogContent,
+      invalidChangelog: normalizedChangelogContent,
     });
   }
 }
