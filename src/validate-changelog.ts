@@ -24,6 +24,15 @@ export class UncategorizedChangesError extends InvalidChangelogError {
 }
 
 /**
+ * Indicates that a release has no changelog entries.
+ */
+export class EmptyReleaseError extends InvalidChangelogError {
+  constructor(releaseVersion: Version) {
+    super(`Release has no changelog entries: '${releaseVersion}'`);
+  }
+}
+
+/**
  * Indicates that the release header for the current version is missing.
  */
 export class MissingCurrentVersionError extends InvalidChangelogError {
@@ -94,6 +103,11 @@ type ValidateChangelogOptions = {
    * associated pull requests within the repository (true) or not (false).
    */
   ensureValidPrLinksPresent?: boolean;
+  /**
+   * Whether to validate that each release section has one or more changelog
+   * entries (true) or not (false).
+   */
+  noEmptyReleases?: boolean;
 };
 
 /**
@@ -128,6 +142,8 @@ function normalizeLineEndings(value: string): string {
  * @param options.ensureValidPrLinksPresent - Whether to validate that each
  * changelog entry has one or more links to associated pull requests within the
  * repository (true) or not (false).
+ * @param options.noEmptyReleases - Whether to validate that each release
+ * section has one or more changelog entries (true) or not (false).
  * @throws `InvalidChangelogError` - Will throw if the changelog is invalid
  * @throws `MissingCurrentVersionError` - Will throw if `isReleaseCandidate` is
  * `true` and the changelog is missing the release header for the current
@@ -149,6 +165,7 @@ export async function validateChangelog({
   formatter = undefined,
   packageRename,
   ensureValidPrLinksPresent,
+  noEmptyReleases,
 }: ValidateChangelogOptions) {
   const normalizedChangelogContent = normalizeLineEndings(changelogContent);
   const changelog = parseChangelog({
@@ -197,6 +214,22 @@ export async function validateChangelog({
             throw new MissingPullRequestLinksError(change, release.version);
           }
         }
+      }
+    }
+  }
+
+  if (noEmptyReleases) {
+    for (const release of changelog.getReleases()) {
+      const releaseChangesForVersion = changelog.getReleaseChanges(
+        release.version,
+      );
+      const numberOfEntries = Object.values(releaseChangesForVersion).reduce(
+        (total, changes) => total + changes.length,
+        0,
+      );
+
+      if (numberOfEntries === 0) {
+        throw new EmptyReleaseError(release.version);
       }
     }
   }

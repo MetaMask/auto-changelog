@@ -124,6 +124,14 @@ or
 
 `npm run auto-changelog validate --pr-links`
 
+#### Validate that each release has one or more changelog entries
+
+`yarn run auto-changelog validate --noEmptyReleases`
+
+or
+
+`npm run auto-changelog validate --noEmptyReleases`
+
 ## API Usage
 
 Each supported command is a separate named export.

@@ -183,6 +183,11 @@ type ValidateOptions = {
    * associated pull requests within the repository (true) or not (false).
    */
   ensureValidPrLinksPresent: boolean;
+  /**
+   * Whether to validate that each release section has one or more changelog
+   * entries (true) or not (false).
+   */
+  noEmptyReleases: boolean;
 };
 
 /**
@@ -200,6 +205,8 @@ type ValidateOptions = {
  * @param options.ensureValidPrLinksPresent - Whether to validate that each
  * changelog entry has one or more links to associated pull requests within the
  * repository (true) or not (false).
+ * @param options.noEmptyReleases - Whether to validate that each release
+ * section has one or more changelog entries (true) or not (false).
  */
 async function validate({
   changelogPath,
@@ -211,6 +218,7 @@ async function validate({
   formatter,
   packageRename,
   ensureValidPrLinksPresent,
+  noEmptyReleases,
 }: ValidateOptions) {
   const changelogContent = await readChangelog(changelogPath);
 
@@ -224,6 +232,7 @@ async function validate({
       formatter,
       packageRename,
       ensureValidPrLinksPresent,
+      noEmptyReleases,
     });
     return undefined;
   } catch (error) {
@@ -403,6 +412,12 @@ async function main() {
               'Verify that each changelog entry has one or more links to associated pull requests within the repository',
             type: 'boolean',
           })
+          .option('noEmptyReleases', {
+            default: false,
+            description:
+              'Verify that each release section has one or more changelog entries',
+            type: 'boolean',
+          })
           .epilog(validateEpilog),
     )
     .command('init', 'Initialize a new empty changelog', (_yargs) => {
@@ -427,6 +442,7 @@ async function main() {
     tagPrefixBeforePackageRename,
     autoCategorize,
     prLinks,
+    noEmptyReleases,
     useChangelogEntry,
     useShortPrLink,
     requirePrNumbers,
@@ -581,6 +597,7 @@ async function main() {
       formatter,
       packageRename,
       ensureValidPrLinksPresent: prLinks,
+      noEmptyReleases,
     });
   } else if (command === 'init') {
     await init({
