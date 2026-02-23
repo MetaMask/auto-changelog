@@ -205,10 +205,9 @@ export async function getDependencyChangesForPackage({
   fromRef,
   toRef = 'HEAD',
   remote = 'origin',
-  baseBranch,
+  baseBranch = `${remote}/main`,
 }: GetDependencyChangesOptions): Promise<DependencyCheckResult | null> {
   const workingDir = path.dirname(manifestPath);
-  const actualBaseBranch = baseBranch ?? `${remote}/main`;
   let actualFromRef = fromRef;
 
   // Auto-detect fromRef if not provided
@@ -222,7 +221,7 @@ export async function getDependencyChangesForPackage({
       );
       const baseSha = await getStdoutFromCommand(
         'git',
-        ['rev-parse', actualBaseBranch],
+        ['rev-parse', baseBranch],
         workingDir,
       );
 
@@ -237,7 +236,7 @@ export async function getDependencyChangesForPackage({
     try {
       actualFromRef = await getStdoutFromCommand(
         'git',
-        ['merge-base', 'HEAD', actualBaseBranch],
+        ['merge-base', 'HEAD', baseBranch],
         workingDir,
       );
     } catch {
