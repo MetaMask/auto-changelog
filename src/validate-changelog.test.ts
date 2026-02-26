@@ -515,7 +515,7 @@ describe('validateChangelog', () => {
       ).resolves.not.toThrow();
     });
 
-    it('should not throw if the changelog has an empty release', async () => {
+    it('should throw if the changelog has an empty release', async () => {
       const changelogWithEmptyRelease = changelogWithReleases.replace(
         '## [1.0.0] - 2020-01-01\n### Changed\n- Something else\n',
         '## [1.0.0] - 2020-01-01\n',
@@ -528,7 +528,7 @@ describe('validateChangelog', () => {
             'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
           isReleaseCandidate: false,
         }),
-      ).resolves.not.toThrow();
+      ).rejects.toThrow("Release has no changelog entries: '1.0.0'");
     });
 
     it('should throw if the changelog has an empty change category', async () => {
@@ -609,7 +609,7 @@ describe('validateChangelog', () => {
       ).resolves.not.toThrow();
     });
 
-    it('should not throw if the changelog has an empty release', async () => {
+    it('should throw if the changelog has an empty release', async () => {
       const changelogWithEmptyRelease = changelogWithReleases.replace(
         '## [1.0.0] - 2020-01-01\n### Changed\n- Something else\n',
         '## [1.0.0] - 2020-01-01\n',
@@ -622,7 +622,7 @@ describe('validateChangelog', () => {
             'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
           isReleaseCandidate: true,
         }),
-      ).resolves.not.toThrow();
+      ).rejects.toThrow("Release has no changelog entries: '1.0.0'");
     });
 
     it('should throw if the changelog has an empty change category', async () => {

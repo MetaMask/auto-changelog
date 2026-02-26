@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **BREAKING:** Throw error if any release section has no changelog entries ([#275](https://github.com/MetaMask/auto-changelog/pull/275))
+
 ## [5.3.2]
 
 ### Fixed
