@@ -515,41 +515,7 @@ describe('validateChangelog', () => {
       ).resolves.not.toThrow();
     });
 
-    it('should not throw if the changelog has an empty release and disallowEmptyReleases is false', async () => {
-      const changelogWithEmptyRelease = changelogWithReleases.replace(
-        '## [1.0.0] - 2020-01-01\n### Changed\n- Something else\n',
-        '## [1.0.0] - 2020-01-01\n',
-      );
-      await expect(
-        validateChangelog({
-          changelogContent: changelogWithEmptyRelease,
-          currentVersion: '1.0.1',
-          repoUrl:
-            'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
-          isReleaseCandidate: false,
-          disallowEmptyReleases: false,
-        }),
-      ).resolves.not.toThrow();
-    });
-
-    it('should throw if the changelog has an empty release and disallowEmptyReleases is true', async () => {
-      const changelogWithEmptyRelease = changelogWithReleases.replace(
-        '## [1.0.0] - 2020-01-01\n### Changed\n- Something else\n',
-        '## [1.0.0] - 2020-01-01\n',
-      );
-      await expect(
-        validateChangelog({
-          changelogContent: changelogWithEmptyRelease,
-          currentVersion: '1.0.1',
-          repoUrl:
-            'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
-          isReleaseCandidate: false,
-          disallowEmptyReleases: true,
-        }),
-      ).rejects.toThrow("Release has no changelog entries: '1.0.0'");
-    });
-
-    it('should throw by default if the changelog has an empty release', async () => {
+    it('should throw if the changelog has an empty release', async () => {
       const changelogWithEmptyRelease = changelogWithReleases.replace(
         '## [1.0.0] - 2020-01-01\n### Changed\n- Something else\n',
         '## [1.0.0] - 2020-01-01\n',
@@ -577,7 +543,6 @@ describe('validateChangelog', () => {
           repoUrl:
             'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
           isReleaseCandidate: false,
-          disallowEmptyReleases: false,
         }),
       ).rejects.toThrow('Changelog is not well-formatted');
     });
@@ -644,41 +609,7 @@ describe('validateChangelog', () => {
       ).resolves.not.toThrow();
     });
 
-    it('should not throw if the changelog has an empty release', async () => {
-      const changelogWithEmptyRelease = changelogWithReleases.replace(
-        '## [1.0.0] - 2020-01-01\n### Changed\n- Something else\n',
-        '## [1.0.0] - 2020-01-01\n',
-      );
-      await expect(
-        validateChangelog({
-          changelogContent: changelogWithEmptyRelease,
-          currentVersion: '1.0.0',
-          repoUrl:
-            'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
-          isReleaseCandidate: true,
-          disallowEmptyReleases: false,
-        }),
-      ).resolves.not.toThrow();
-    });
-
-    it('should throw if the changelog has an empty release and disallowEmptyReleases is true', async () => {
-      const changelogWithEmptyRelease = changelogWithReleases.replace(
-        '## [1.0.0] - 2020-01-01\n### Changed\n- Something else\n',
-        '## [1.0.0] - 2020-01-01\n',
-      );
-      await expect(
-        validateChangelog({
-          changelogContent: changelogWithEmptyRelease,
-          currentVersion: '1.0.0',
-          repoUrl:
-            'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
-          isReleaseCandidate: true,
-          disallowEmptyReleases: true,
-        }),
-      ).rejects.toThrow("Release has no changelog entries: '1.0.0'");
-    });
-
-    it('should throw by default if the changelog has an empty release', async () => {
+    it('should throw if the changelog has an empty release', async () => {
       const changelogWithEmptyRelease = changelogWithReleases.replace(
         '## [1.0.0] - 2020-01-01\n### Changed\n- Something else\n',
         '## [1.0.0] - 2020-01-01\n',
@@ -706,7 +637,6 @@ describe('validateChangelog', () => {
           repoUrl:
             'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
           isReleaseCandidate: false,
-          disallowEmptyReleases: false,
         }),
       ).rejects.toThrow('Changelog is not well-formatted');
     });
