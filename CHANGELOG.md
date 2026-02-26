@@ -7,9 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
+### Changed
 
-- Add `--noEmptyReleases` option to `validate` command and `validateChangelog` function which will throw if any release sections are empty ([#275](https://github.com/MetaMask/auto-changelog/pull/275))
+- **BREAKING:** Throw error if any release section has no changelog entries ([#275](https://github.com/MetaMask/auto-changelog/pull/275))
 
 ## [5.3.2]
 

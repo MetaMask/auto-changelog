@@ -107,7 +107,7 @@ type ValidateChangelogOptions = {
    * Whether to validate that each release section has one or more changelog
    * entries (true) or not (false).
    */
-  noEmptyReleases?: boolean;
+  disallowEmptyReleases?: boolean;
 };
 
 /**
@@ -142,7 +142,7 @@ function normalizeLineEndings(value: string): string {
  * @param options.ensureValidPrLinksPresent - Whether to validate that each
  * changelog entry has one or more links to associated pull requests within the
  * repository (true) or not (false).
- * @param options.noEmptyReleases - Whether to validate that each release
+ * @param options.disallowEmptyReleases - Whether to validate that each release
  * section has one or more changelog entries (true) or not (false).
  * @throws `InvalidChangelogError` - Will throw if the changelog is invalid
  * @throws `MissingCurrentVersionError` - Will throw if `isReleaseCandidate` is
@@ -165,7 +165,7 @@ export async function validateChangelog({
   formatter = undefined,
   packageRename,
   ensureValidPrLinksPresent,
-  noEmptyReleases,
+  disallowEmptyReleases = true,
 }: ValidateChangelogOptions) {
   const normalizedChangelogContent = normalizeLineEndings(changelogContent);
   const changelog = parseChangelog({
@@ -218,7 +218,7 @@ export async function validateChangelog({
     }
   }
 
-  if (noEmptyReleases) {
+  if (disallowEmptyReleases) {
     for (const release of changelog.getReleases()) {
       const releaseChangesForVersion = changelog.getReleaseChanges(
         release.version,
