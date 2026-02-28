@@ -471,6 +471,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@eslint/js@npm:^9.11.0":
+  version: 9.39.1
+  resolution: "@eslint/js@npm:9.39.1"
+  checksum: b651930aec03a5aef97bc144627aebb05070afec5364cd3c5fd7c5dbb97f4fd82faf1b200b3be17572d5ebb7f8805211b655f463be96f2b02202ec7250868048
+  languageName: node
+  linkType: hard
+
 "@gar/promisify@npm:^1.1.3":
   version: 1.1.3
   resolution: "@gar/promisify@npm:1.1.3"
@@ -841,7 +848,7 @@ __metadata:
     "@metamask/eslint-config": ^11.1.0
     "@metamask/eslint-config-jest": ^11.1.0
     "@metamask/eslint-config-nodejs": ^11.1.0
-    "@metamask/eslint-config-typescript": ^11.1.0
+    "@metamask/eslint-config-typescript": ^15.0.0
     "@octokit/rest": ^20.0.0
     "@ts-bridge/cli": ^0.6.3
     "@types/cross-spawn": ^6.0.2
@@ -899,16 +906,20 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@metamask/eslint-config-typescript@npm:^11.1.0":
-  version: 11.1.0
-  resolution: "@metamask/eslint-config-typescript@npm:11.1.0"
+"@metamask/eslint-config-typescript@npm:^15.0.0":
+  version: 15.0.0
+  resolution: "@metamask/eslint-config-typescript@npm:15.0.0"
+  dependencies:
+    "@eslint/js": ^9.11.0
   peerDependencies:
-    "@metamask/eslint-config": ^11.0.0
-    "@typescript-eslint/eslint-plugin": ^5.42.1
-    "@typescript-eslint/parser": ^5.42.1
-    eslint: ^8.27.0
-    typescript: ~4.8.4
-  checksum: 86f20303730fce7a2d6944d133e3d4cf745816bdc202fd17ebd341e4937777c662e80b3c1496a8da7d5e06e39518dec3206c4a4e872d9491f423e792bcdf56db
+    "@metamask/eslint-config": ^15.0.0
+    eslint: ^9.11.0
+    eslint-import-resolver-typescript: ^3.6.3
+    eslint-plugin-import-x: ^4.3.0
+    eslint-plugin-jsdoc: ^50.2.4
+    typescript: ">=4.8.4 <6"
+    typescript-eslint: ^8.39.0
+  checksum: 07434b045305a118e2a88587205382cd630b9c3bdff1b3226d6c6a8478a0e69758ed357fd92d6fa8cfbfff18cd03de765bc756e7908ac6029aa9a2648fc5aab0
   languageName: node
   linkType: hard
 
