@@ -27,6 +27,15 @@ export class UncategorizedChangesError extends InvalidChangelogError {
 }
 
 /**
+ * Indicates that a release has no changelog entries.
+ */
+export class EmptyReleaseError extends InvalidChangelogError {
+  constructor(releaseVersion: Version) {
+    super(`Release has no changelog entries: '${releaseVersion}'`);
+  }
+}
+
+/**
  * Indicates that the release header for the current version is missing.
  */
 export class MissingCurrentVersionError extends InvalidChangelogError {
@@ -268,5 +277,19 @@ export async function validateChangelog({
       validChangelog,
       invalidChangelog: normalizedChangelogContent,
     });
+  }
+
+  for (const release of changelog.getReleases()) {
+    const releaseChangesForVersion = changelog.getReleaseChanges(
+      release.version,
+    );
+    const numberOfEntries = Object.values(releaseChangesForVersion).reduce(
+      (total, changes) => total + changes.length,
+      0,
+    );
+
+    if (numberOfEntries === 0) {
+      throw new EmptyReleaseError(release.version);
+    }
   }
 }
