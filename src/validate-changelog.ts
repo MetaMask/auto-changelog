@@ -126,7 +126,7 @@ type ValidateChangelogOptions = {
   /**
    * Dependency changes detected from comparing package manifests.
    * When provided, the changelog will be checked for entries corresponding to
-   * each dependency bump. If `isReleaseCandidate` is true, entries are checked
+   * each dependency bump. If `versionChanged` is true, entries are checked
    * in the `currentVersion` release section; otherwise the Unreleased section.
    */
   dependencyCheckResult?: DependencyCheckResult;
@@ -166,9 +166,9 @@ function normalizeLineEndings(value: string): string {
  * repository (true) or not (false).
  * @param options.dependencyCheckResult - Dependency changes detected from
  * comparing package manifests. When provided, the changelog will be checked for
- * entries corresponding to each dependency bump. If `isReleaseCandidate` is
- * true, entries are checked in the `currentVersion` release section; otherwise
- * the Unreleased section.
+ * entries corresponding to each dependency bump. If `versionChanged` is true,
+ * entries are checked in the `currentVersion` release section; otherwise the
+ * Unreleased section.
  * @throws `InvalidChangelogError` - Will throw if the changelog is invalid
  * @throws `MissingCurrentVersionError` - Will throw if `isReleaseCandidate` is
  * `true` and the changelog is missing the release header for the current
