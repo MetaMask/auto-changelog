@@ -266,6 +266,37 @@ describe('validate', () => {
       logSpy.mockRestore();
     });
 
+    it('adds entries to Unreleased when versionChanged is true but release header is missing', async () => {
+      readFileMock.mockResolvedValue(changelogWithoutDepEntry);
+      getDependencyChangesForPackageMock.mockResolvedValue({
+        dependencyChanges: missingEntries,
+        prNumbers: ['100'],
+        versionChanged: true,
+      });
+      const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {
+        // Do nothing
+      });
+
+      await validate({
+        ...defaultOptions,
+        currentVersion: '2.0.0',
+        isReleaseCandidate: false,
+        checkDeps: true,
+        fix: true,
+        currentPr: '200',
+      });
+
+      // No ## [2.0.0] header exists, so entries should go to Unreleased
+      const writtenContent = writeFileMock.mock.calls[0][1];
+      const unreleasedIndex = writtenContent.indexOf('## [Unreleased]');
+      const bumpIndex = writtenContent.indexOf('Bump `@scope/b`');
+      expect(unreleasedIndex).not.toBe(-1);
+      expect(bumpIndex).not.toBe(-1);
+      expect(bumpIndex).toBeGreaterThan(unreleasedIndex);
+      expect(writtenContent).not.toContain('## [2.0.0]');
+      logSpy.mockRestore();
+    });
+
     it('falls back to currentPr when dependencyCheckResult has no prNumbers', async () => {
       readFileMock.mockResolvedValue(changelogWithoutDepEntry);
       getDependencyChangesForPackageMock.mockResolvedValue({

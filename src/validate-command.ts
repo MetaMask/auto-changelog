@@ -159,12 +159,19 @@ export async function validate({
           dependencyCheckResult.prNumbers.length > 0
             ? dependencyCheckResult.prNumbers
             : [currentPr];
+        // Mirror validate-changelog's fallback: only target the release section
+        // when versionChanged AND the release header actually exists. Otherwise
+        // entries go into Unreleased.
+        const hasReleaseHeader =
+          currentVersion !== undefined &&
+          changelogContent.includes(`## [${currentVersion}]`);
         await updateChangelogWithDependencies({
           changelogPath,
           dependencyChanges: error.missingEntries,
-          currentVersion: dependencyCheckResult?.versionChanged
-            ? currentVersion
-            : undefined,
+          currentVersion:
+            dependencyCheckResult?.versionChanged && hasReleaseHeader
+              ? currentVersion
+              : undefined,
           prNumbers,
           repoUrl,
           formatter,
