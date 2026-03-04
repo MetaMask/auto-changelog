@@ -173,7 +173,7 @@ export function parseChangelog({
       description,
       version: mostRecentRelease,
       prNumbers,
-      dependencyBump,
+      ...(dependencyBump != null && { dependencyBump }),
     });
     currentChangeEntry = undefined;
   }
