@@ -249,10 +249,11 @@ export async function validateChangelog({
   const dependencyChanges = dependencyCheckResult?.dependencyChanges;
   if (dependencyChanges && dependencyChanges.length > 0) {
     // Check the release section only when the package version was actually
-    // bumped (versionChanged). On a release branch where this package is NOT
-    // being released, entries belong in Unreleased.
+    // bumped (versionChanged) AND the release header exists. On a release
+    // branch where this package is NOT being released, entries belong in
+    // Unreleased. Fall back to Unreleased when the release section is missing.
     const changesSection =
-      dependencyCheckResult.versionChanged && currentVersion
+      dependencyCheckResult.versionChanged && currentVersion && releaseChanges
         ? releaseChanges
         : changelog.getUnreleasedChanges();
 

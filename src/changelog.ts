@@ -657,8 +657,10 @@ export default class Changelog {
     if (description !== undefined) {
       change.description = description;
     } else if (dependencyBump !== undefined) {
-      change.dependencyBump = dependencyBump;
       change.description = formatDependencyBumpDescription(dependencyBump);
+    }
+    if (dependencyBump !== undefined) {
+      change.dependencyBump = dependencyBump;
     }
     if (prNumbers !== undefined) {
       change.prNumbers = prNumbers;

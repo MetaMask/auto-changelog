@@ -1359,6 +1359,46 @@ describe('validateChangelog', () => {
       );
     });
 
+    it('should fall back to Unreleased when versionChanged is true but release header is missing', async () => {
+      // Scenario: versionChanged=true with currentVersion set, but no release
+      // section for that version exists yet. Entries in Unreleased should still
+      // be found instead of reporting everything as missing.
+      const changelogContent = outdent`
+        # Changelog
+        All notable changes to this project will be documented in this file.
+
+        The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+        and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+        ## [Unreleased]
+        ### Changed
+        - Bump \`@scope/b\` from \`1.0.0\` to \`2.0.0\` ([#123](${repoUrl}/pull/123))
+
+        [Unreleased]: ${repoUrl}/
+      `;
+
+      await expect(
+        validateChangelog({
+          changelogContent,
+          currentVersion: '2.0.0',
+          repoUrl,
+          isReleaseCandidate: false,
+          dependencyCheckResult: {
+            prNumbers: [],
+            versionChanged: true,
+            dependencyChanges: [
+              {
+                dependency: '@scope/b',
+                isBreaking: false,
+                oldVersion: '1.0.0',
+                newVersion: '2.0.0',
+              },
+            ],
+          },
+        }),
+      ).resolves.not.toThrow();
+    });
+
     it('should not validate dependency changes when none provided', async () => {
       await expect(
         validateChangelog({

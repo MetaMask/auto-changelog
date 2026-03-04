@@ -235,6 +235,7 @@ describe('Changelog', () => {
       const changes = changelog.getUnreleasedChanges();
       const entry = changes[ChangeCategory.Changed]?.[0];
       expect(entry?.description).toBe('Custom description');
+      expect(entry?.dependencyBump?.newVersion).toBe('2.0.0');
     });
 
     it('throws when version does not exist', () => {
