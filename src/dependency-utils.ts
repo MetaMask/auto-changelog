@@ -1,6 +1,5 @@
-import type { Change, ReleaseChanges } from './changelog';
+import type { Change, DependencyBump, ReleaseChanges } from './changelog';
 import { ChangeCategory } from './constants';
-import type { DependencyChange } from './dependency-types';
 
 /**
  * Result of checking for a changelog entry.
@@ -15,16 +14,16 @@ export type ChangelogEntryCheckResult = {
 };
 
 /**
- * Checks if a changelog entry exists for a dependency change using
+ * Finds a changelog entry for a dependency change using
  * structured `dependencyBump` data on Change objects.
  *
  * @param releaseChanges - The release changes to search in.
- * @param change - The dependency change to check for.
+ * @param change - The dependency change to find.
  * @returns Result indicating whether an entry exists and details about it.
  */
-export function hasChangelogEntry(
+export function findChangelogEntry(
   releaseChanges: ReleaseChanges,
-  change: DependencyChange,
+  change: DependencyBump,
 ): ChangelogEntryCheckResult {
   const changedEntries = releaseChanges[ChangeCategory.Changed] ?? [];
 
@@ -35,11 +34,14 @@ export function hasChangelogEntry(
       continue;
     }
 
-    if (bump.dependency !== change.dependency || bump.type !== change.type) {
+    if (
+      bump.dependency !== change.dependency ||
+      bump.isBreaking !== change.isBreaking
+    ) {
       continue;
     }
 
-    // Same dependency and type
+    // Same dependency and breaking status
     if (
       bump.oldVersion === change.oldVersion &&
       bump.newVersion === change.newVersion
@@ -48,7 +50,7 @@ export function hasChangelogEntry(
       return { hasExactMatch: true, existingEntry: entry, entryIndex: i };
     }
 
-    // Any-version match (same dep + type, different versions)
+    // Any-version match (same dep + breaking status, different versions)
     return { hasExactMatch: false, existingEntry: entry, entryIndex: i };
   }
 

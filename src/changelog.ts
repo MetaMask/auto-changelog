@@ -77,7 +77,7 @@ type ReleaseMetadata = {
  */
 export type DependencyBump = {
   dependency: string;
-  type: 'dependencies' | 'peerDependencies';
+  isBreaking: boolean;
   oldVersion: string;
   newVersion: string;
 };
@@ -424,7 +424,7 @@ function getReleaseLinkReferenceDefinitions(
  * @returns The formatted description string.
  */
 function formatDependencyBumpDescription(bump: DependencyBump): string {
-  const prefix = bump.type === 'peerDependencies' ? '**BREAKING:** ' : '';
+  const prefix = bump.isBreaking ? '**BREAKING:** ' : '';
   return `${prefix}Bump \`${bump.dependency}\` from \`${bump.oldVersion}\` to \`${bump.newVersion}\``;
 }
 
@@ -438,8 +438,23 @@ type AddReleaseOptions = {
 type AddChangeOptions = {
   addToStart?: boolean;
   category: ChangeCategory;
-  description?: string;
   version?: Version;
+  prNumbers?: string[];
+} & (
+  | {
+      description: string;
+    }
+  | {
+      description?: string;
+      dependencyBump: DependencyBump;
+    }
+);
+
+type UpdateChangeOptions = {
+  version?: Version;
+  category: ChangeCategory;
+  entryIndex: number;
+  description?: string;
   prNumbers?: string[];
   dependencyBump?: DependencyBump;
 };
@@ -548,28 +563,34 @@ export default class Changelog {
    * provided and no description is given, the description is auto-generated
    * from the bump data.
    */
-  addChange({
-    addToStart = true,
-    category,
-    description,
-    version,
-    prNumbers = [],
-    dependencyBump,
-  }: AddChangeOptions) {
+  addChange(options: AddChangeOptions) {
+    const {
+      addToStart = true,
+      category,
+      description,
+      version,
+      prNumbers = [],
+    } = options;
+
     if (!category) {
       throw new Error('Category required');
     } else if (!orderedChangeCategories.includes(category)) {
       throw new Error(`Unrecognized category: '${category}'`);
-    } else if (!description && !dependencyBump) {
-      throw new Error('Description required');
     } else if (version !== undefined && !this.#changes[version]) {
       throw new Error(`Specified release version does not exist: '${version}'`);
     }
 
-    // Auto-generate description from dependencyBump when not provided
-    let effectiveDescription = description ?? '';
-    if (!effectiveDescription && dependencyBump) {
-      effectiveDescription = formatDependencyBumpDescription(dependencyBump);
+    const dependencyBump =
+      'dependencyBump' in options ? options.dependencyBump : undefined;
+
+    let effectiveDescription: string;
+    if (dependencyBump !== undefined) {
+      effectiveDescription =
+        description ?? formatDependencyBumpDescription(dependencyBump);
+    } else if (description) {
+      effectiveDescription = description;
+    } else {
+      throw new Error('Description required');
     }
 
     const release = version
@@ -581,7 +602,7 @@ export default class Changelog {
       description: effectiveDescription,
       prNumbers,
     };
-    if (dependencyBump) {
+    if (dependencyBump !== undefined) {
       change.dependencyBump = dependencyBump;
     }
     releaseCategory[addToStart ? 'unshift' : 'push'](change);
@@ -608,44 +629,36 @@ export default class Changelog {
     description,
     prNumbers,
     dependencyBump,
-  }: {
-    version?: Version;
-    category: ChangeCategory;
-    entryIndex: number;
-    description?: string;
-    prNumbers?: string[];
-    dependencyBump?: DependencyBump;
-  }) {
+  }: UpdateChangeOptions) {
     const release = version
       ? this.#changes[version]
       : this.#changes[unreleased];
 
     if (!release) {
-      throw new Error(
-        `Specified release version does not exist: '${String(version)}'`,
-      );
+      const message = version
+        ? `Specified release version does not exist: '${version}'`
+        : `Could not find 'Unreleased' section`;
+      throw new Error(message);
     }
 
     const releaseCategory = release[category];
-    if (
-      !releaseCategory ||
-      entryIndex < 0 ||
-      entryIndex >= releaseCategory.length
-    ) {
+    if (!releaseCategory) {
       throw new Error(
-        `No change at index ${entryIndex} in category ${category}`,
+        `No '${category}' category in the ${version ?? 'Unreleased'} section`,
+      );
+    }
+    if (entryIndex < 0 || entryIndex >= releaseCategory.length) {
+      throw new Error(
+        `No change at index ${entryIndex} in category '${category}'`,
       );
     }
 
     const change = releaseCategory[entryIndex];
-    if (dependencyBump !== undefined) {
-      change.dependencyBump = dependencyBump;
-      // Auto-update the description to match the new dependencyBump data.
-      // Note: if both description and dependencyBump are provided,
-      // dependencyBump takes precedence for the description.
-      change.description = formatDependencyBumpDescription(dependencyBump);
-    } else if (description !== undefined) {
+    if (description !== undefined) {
       change.description = description;
+    } else if (dependencyBump !== undefined) {
+      change.dependencyBump = dependencyBump;
+      change.description = formatDependencyBumpDescription(dependencyBump);
     }
     if (prNumbers !== undefined) {
       change.prNumbers = prNumbers;

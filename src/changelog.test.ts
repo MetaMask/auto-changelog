@@ -82,7 +82,7 @@ describe('Changelog', () => {
         category: ChangeCategory.Changed,
         dependencyBump: {
           dependency: '@scope/b',
-          type: 'dependencies',
+          isBreaking: false,
           oldVersion: '1.0.0',
           newVersion: '2.0.0',
         },
@@ -100,7 +100,7 @@ describe('Changelog', () => {
         category: ChangeCategory.Changed,
         dependencyBump: {
           dependency: '@scope/b',
-          type: 'peerDependencies',
+          isBreaking: true,
           oldVersion: '1.0.0',
           newVersion: '2.0.0',
         },
@@ -118,6 +118,7 @@ describe('Changelog', () => {
       });
 
       expect(() => {
+        // @ts-expect-error — testing runtime guard for missing description
         changelog.addChange({
           category: ChangeCategory.Changed,
         });
@@ -179,7 +180,7 @@ describe('Changelog', () => {
         description: 'Bump `@scope/b` from `1.0.0` to `1.5.0`',
         dependencyBump: {
           dependency: '@scope/b',
-          type: 'dependencies',
+          isBreaking: false,
           oldVersion: '1.0.0',
           newVersion: '1.5.0',
         },
@@ -190,7 +191,7 @@ describe('Changelog', () => {
         entryIndex: 0,
         dependencyBump: {
           dependency: '@scope/b',
-          type: 'dependencies',
+          isBreaking: false,
           oldVersion: '1.0.0',
           newVersion: '2.0.0',
         },
@@ -202,6 +203,38 @@ describe('Changelog', () => {
         'Bump `@scope/b` from `1.0.0` to `2.0.0`',
       );
       expect(entry?.dependencyBump?.newVersion).toBe('2.0.0');
+    });
+
+    it('uses explicit description over dependencyBump when both provided', () => {
+      const changelog = new Changelog({
+        repoUrl: 'https://github.com/MetaMask/fake-repo',
+      });
+      changelog.addChange({
+        category: ChangeCategory.Changed,
+        description: 'Bump `@scope/b` from `1.0.0` to `1.5.0`',
+        dependencyBump: {
+          dependency: '@scope/b',
+          isBreaking: false,
+          oldVersion: '1.0.0',
+          newVersion: '1.5.0',
+        },
+      });
+
+      changelog.updateChange({
+        category: ChangeCategory.Changed,
+        entryIndex: 0,
+        description: 'Custom description',
+        dependencyBump: {
+          dependency: '@scope/b',
+          isBreaking: false,
+          oldVersion: '1.0.0',
+          newVersion: '2.0.0',
+        },
+      });
+
+      const changes = changelog.getUnreleasedChanges();
+      const entry = changes[ChangeCategory.Changed]?.[0];
+      expect(entry?.description).toBe('Custom description');
     });
 
     it('throws when version does not exist', () => {
@@ -232,7 +265,7 @@ describe('Changelog', () => {
           category: ChangeCategory.Changed,
           entryIndex: 5,
         });
-      }).toThrow('No change at index 5');
+      }).toThrow("No change at index 5 in category 'Changed'");
     });
 
     it('throws when entryIndex is negative', () => {
@@ -249,7 +282,7 @@ describe('Changelog', () => {
           category: ChangeCategory.Changed,
           entryIndex: -1,
         });
-      }).toThrow('No change at index -1');
+      }).toThrow("No change at index -1 in category 'Changed'");
     });
 
     it('throws when category has no entries', () => {
@@ -262,7 +295,7 @@ describe('Changelog', () => {
           category: ChangeCategory.Changed,
           entryIndex: 0,
         });
-      }).toThrow('No change at index 0');
+      }).toThrow("No 'Changed' category in the Unreleased section");
     });
 
     it('updates a change in a specific release version', () => {

@@ -1,7 +1,6 @@
-import type { Change, Formatter } from './changelog';
+import type { Change, DependencyBump, Formatter } from './changelog';
 import { ChangeCategory } from './constants';
-import type { DependencyChange } from './dependency-types';
-import { hasChangelogEntry } from './dependency-utils';
+import { findChangelogEntry } from './dependency-utils';
 import { readFile, writeFile } from './fs';
 import { parseChangelog } from './parse-changelog';
 
@@ -33,7 +32,7 @@ type UpdateChangelogWithDependenciesOptions = {
   /** Path to the changelog file. */
   changelogPath: string;
   /** Dependency changes to add. */
-  dependencyChanges: DependencyChange[];
+  dependencyChanges: DependencyBump[];
   /** Current version of the package (if being released). */
   currentVersion?: string;
   /** PR numbers to use in entries. */
@@ -102,7 +101,7 @@ export async function updateChangelogWithDependencies({
     ? changelog.getReleaseChanges(currentVersion)
     : changelog.getUnreleasedChanges();
 
-  const entriesToAdd: DependencyChange[] = [];
+  const entriesToAdd: DependencyBump[] = [];
   let hasUpdates = false;
 
   for (const change of dependencyChanges) {
@@ -111,7 +110,7 @@ export async function updateChangelogWithDependencies({
       continue;
     }
 
-    const entryCheck = hasChangelogEntry(changesSection, change);
+    const entryCheck = findChangelogEntry(changesSection, change);
     if (entryCheck.hasExactMatch) {
       continue;
     }
@@ -153,29 +152,27 @@ export async function updateChangelogWithDependencies({
     return changelogContent;
   }
 
-  // Add new entries: deps first, then peerDeps
-  // (since addToStart=true, peerDeps added last end up on top)
-  const deps = entriesToAdd.filter((entry) => entry.type === 'dependencies');
-  const peerDeps = entriesToAdd.filter(
-    (entry) => entry.type === 'peerDependencies',
-  );
+  // Add new entries: non-breaking first, then breaking
+  // (since addToStart=true, breaking added last end up on top)
+  const nonBreaking = entriesToAdd.filter((entry) => !entry.isBreaking);
+  const breaking = entriesToAdd.filter((entry) => entry.isBreaking);
 
   // Add in reverse order so they appear in correct order
-  for (let i = deps.length - 1; i >= 0; i--) {
+  for (let i = nonBreaking.length - 1; i >= 0; i--) {
     changelog.addChange({
       category: ChangeCategory.Changed,
       ...(currentVersion && { version: currentVersion }),
       prNumbers,
-      dependencyBump: deps[i],
+      dependencyBump: nonBreaking[i],
     });
   }
 
-  for (let i = peerDeps.length - 1; i >= 0; i--) {
+  for (let i = breaking.length - 1; i >= 0; i--) {
     changelog.addChange({
       category: ChangeCategory.Changed,
       ...(currentVersion && { version: currentVersion }),
       prNumbers,
-      dependencyBump: peerDeps[i],
+      dependencyBump: breaking[i],
     });
   }
 

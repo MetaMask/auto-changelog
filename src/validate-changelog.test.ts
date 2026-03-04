@@ -936,11 +936,11 @@ describe('validateChangelog', () => {
     });
   });
 
-  describe('dependency bump validation', () => {
+  describe('when dependencyCheckResult is given', () => {
     const repoUrl =
       'https://github.com/ExampleUsernameOrOrganization/ExampleRepository';
 
-    it('passes when dependency changes are found in changelog', async () => {
+    it('should pass when expected dependency entry is found', async () => {
       const changelogContent = outdent`
         # Changelog
         All notable changes to this project will be documented in this file.
@@ -960,12 +960,13 @@ describe('validateChangelog', () => {
           changelogContent,
           repoUrl,
           isReleaseCandidate: false,
-          dependencyResult: {
+          dependencyCheckResult: {
             prNumbers: [],
+            versionChanged: false,
             dependencyChanges: [
               {
                 dependency: '@scope/b',
-                type: 'dependencies',
+                isBreaking: false,
                 oldVersion: '1.0.0',
                 newVersion: '2.0.0',
               },
@@ -975,7 +976,7 @@ describe('validateChangelog', () => {
       ).resolves.not.toThrow();
     });
 
-    it('throws MissingDependencyEntriesError when dependency entry is missing', async () => {
+    it('should throw when expected dependency entry is missing', async () => {
       const changelogContent = outdent`
         # Changelog
         All notable changes to this project will be documented in this file.
@@ -993,12 +994,13 @@ describe('validateChangelog', () => {
           changelogContent,
           repoUrl,
           isReleaseCandidate: false,
-          dependencyResult: {
+          dependencyCheckResult: {
             prNumbers: [],
+            versionChanged: false,
             dependencyChanges: [
               {
                 dependency: '@scope/b',
-                type: 'dependencies',
+                isBreaking: false,
                 oldVersion: '1.0.0',
                 newVersion: '2.0.0',
               },
@@ -1008,7 +1010,7 @@ describe('validateChangelog', () => {
       ).rejects.toThrow('Missing changelog entries for dependency bumps');
     });
 
-    it('validates peerDependency entry with BREAKING prefix', async () => {
+    it('should pass when expected peerDependency entry with BREAKING prefix is found', async () => {
       const changelogContent = outdent`
         # Changelog
         All notable changes to this project will be documented in this file.
@@ -1028,12 +1030,13 @@ describe('validateChangelog', () => {
           changelogContent,
           repoUrl,
           isReleaseCandidate: false,
-          dependencyResult: {
+          dependencyCheckResult: {
             prNumbers: [],
+            versionChanged: false,
             dependencyChanges: [
               {
                 dependency: '@scope/b',
-                type: 'peerDependencies',
+                isBreaking: true,
                 oldVersion: '1.0.0',
                 newVersion: '2.0.0',
               },
@@ -1043,7 +1046,7 @@ describe('validateChangelog', () => {
       ).resolves.not.toThrow();
     });
 
-    it('fails when peerDependency entry lacks BREAKING prefix', async () => {
+    it('should throw when peerDependency entry lacks expected BREAKING prefix', async () => {
       const changelogContent = outdent`
         # Changelog
         All notable changes to this project will be documented in this file.
@@ -1063,22 +1066,25 @@ describe('validateChangelog', () => {
           changelogContent,
           repoUrl,
           isReleaseCandidate: false,
-          dependencyResult: {
+          dependencyCheckResult: {
             prNumbers: [],
+            versionChanged: false,
             dependencyChanges: [
               {
                 dependency: '@scope/b',
-                type: 'peerDependencies',
+                isBreaking: true,
                 oldVersion: '1.0.0',
                 newVersion: '2.0.0',
               },
             ],
           },
         }),
-      ).rejects.toThrow('Missing changelog entries for dependency bumps');
+      ).rejects.toThrow(
+        'has a changelog entry but with **BREAKING:** prefix (peerDependency) is expected',
+      );
     });
 
-    it('validates entry in release version section when versionBump provided', async () => {
+    it('should validate entry in release version section when isReleaseCandidate is true', async () => {
       const changelogContent = outdent`
         # Changelog
         All notable changes to this project will be documented in this file.
@@ -1101,24 +1107,186 @@ describe('validateChangelog', () => {
           changelogContent,
           currentVersion: '2.0.0',
           repoUrl,
-          isReleaseCandidate: false,
-          dependencyResult: {
+          isReleaseCandidate: true,
+          dependencyCheckResult: {
             prNumbers: [],
+            versionChanged: true,
             dependencyChanges: [
               {
                 dependency: '@scope/b',
-                type: 'dependencies',
+                isBreaking: false,
                 oldVersion: '1.0.0',
                 newVersion: '2.0.0',
               },
             ],
-            versionBump: '2.0.0',
           },
         }),
       ).resolves.not.toThrow();
     });
 
-    it('treats all entries as missing when Unreleased section is empty', async () => {
+    it('should throw when expected dependency entry is missing from release section (isReleaseCandidate)', async () => {
+      const changelogContent = outdent`
+        # Changelog
+        All notable changes to this project will be documented in this file.
+
+        The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+        and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+        ## [Unreleased]
+
+        ## [2.0.0]
+
+        [Unreleased]: ${repoUrl}/compare/v2.0.0...HEAD
+        [2.0.0]: ${repoUrl}/releases/tag/v2.0.0
+      `;
+
+      await expect(
+        validateChangelog({
+          changelogContent,
+          currentVersion: '2.0.0',
+          repoUrl,
+          isReleaseCandidate: true,
+          dependencyCheckResult: {
+            prNumbers: [],
+            versionChanged: true,
+            dependencyChanges: [
+              {
+                dependency: '@scope/b',
+                isBreaking: false,
+                oldVersion: '1.0.0',
+                newVersion: '2.0.0',
+              },
+            ],
+          },
+        }),
+      ).rejects.toThrow('Missing changelog entries for dependency bumps');
+    });
+
+    it('should pass when peerDependency entry with BREAKING prefix is in release section (isReleaseCandidate)', async () => {
+      const changelogContent = outdent`
+        # Changelog
+        All notable changes to this project will be documented in this file.
+
+        The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+        and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+        ## [Unreleased]
+
+        ## [2.0.0]
+        ### Changed
+        - **BREAKING:** Bump \`@scope/b\` from \`1.0.0\` to \`2.0.0\` ([#123](${repoUrl}/pull/123))
+
+        [Unreleased]: ${repoUrl}/compare/v2.0.0...HEAD
+        [2.0.0]: ${repoUrl}/releases/tag/v2.0.0
+      `;
+
+      await expect(
+        validateChangelog({
+          changelogContent,
+          currentVersion: '2.0.0',
+          repoUrl,
+          isReleaseCandidate: true,
+          dependencyCheckResult: {
+            prNumbers: [],
+            versionChanged: true,
+            dependencyChanges: [
+              {
+                dependency: '@scope/b',
+                isBreaking: true,
+                oldVersion: '1.0.0',
+                newVersion: '2.0.0',
+              },
+            ],
+          },
+        }),
+      ).resolves.not.toThrow();
+    });
+
+    it('should throw when peerDependency entry lacks BREAKING prefix in release section (isReleaseCandidate)', async () => {
+      const changelogContent = outdent`
+        # Changelog
+        All notable changes to this project will be documented in this file.
+
+        The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+        and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+        ## [Unreleased]
+
+        ## [2.0.0]
+        ### Changed
+        - Bump \`@scope/b\` from \`1.0.0\` to \`2.0.0\` ([#123](${repoUrl}/pull/123))
+
+        [Unreleased]: ${repoUrl}/compare/v2.0.0...HEAD
+        [2.0.0]: ${repoUrl}/releases/tag/v2.0.0
+      `;
+
+      await expect(
+        validateChangelog({
+          changelogContent,
+          currentVersion: '2.0.0',
+          repoUrl,
+          isReleaseCandidate: true,
+          dependencyCheckResult: {
+            prNumbers: [],
+            versionChanged: true,
+            dependencyChanges: [
+              {
+                dependency: '@scope/b',
+                isBreaking: true,
+                oldVersion: '1.0.0',
+                newVersion: '2.0.0',
+              },
+            ],
+          },
+        }),
+      ).rejects.toThrow(
+        'has a changelog entry but with **BREAKING:** prefix (peerDependency) is expected',
+      );
+    });
+
+    it('should throw when regular dependency has incorrect BREAKING prefix in release section (isReleaseCandidate)', async () => {
+      const changelogContent = outdent`
+        # Changelog
+        All notable changes to this project will be documented in this file.
+
+        The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+        and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+        ## [Unreleased]
+
+        ## [2.0.0]
+        ### Changed
+        - **BREAKING:** Bump \`@scope/b\` from \`1.0.0\` to \`2.0.0\` ([#123](${repoUrl}/pull/123))
+
+        [Unreleased]: ${repoUrl}/compare/v2.0.0...HEAD
+        [2.0.0]: ${repoUrl}/releases/tag/v2.0.0
+      `;
+
+      await expect(
+        validateChangelog({
+          changelogContent,
+          currentVersion: '2.0.0',
+          repoUrl,
+          isReleaseCandidate: true,
+          dependencyCheckResult: {
+            prNumbers: [],
+            versionChanged: true,
+            dependencyChanges: [
+              {
+                dependency: '@scope/b',
+                isBreaking: false,
+                oldVersion: '1.0.0',
+                newVersion: '2.0.0',
+              },
+            ],
+          },
+        }),
+      ).rejects.toThrow(
+        'has a changelog entry but without **BREAKING:** prefix (regular dependency) is expected',
+      );
+    });
+
+    it('should treat all entries as missing when Unreleased section is empty', async () => {
       const changelogContent = outdent`
         # Changelog
         All notable changes to this project will be documented in this file.
@@ -1136,12 +1304,13 @@ describe('validateChangelog', () => {
           changelogContent,
           repoUrl,
           isReleaseCandidate: false,
-          dependencyResult: {
+          dependencyCheckResult: {
             prNumbers: [],
+            versionChanged: false,
             dependencyChanges: [
               {
                 dependency: '@scope/b',
-                type: 'dependencies',
+                isBreaking: false,
                 oldVersion: '1.0.0',
                 newVersion: '2.0.0',
               },
@@ -1151,7 +1320,7 @@ describe('validateChangelog', () => {
       ).rejects.toThrow('Missing changelog entries for dependency bumps');
     });
 
-    it('rejects regular dependency entry that has BREAKING prefix', async () => {
+    it('should throw when regular dependency entry has incorrect BREAKING prefix', async () => {
       const changelogContent = outdent`
         # Changelog
         All notable changes to this project will be documented in this file.
@@ -1172,22 +1341,25 @@ describe('validateChangelog', () => {
           changelogContent,
           repoUrl,
           isReleaseCandidate: false,
-          dependencyResult: {
+          dependencyCheckResult: {
             prNumbers: [],
+            versionChanged: false,
             dependencyChanges: [
               {
                 dependency: '@scope/b',
-                type: 'dependencies',
+                isBreaking: false,
                 oldVersion: '1.0.0',
                 newVersion: '2.0.0',
               },
             ],
           },
         }),
-      ).rejects.toThrow('Missing changelog entries for dependency bumps');
+      ).rejects.toThrow(
+        'has a changelog entry but without **BREAKING:** prefix (regular dependency) is expected',
+      );
     });
 
-    it('does not validate dependency changes when none provided', async () => {
+    it('should not validate dependency changes when none provided', async () => {
       await expect(
         validateChangelog({
           changelogContent: emptyChangelog,

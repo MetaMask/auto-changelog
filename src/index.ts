@@ -6,8 +6,7 @@ export {
 export {
   getDependencyChangesForPackage,
   type DependencyCheckResult,
-} from './check-dependency-bumps';
-export { type DependencyChange } from './dependency-types';
+} from './get-dependency-changes';
 export { createEmptyChangelog } from './init';
 export { parseChangelog } from './parse-changelog';
 export { updateChangelog } from './update-changelog';

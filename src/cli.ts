@@ -13,7 +13,7 @@ import { createEmptyChangelog } from './init';
 import { getRepositoryUrl } from './repo';
 import { PackageRename } from './shared-types';
 import { updateChangelog } from './update-changelog';
-import { validate } from './validate-cli';
+import { validate } from './validate-command';
 
 const updateEpilog = `New commits will be added to the "${unreleased}" section (or \
 to the section for the current release if the '--rc' flag is used) in reverse \
@@ -315,7 +315,7 @@ async function main() {
           .option('baseBranch', {
             alias: 'b',
             describe:
-              'Base branch reference to compare against (defaults to <remote>/main).',
+              "Base branch reference to compare against (defaults to <remote>/main). For stacked PRs (branch off a branch), set this to the parent branch so only the current branch's changes are checked.",
             type: 'string',
           })
           .option('currentPr', {

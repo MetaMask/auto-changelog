@@ -1,23 +1,7 @@
-import execa from 'execa';
 import path from 'path';
 
-import type { DependencyChange } from './dependency-types';
-
-/**
- * Runs a command and returns its stdout.
- *
- * @param command - The command to run.
- * @param args - Arguments to pass to the command.
- * @param projectRoot - Working directory for the command.
- * @returns The stdout output.
- */
-async function getStdoutFromCommand(
-  command: string,
-  args: string[],
-  projectRoot: string,
-): Promise<string> {
-  return (await execa(command, args, { cwd: projectRoot })).stdout;
-}
+import type { DependencyBump } from './changelog';
+import { runCommand } from './run-command';
 
 /**
  * Gets the content of a file at a specific git reference.
@@ -33,40 +17,31 @@ async function getFileAtRef(
   projectRoot: string,
 ): Promise<string | null> {
   try {
-    return await getStdoutFromCommand(
-      'git',
-      ['show', `${ref}:${filePath}`],
-      projectRoot,
-    );
+    return await runCommand('git', ['show', `${ref}:${filePath}`], {
+      cwd: projectRoot,
+    });
   } catch {
     return null;
   }
 }
 
 /**
- * Gets the repo-relative path for a file.
+ * Gets the cwd-relative path for a file, suitable for use with git commands
+ * run from `projectRoot`.
  *
  * @param absolutePath - Absolute path to the file.
- * @param projectRoot - Working directory for the git command.
- * @returns The repo-relative path.
+ * @param projectRoot - Working directory for git commands.
+ * @returns The relative path (e.g., `./package.json`).
  */
-async function getRepoRelativePath(
-  absolutePath: string,
-  projectRoot: string,
-): Promise<string> {
-  const topLevel = await getStdoutFromCommand(
-    'git',
-    ['rev-parse', '--show-toplevel'],
-    projectRoot,
-  );
-  return path.relative(topLevel, absolutePath);
+function getRelativePath(absolutePath: string, projectRoot: string): string {
+  return `./${path.relative(projectRoot, absolutePath)}`;
 }
 
 /**
  * Minimal type for the parts of package.json we care about.
  */
 type PackageJson = {
-  version?: string;
+  version: string;
   dependencies?: Record<string, string>;
   peerDependencies?: Record<string, string>;
 };
@@ -76,15 +51,15 @@ type PackageJson = {
  */
 export type DependencyCheckResult = {
   /** Dependency changes detected. */
-  dependencyChanges: DependencyChange[];
-  /** New version if the package version was bumped. */
-  versionBump?: string;
+  dependencyChanges: DependencyBump[];
   /** PR numbers extracted from commit history for the changed file. */
   prNumbers: string[];
+  /** Whether the package's own version changed between the two refs. */
+  versionChanged: boolean;
 };
 
 /**
- * Compare two package.json objects to find dependency changes.
+ * Find dependency changes between two package.json objects.
  * Only examines 'dependencies' and 'peerDependencies' — devDependencies
  * and optionalDependencies are excluded.
  *
@@ -94,13 +69,13 @@ export type DependencyCheckResult = {
  *
  * @param oldPkg - The old package.json content.
  * @param newPkg - The new package.json content.
- * @returns Dependency changes and version bump info.
+ * @returns Array of dependency changes found.
  */
-function compareDependencies(
+function findDependencyChangesBetweenPackageManifests(
   oldPkg: PackageJson,
   newPkg: PackageJson,
-): { dependencyChanges: DependencyChange[]; versionBump?: string } {
-  const dependencyChanges: DependencyChange[] = [];
+): DependencyBump[] {
+  const dependencyChanges: DependencyBump[] = [];
   const sections: ('dependencies' | 'peerDependencies')[] = [
     'dependencies',
     'peerDependencies',
@@ -115,7 +90,7 @@ function compareDependencies(
       if (oldVersion !== undefined && oldVersion !== newVersion) {
         dependencyChanges.push({
           dependency: dep,
-          type: section,
+          isBreaking: section === 'peerDependencies',
           oldVersion,
           newVersion,
         });
@@ -123,12 +98,7 @@ function compareDependencies(
     }
   }
 
-  const versionBump =
-    newPkg.version && oldPkg.version !== newPkg.version
-      ? newPkg.version
-      : undefined;
-
-  return { dependencyChanges, versionBump };
+  return dependencyChanges;
 }
 
 /**
@@ -147,10 +117,10 @@ async function getPrNumbersForFileChanges(
   projectRoot: string,
 ): Promise<string[]> {
   try {
-    const log = await getStdoutFromCommand(
+    const log = await runCommand(
       'git',
       ['log', '--format=%s', `${fromRef}..${toRef}`, '--', filePath],
-      projectRoot,
+      { cwd: projectRoot },
     );
     if (!log) {
       return [];
@@ -183,6 +153,10 @@ type GetDependencyChangesOptions = {
   /**
    * Base branch reference for auto-detection (defaults to '<remote>/main').
    * Only used when `fromRef` is not provided, to compute the merge base.
+   *
+   * For stacked PRs (branch created off another feature branch), set this
+   * to the parent branch so that only the current branch's dependency
+   * changes are detected.
    */
   baseBranch?: string;
 };
@@ -197,7 +171,7 @@ type GetDependencyChangesOptions = {
  * @param options.toRef - Ending git reference (defaults to HEAD).
  * @param options.remote - Remote name for auto-detection.
  * @param options.baseBranch - Base branch for auto-detection (only used when
- * fromRef is not provided).
+ * fromRef is not provided). For stacked PRs, set this to the parent branch.
  * @returns Dependency check result, or null if on base branch.
  */
 export async function getDependencyChangesForPackage({
@@ -210,20 +184,19 @@ export async function getDependencyChangesForPackage({
   const workingDir = path.dirname(manifestPath);
   let actualFromRef = fromRef;
 
-  // Auto-detect fromRef if not provided
+  // Auto-detect fromRef using merge-base against baseBranch.
+  // Note: for stacked PRs (branch off a branch), the merge-base with main
+  // includes changes from the parent branch. Use --baseBranch to point to
+  // the parent branch in that case.
   if (!actualFromRef) {
     // Compare HEAD SHA to base branch SHA (avoids "main" vs "origin/main" bug)
     try {
-      const headSha = await getStdoutFromCommand(
-        'git',
-        ['rev-parse', 'HEAD'],
-        workingDir,
-      );
-      const baseSha = await getStdoutFromCommand(
-        'git',
-        ['rev-parse', baseBranch],
-        workingDir,
-      );
+      const headSha = await runCommand('git', ['rev-parse', 'HEAD'], {
+        cwd: workingDir,
+      });
+      const baseSha = await runCommand('git', ['rev-parse', baseBranch], {
+        cwd: workingDir,
+      });
 
       if (headSha === baseSha) {
         return null;
@@ -234,10 +207,10 @@ export async function getDependencyChangesForPackage({
     }
 
     try {
-      actualFromRef = await getStdoutFromCommand(
+      actualFromRef = await runCommand(
         'git',
         ['merge-base', 'HEAD', baseBranch],
-        workingDir,
+        { cwd: workingDir },
       );
     } catch {
       // Could not find merge base
@@ -245,8 +218,8 @@ export async function getDependencyChangesForPackage({
     }
   }
 
-  // Get repo-relative path for git show
-  const relativePath = await getRepoRelativePath(manifestPath, workingDir);
+  // Get cwd-relative path for git show
+  const relativePath = getRelativePath(manifestPath, workingDir);
 
   // Get file contents at both refs
   const oldContent = await getFileAtRef(
@@ -256,7 +229,7 @@ export async function getDependencyChangesForPackage({
   );
   if (oldContent === null) {
     // New package — no previous version to compare against
-    return { dependencyChanges: [], versionBump: undefined, prNumbers: [] };
+    return { dependencyChanges: [], prNumbers: [], versionChanged: true };
   }
 
   const newContent = await getFileAtRef(relativePath, toRef, workingDir);
@@ -279,7 +252,7 @@ export async function getDependencyChangesForPackage({
     throw new Error(`Could not parse ${relativePath} at ref ${toRef} as JSON`);
   }
 
-  const { dependencyChanges, versionBump } = compareDependencies(
+  const dependencyChanges = findDependencyChangesBetweenPackageManifests(
     oldPkg,
     newPkg,
   );
@@ -292,5 +265,7 @@ export async function getDependencyChangesForPackage({
     workingDir,
   );
 
-  return { dependencyChanges, versionBump, prNumbers };
+  const versionChanged = oldPkg.version !== newPkg.version;
+
+  return { dependencyChanges, prNumbers, versionChanged };
 }

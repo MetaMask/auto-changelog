@@ -3,8 +3,8 @@ import os from 'os';
 import _outdent from 'outdent';
 import path from 'path';
 
+import type { DependencyBump } from './changelog';
 import { updateChangelogWithDependencies } from './dependency-changelog';
-import type { DependencyChange } from './dependency-types';
 import { readFile, writeFile } from './fs';
 
 const outdent = _outdent({ trimTrailingNewline: false });
@@ -56,10 +56,10 @@ describe('updateChangelogWithDependencies', () => {
       `),
     );
 
-    const dependencyChanges: DependencyChange[] = [
+    const dependencyChanges: DependencyBump[] = [
       {
         dependency: '@scope/b',
-        type: 'dependencies',
+        isBreaking: false,
         oldVersion: '1.0.0',
         newVersion: '2.0.0',
       },
@@ -97,10 +97,10 @@ describe('updateChangelogWithDependencies', () => {
       `),
     );
 
-    const dependencyChanges: DependencyChange[] = [
+    const dependencyChanges: DependencyBump[] = [
       {
         dependency: '@scope/b',
-        type: 'peerDependencies',
+        isBreaking: true,
         oldVersion: '1.0.0',
         newVersion: '2.0.0',
       },
@@ -140,10 +140,10 @@ describe('updateChangelogWithDependencies', () => {
       `),
     );
 
-    const dependencyChanges: DependencyChange[] = [
+    const dependencyChanges: DependencyBump[] = [
       {
         dependency: '@scope/b',
-        type: 'dependencies',
+        isBreaking: false,
         oldVersion: '1.5.0',
         newVersion: '2.0.0',
       },
@@ -187,10 +187,10 @@ describe('updateChangelogWithDependencies', () => {
       `),
     );
 
-    const dependencyChanges: DependencyChange[] = [
+    const dependencyChanges: DependencyBump[] = [
       {
         dependency: '@scope/b',
-        type: 'dependencies',
+        isBreaking: false,
         oldVersion: '1.0.0',
         newVersion: '2.0.0',
       },
@@ -240,10 +240,10 @@ describe('updateChangelogWithDependencies', () => {
       `),
     );
 
-    const dependencyChanges: DependencyChange[] = [
+    const dependencyChanges: DependencyBump[] = [
       {
         dependency: '@scope/b',
-        type: 'peerDependencies',
+        isBreaking: true,
         oldVersion: '1.0.0',
         newVersion: '2.0.0',
       },
@@ -290,10 +290,10 @@ describe('updateChangelogWithDependencies', () => {
       `),
     );
 
-    const dependencyChanges: DependencyChange[] = [
+    const dependencyChanges: DependencyBump[] = [
       {
         dependency: '@scope/b',
-        type: 'dependencies',
+        isBreaking: false,
         oldVersion: '1.0.0',
         newVersion: '2.0.0',
       },
@@ -323,16 +323,16 @@ describe('updateChangelogWithDependencies', () => {
       `),
     );
 
-    const dependencyChanges: DependencyChange[] = [
+    const dependencyChanges: DependencyBump[] = [
       {
         dependency: '@scope/b',
-        type: 'dependencies',
+        isBreaking: false,
         oldVersion: '1.0.0',
         newVersion: '2.0.0',
       },
       {
         dependency: '@scope/c',
-        type: 'peerDependencies',
+        isBreaking: true,
         oldVersion: '1.0.0',
         newVersion: '2.0.0',
       },
@@ -371,16 +371,16 @@ describe('updateChangelogWithDependencies', () => {
       `),
     );
 
-    const dependencyChanges: DependencyChange[] = [
+    const dependencyChanges: DependencyBump[] = [
       {
         dependency: '@scope/b',
-        type: 'dependencies',
+        isBreaking: false,
         oldVersion: '1.0.0',
         newVersion: '2.0.0',
       },
       {
         dependency: '@scope/c',
-        type: 'dependencies',
+        isBreaking: false,
         oldVersion: '1.0.0',
         newVersion: '2.0.0',
       },
@@ -419,10 +419,10 @@ describe('updateChangelogWithDependencies', () => {
       `),
     );
 
-    const dependencyChanges: DependencyChange[] = [
+    const dependencyChanges: DependencyBump[] = [
       {
         dependency: 'lodash',
-        type: 'dependencies',
+        isBreaking: false,
         oldVersion: '4.17.20',
         newVersion: '4.17.21',
       },
@@ -452,10 +452,10 @@ describe('updateChangelogWithDependencies', () => {
   it('throws error when changelog does not exist', async () => {
     const nonExistentPath = path.join(tempDir, 'nonexistent', 'CHANGELOG.md');
 
-    const dependencyChanges: DependencyChange[] = [
+    const dependencyChanges: DependencyBump[] = [
       {
         dependency: '@scope/b',
-        type: 'dependencies',
+        isBreaking: false,
         oldVersion: '1.0.0',
         newVersion: '2.0.0',
       },
@@ -485,10 +485,10 @@ describe('updateChangelogWithDependencies', () => {
 
     await writeFile(changelogPath, initialChangelog);
 
-    const dependencyChanges: DependencyChange[] = [
+    const dependencyChanges: DependencyBump[] = [
       {
         dependency: '@scope/b',
-        type: 'dependencies',
+        isBreaking: false,
         oldVersion: '1.0.0',
         newVersion: '2.0.0',
       },
@@ -521,18 +521,18 @@ describe('updateChangelogWithDependencies', () => {
       `),
     );
 
-    const dependencyChanges: DependencyChange[] = [
+    const dependencyChanges: DependencyBump[] = [
       // This one needs updating (version changed)
       {
         dependency: '@scope/b',
-        type: 'dependencies',
+        isBreaking: false,
         oldVersion: '1.5.0',
         newVersion: '2.0.0',
       },
       // This one is completely new
       {
         dependency: '@scope/c',
-        type: 'dependencies',
+        isBreaking: false,
         oldVersion: '1.0.0',
         newVersion: '2.0.0',
       },
@@ -571,10 +571,10 @@ describe('updateChangelogWithDependencies', () => {
       `),
     );
 
-    const dependencyChanges: DependencyChange[] = [
+    const dependencyChanges: DependencyBump[] = [
       {
         dependency: '@scope/b',
-        type: 'dependencies',
+        isBreaking: false,
         oldVersion: '1.0.0',
         newVersion: '2.0.0',
       },
@@ -623,7 +623,7 @@ describe('updateChangelogWithDependencies', () => {
       dependencyChanges: [
         {
           dependency: '@scope/b',
-          type: 'peerDependencies',
+          isBreaking: true,
           oldVersion: '1.0.0',
           newVersion: '3.0.0', // Updated version
         },
@@ -665,7 +665,7 @@ describe('updateChangelogWithDependencies', () => {
       dependencyChanges: [
         {
           dependency: '@scope/b',
-          type: 'peerDependencies',
+          isBreaking: true,
           oldVersion: '1.0.0',
           newVersion: '2.0.0', // New target version
         },

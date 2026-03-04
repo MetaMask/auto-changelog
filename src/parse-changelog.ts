@@ -19,7 +19,7 @@ import { PackageRename } from './shared-types';
  * @param description - The change description to parse.
  * @returns A DependencyBump if the description matches, undefined otherwise.
  */
-function parseDependencyBumpDescription(
+function parsePossibleDependencyBumpDescription(
   description: string,
 ): DependencyBump | undefined {
   const match = description.match(
@@ -30,7 +30,7 @@ function parseDependencyBumpDescription(
   }
   return {
     dependency: match[2],
-    type: match[1] ? 'peerDependencies' : 'dependencies',
+    isBreaking: Boolean(match[1]),
     oldVersion: match[3],
     newVersion: match[4],
   };
@@ -165,7 +165,7 @@ export function parseChangelog({
           prNumbers: [],
         };
 
-    const dependencyBump = parseDependencyBumpDescription(description);
+    const dependencyBump = parsePossibleDependencyBumpDescription(description);
 
     changelog.addChange({
       addToStart: false,

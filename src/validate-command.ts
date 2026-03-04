@@ -1,13 +1,13 @@
 import { Formatter } from './changelog';
-import {
-  getDependencyChangesForPackage,
-  type DependencyCheckResult,
-} from './check-dependency-bumps';
 import { exitWithError, saveChangelog } from './cli-utils';
 import { Version } from './constants';
 import { updateChangelogWithDependencies } from './dependency-changelog';
 import { readFile } from './fs';
 import { generateDiff } from './generate-diff';
+import {
+  getDependencyChangesForPackage,
+  type DependencyCheckResult,
+} from './get-dependency-changes';
 import { PackageRename } from './shared-types';
 import {
   ChangelogFormattingError,
@@ -109,7 +109,7 @@ export async function validate({
 }: ValidateOptions) {
   const changelogContent = await readFile(changelogPath);
 
-  let dependencyResult: DependencyCheckResult | undefined;
+  let dependencyCheckResult: DependencyCheckResult | undefined;
   if (checkDeps) {
     const result = await getDependencyChangesForPackage({
       manifestPath,
@@ -126,7 +126,7 @@ export async function validate({
       );
     }
 
-    dependencyResult = result;
+    dependencyCheckResult = result;
   }
 
   try {
@@ -139,7 +139,7 @@ export async function validate({
       formatter,
       packageRename,
       ensureValidPrLinksPresent,
-      dependencyResult,
+      dependencyCheckResult,
     });
     return undefined;
   } catch (error) {
@@ -155,13 +155,16 @@ export async function validate({
     } else if (error instanceof MissingDependencyEntriesError) {
       if (fix && currentPr) {
         const prNumbers =
-          dependencyResult?.prNumbers && dependencyResult.prNumbers.length > 0
-            ? dependencyResult.prNumbers
+          dependencyCheckResult?.prNumbers &&
+          dependencyCheckResult.prNumbers.length > 0
+            ? dependencyCheckResult.prNumbers
             : [currentPr];
         await updateChangelogWithDependencies({
           changelogPath,
           dependencyChanges: error.missingEntries,
-          currentVersion: dependencyResult?.versionBump,
+          currentVersion: dependencyCheckResult?.versionChanged
+            ? currentVersion
+            : undefined,
           prNumbers,
           repoUrl,
           formatter,

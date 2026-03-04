@@ -1,11 +1,10 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import type { Change, DependencyBump } from './changelog';
 import { ChangeCategory } from './constants';
-import type { DependencyChange } from './dependency-types';
-import { hasChangelogEntry } from './dependency-utils';
+import { findChangelogEntry } from './dependency-utils';
 
 describe('dependency-utils', () => {
-  describe('hasChangelogEntry', () => {
+  describe('findChangelogEntry', () => {
     const createReleaseChanges = (
       changes: {
         description: string;
@@ -28,21 +27,21 @@ describe('dependency-utils', () => {
             description: 'Bump `@scope/b` from `1.0.0` to `2.0.0`',
             dependencyBump: {
               dependency: '@scope/b',
-              type: 'dependencies',
+              isBreaking: false,
               oldVersion: '1.0.0',
               newVersion: '2.0.0',
             },
           },
         ]);
 
-        const change: DependencyChange = {
+        const change: DependencyBump = {
           dependency: '@scope/b',
-          type: 'dependencies',
+          isBreaking: false,
           oldVersion: '1.0.0',
           newVersion: '2.0.0',
         };
 
-        const result = hasChangelogEntry(releaseChanges, change);
+        const result = findChangelogEntry(releaseChanges, change);
 
         expect(result.hasExactMatch).toBe(true);
         expect(result.existingEntry?.dependencyBump?.dependency).toBe(
@@ -58,26 +57,24 @@ describe('dependency-utils', () => {
               '**BREAKING:** Bump `@scope/b` from `1.0.0` to `2.0.0`',
             dependencyBump: {
               dependency: '@scope/b',
-              type: 'peerDependencies',
+              isBreaking: true,
               oldVersion: '1.0.0',
               newVersion: '2.0.0',
             },
           },
         ]);
 
-        const change: DependencyChange = {
+        const change: DependencyBump = {
           dependency: '@scope/b',
-          type: 'peerDependencies',
+          isBreaking: true,
           oldVersion: '1.0.0',
           newVersion: '2.0.0',
         };
 
-        const result = hasChangelogEntry(releaseChanges, change);
+        const result = findChangelogEntry(releaseChanges, change);
 
         expect(result.hasExactMatch).toBe(true);
-        expect(result.existingEntry?.dependencyBump?.type).toBe(
-          'peerDependencies',
-        );
+        expect(result.existingEntry?.dependencyBump?.isBreaking).toBe(true);
         expect(result.entryIndex).toBe(0);
       });
 
@@ -87,21 +84,21 @@ describe('dependency-utils', () => {
             description: 'Bump `@scope/b` from `1.0.0` to `2.0.0`',
             dependencyBump: {
               dependency: '@scope/b',
-              type: 'dependencies',
+              isBreaking: false,
               oldVersion: '1.0.0',
               newVersion: '2.0.0',
             },
           },
         ]);
 
-        const change: DependencyChange = {
+        const change: DependencyBump = {
           dependency: '@scope/b',
-          type: 'peerDependencies',
+          isBreaking: true,
           oldVersion: '1.0.0',
           newVersion: '2.0.0',
         };
 
-        const result = hasChangelogEntry(releaseChanges, change);
+        const result = findChangelogEntry(releaseChanges, change);
 
         expect(result.hasExactMatch).toBe(false);
       });
@@ -113,21 +110,21 @@ describe('dependency-utils', () => {
               '**BREAKING:** Bump `@scope/b` from `1.0.0` to `2.0.0`',
             dependencyBump: {
               dependency: '@scope/b',
-              type: 'peerDependencies',
+              isBreaking: true,
               oldVersion: '1.0.0',
               newVersion: '2.0.0',
             },
           },
         ]);
 
-        const change: DependencyChange = {
+        const change: DependencyBump = {
           dependency: '@scope/b',
-          type: 'dependencies',
+          isBreaking: false,
           oldVersion: '1.0.0',
           newVersion: '2.0.0',
         };
 
-        const result = hasChangelogEntry(releaseChanges, change);
+        const result = findChangelogEntry(releaseChanges, change);
 
         expect(result.hasExactMatch).toBe(false);
       });
@@ -138,21 +135,21 @@ describe('dependency-utils', () => {
             description: 'Bump `@scope/package-name` from `1.0.0` to `2.0.0`',
             dependencyBump: {
               dependency: '@scope/package-name',
-              type: 'dependencies',
+              isBreaking: false,
               oldVersion: '1.0.0',
               newVersion: '2.0.0',
             },
           },
         ]);
 
-        const change: DependencyChange = {
+        const change: DependencyBump = {
           dependency: '@scope/package-name',
-          type: 'dependencies',
+          isBreaking: false,
           oldVersion: '1.0.0',
           newVersion: '2.0.0',
         };
 
-        const result = hasChangelogEntry(releaseChanges, change);
+        const result = findChangelogEntry(releaseChanges, change);
 
         expect(result.hasExactMatch).toBe(true);
       });
@@ -163,21 +160,21 @@ describe('dependency-utils', () => {
             description: 'Bump `@scope/b` from `1.0.0-beta.1` to `2.0.0-rc.1`',
             dependencyBump: {
               dependency: '@scope/b',
-              type: 'dependencies',
+              isBreaking: false,
               oldVersion: '1.0.0-beta.1',
               newVersion: '2.0.0-rc.1',
             },
           },
         ]);
 
-        const change: DependencyChange = {
+        const change: DependencyBump = {
           dependency: '@scope/b',
-          type: 'dependencies',
+          isBreaking: false,
           oldVersion: '1.0.0-beta.1',
           newVersion: '2.0.0-rc.1',
         };
 
-        const result = hasChangelogEntry(releaseChanges, change);
+        const result = findChangelogEntry(releaseChanges, change);
 
         expect(result.hasExactMatch).toBe(true);
       });
@@ -188,7 +185,7 @@ describe('dependency-utils', () => {
             description: 'Bump `@scope/a` from `1.0.0` to `2.0.0`',
             dependencyBump: {
               dependency: '@scope/a',
-              type: 'dependencies',
+              isBreaking: false,
               oldVersion: '1.0.0',
               newVersion: '2.0.0',
             },
@@ -197,7 +194,7 @@ describe('dependency-utils', () => {
             description: 'Bump `@scope/b` from `1.0.0` to `2.0.0`',
             dependencyBump: {
               dependency: '@scope/b',
-              type: 'dependencies',
+              isBreaking: false,
               oldVersion: '1.0.0',
               newVersion: '2.0.0',
             },
@@ -206,21 +203,21 @@ describe('dependency-utils', () => {
             description: 'Bump `@scope/c` from `1.0.0` to `2.0.0`',
             dependencyBump: {
               dependency: '@scope/c',
-              type: 'dependencies',
+              isBreaking: false,
               oldVersion: '1.0.0',
               newVersion: '2.0.0',
             },
           },
         ]);
 
-        const change: DependencyChange = {
+        const change: DependencyBump = {
           dependency: '@scope/b',
-          type: 'dependencies',
+          isBreaking: false,
           oldVersion: '1.0.0',
           newVersion: '2.0.0',
         };
 
-        const result = hasChangelogEntry(releaseChanges, change);
+        const result = findChangelogEntry(releaseChanges, change);
 
         expect(result.hasExactMatch).toBe(true);
         expect(result.entryIndex).toBe(1);
@@ -237,21 +234,21 @@ describe('dependency-utils', () => {
             description: 'Bump `@scope/b` from `1.0.0` to `1.5.0`',
             dependencyBump: {
               dependency: '@scope/b',
-              type: 'dependencies',
+              isBreaking: false,
               oldVersion: '1.0.0',
               newVersion: '1.5.0',
             },
           },
         ]);
 
-        const change: DependencyChange = {
+        const change: DependencyBump = {
           dependency: '@scope/b',
-          type: 'dependencies',
+          isBreaking: false,
           oldVersion: '1.0.0',
           newVersion: '2.0.0',
         };
 
-        const result = hasChangelogEntry(releaseChanges, change);
+        const result = findChangelogEntry(releaseChanges, change);
 
         expect(result.hasExactMatch).toBe(false);
         expect(result.existingEntry?.dependencyBump?.newVersion).toBe('1.5.0');
@@ -265,26 +262,24 @@ describe('dependency-utils', () => {
               '**BREAKING:** Bump `@scope/b` from `1.0.0` to `1.5.0`',
             dependencyBump: {
               dependency: '@scope/b',
-              type: 'peerDependencies',
+              isBreaking: true,
               oldVersion: '1.0.0',
               newVersion: '1.5.0',
             },
           },
         ]);
 
-        const change: DependencyChange = {
+        const change: DependencyBump = {
           dependency: '@scope/b',
-          type: 'peerDependencies',
+          isBreaking: true,
           oldVersion: '1.0.0',
           newVersion: '2.0.0',
         };
 
-        const result = hasChangelogEntry(releaseChanges, change);
+        const result = findChangelogEntry(releaseChanges, change);
 
         expect(result.hasExactMatch).toBe(false);
-        expect(result.existingEntry?.dependencyBump?.type).toBe(
-          'peerDependencies',
-        );
+        expect(result.existingEntry?.dependencyBump?.isBreaking).toBe(true);
       });
 
       it('does not match any version entry for regular dependency when searching for peerDependency', () => {
@@ -293,21 +288,21 @@ describe('dependency-utils', () => {
             description: 'Bump `@scope/b` from `1.0.0` to `1.5.0`',
             dependencyBump: {
               dependency: '@scope/b',
-              type: 'dependencies',
+              isBreaking: false,
               oldVersion: '1.0.0',
               newVersion: '1.5.0',
             },
           },
         ]);
 
-        const change: DependencyChange = {
+        const change: DependencyBump = {
           dependency: '@scope/b',
-          type: 'peerDependencies',
+          isBreaking: true,
           oldVersion: '1.0.0',
           newVersion: '2.0.0',
         };
 
-        const result = hasChangelogEntry(releaseChanges, change);
+        const result = findChangelogEntry(releaseChanges, change);
 
         expect(result.hasExactMatch).toBe(false);
         expect(result.existingEntry).toBeUndefined();
@@ -320,21 +315,21 @@ describe('dependency-utils', () => {
               '**BREAKING:** Bump `@scope/b` from `1.0.0` to `1.5.0`',
             dependencyBump: {
               dependency: '@scope/b',
-              type: 'peerDependencies',
+              isBreaking: true,
               oldVersion: '1.0.0',
               newVersion: '1.5.0',
             },
           },
         ]);
 
-        const change: DependencyChange = {
+        const change: DependencyBump = {
           dependency: '@scope/b',
-          type: 'dependencies',
+          isBreaking: false,
           oldVersion: '1.0.0',
           newVersion: '2.0.0',
         };
 
-        const result = hasChangelogEntry(releaseChanges, change);
+        const result = findChangelogEntry(releaseChanges, change);
 
         expect(result.hasExactMatch).toBe(false);
         expect(result.existingEntry).toBeUndefined();
@@ -348,21 +343,21 @@ describe('dependency-utils', () => {
             description: 'Bump `@scope/a` from `1.0.0` to `2.0.0`',
             dependencyBump: {
               dependency: '@scope/a',
-              type: 'dependencies',
+              isBreaking: false,
               oldVersion: '1.0.0',
               newVersion: '2.0.0',
             },
           },
         ]);
 
-        const change: DependencyChange = {
+        const change: DependencyBump = {
           dependency: '@scope/b',
-          type: 'dependencies',
+          isBreaking: false,
           oldVersion: '1.0.0',
           newVersion: '2.0.0',
         };
 
-        const result = hasChangelogEntry(releaseChanges, change);
+        const result = findChangelogEntry(releaseChanges, change);
 
         expect(result.hasExactMatch).toBe(false);
         expect(result.existingEntry).toBeUndefined();
@@ -374,14 +369,14 @@ describe('dependency-utils', () => {
           [ChangeCategory.Changed]: [],
         };
 
-        const change: DependencyChange = {
+        const change: DependencyBump = {
           dependency: '@scope/b',
-          type: 'dependencies',
+          isBreaking: false,
           oldVersion: '1.0.0',
           newVersion: '2.0.0',
         };
 
-        const result = hasChangelogEntry(releaseChanges, change);
+        const result = findChangelogEntry(releaseChanges, change);
 
         expect(result.hasExactMatch).toBe(false);
         expect(result.existingEntry).toBeUndefined();
@@ -391,14 +386,14 @@ describe('dependency-utils', () => {
       it('returns no match when Changed category is missing', () => {
         const releaseChanges: Partial<Record<ChangeCategory, Change[]>> = {};
 
-        const change: DependencyChange = {
+        const change: DependencyBump = {
           dependency: '@scope/b',
-          type: 'dependencies',
+          isBreaking: false,
           oldVersion: '1.0.0',
           newVersion: '2.0.0',
         };
 
-        const result = hasChangelogEntry(releaseChanges, change);
+        const result = findChangelogEntry(releaseChanges, change);
 
         expect(result.hasExactMatch).toBe(false);
         expect(result.existingEntry).toBeUndefined();
@@ -415,14 +410,14 @@ describe('dependency-utils', () => {
           ],
         };
 
-        const change: DependencyChange = {
+        const change: DependencyBump = {
           dependency: '@scope/b',
-          type: 'dependencies',
+          isBreaking: false,
           oldVersion: '1.0.0',
           newVersion: '2.0.0',
         };
 
-        const result = hasChangelogEntry(releaseChanges, change);
+        const result = findChangelogEntry(releaseChanges, change);
 
         expect(result.hasExactMatch).toBe(false);
         expect(result.existingEntry).toBeUndefined();
@@ -436,21 +431,21 @@ describe('dependency-utils', () => {
             description: 'Bump `@scope/package.name` from `1.0.0` to `2.0.0`',
             dependencyBump: {
               dependency: '@scope/package.name',
-              type: 'dependencies',
+              isBreaking: false,
               oldVersion: '1.0.0',
               newVersion: '2.0.0',
             },
           },
         ]);
 
-        const change: DependencyChange = {
+        const change: DependencyBump = {
           dependency: '@scope/package.name',
-          type: 'dependencies',
+          isBreaking: false,
           oldVersion: '1.0.0',
           newVersion: '2.0.0',
         };
 
-        const result = hasChangelogEntry(releaseChanges, change);
+        const result = findChangelogEntry(releaseChanges, change);
 
         expect(result.hasExactMatch).toBe(true);
       });
