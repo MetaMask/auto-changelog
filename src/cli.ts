@@ -234,7 +234,7 @@ async function validate({
         return undefined;
       }
 
-      const diff = generateDiff(validChangelog, invalidChangelog);
+      const diff = generateDiff(invalidChangelog, validChangelog);
       return exitWithError(`Changelog not well-formatted. Diff:\n\n${diff}`);
     } else if (error instanceof InvalidChangelogError) {
       return exitWithError(`Changelog is invalid: ${error.message}`);
