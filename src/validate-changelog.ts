@@ -170,10 +170,6 @@ export async function validateChangelog({
   });
   const hasUnreleasedChanges =
     Object.keys(changelog.getUnreleasedChanges()).length !== 0;
-  const releaseChanges = currentVersion
-    ? changelog.getReleaseChanges(currentVersion)
-    : undefined;
-
   if (isReleaseCandidate) {
     if (!currentVersion) {
       throw new Error(
@@ -187,9 +183,16 @@ export async function validateChangelog({
       throw new MissingCurrentVersionError(currentVersion);
     } else if (hasUnreleasedChanges) {
       throw new UnreleasedChangesError();
-    } else if (
-      releaseChanges?.[ChangeCategory.Uncategorized]?.length &&
-      releaseChanges?.[ChangeCategory.Uncategorized]?.length !== 0
+    }
+  }
+
+  for (const release of changelog.getReleases()) {
+    const releaseChangesForVersion = changelog.getReleaseChanges(
+      release.version,
+    );
+    if (
+      releaseChangesForVersion[ChangeCategory.Uncategorized]?.length &&
+      releaseChangesForVersion[ChangeCategory.Uncategorized]?.length !== 0
     ) {
       throw new UncategorizedChangesError();
     }
