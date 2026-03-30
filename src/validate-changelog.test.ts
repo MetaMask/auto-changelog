@@ -563,36 +563,36 @@ describe('validateChangelog', () => {
       ).resolves.not.toThrow();
     });
 
-    it('should not throw if there are uncategorized changes in the current release', async () => {
-      const changelogWithUnreleasedChanges = changelogWithReleases.replace(
+    it('should throw if there are uncategorized changes in the current release', async () => {
+      const changelogWithUncategorizedChanges = changelogWithReleases.replace(
         '## [1.0.0] - 2020-01-01',
         '## [1.0.0] - 2020-01-01\n### Uncategorized\n- More changes\n',
       );
       await expect(
         validateChangelog({
-          changelogContent: changelogWithUnreleasedChanges,
+          changelogContent: changelogWithUncategorizedChanges,
           currentVersion: '1.0.0',
           repoUrl:
             'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
           isReleaseCandidate: false,
         }),
-      ).resolves.not.toThrow();
+      ).rejects.toThrow('Uncategorized changes present in the changelog');
     });
 
-    it('should not throw if there are uncategorized changes in an older release', async () => {
-      const changelogWithUnreleasedChanges = changelogWithReleases.replace(
+    it('should throw if there are uncategorized changes in an older release', async () => {
+      const changelogWithUncategorizedChanges = changelogWithReleases.replace(
         '## [0.0.2] - 2020-01-01',
         '## [0.0.2] - 2020-01-01\n### Uncategorized\n- More changes\n',
       );
       await expect(
         validateChangelog({
-          changelogContent: changelogWithUnreleasedChanges,
+          changelogContent: changelogWithUncategorizedChanges,
           currentVersion: '1.0.0',
           repoUrl:
             'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
           isReleaseCandidate: false,
         }),
-      ).resolves.not.toThrow();
+      ).rejects.toThrow('Uncategorized changes present in the changelog');
     });
   });
 
@@ -685,20 +685,20 @@ describe('validateChangelog', () => {
       ).rejects.toThrow('Uncategorized changes present in the changelog');
     });
 
-    it('should not throw if there are uncategorized changes in an older release', async () => {
-      const changelogWithUnreleasedChanges = changelogWithReleases.replace(
+    it('should throw if there are uncategorized changes in an older release', async () => {
+      const changelogWithUncategorizedChanges = changelogWithReleases.replace(
         '## [0.0.2] - 2020-01-01',
         '## [0.0.2] - 2020-01-01\n### Uncategorized\n- More changes\n',
       );
       await expect(
         validateChangelog({
-          changelogContent: changelogWithUnreleasedChanges,
+          changelogContent: changelogWithUncategorizedChanges,
           currentVersion: '1.0.0',
           repoUrl:
             'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
           isReleaseCandidate: true,
         }),
-      ).resolves.not.toThrow();
+      ).rejects.toThrow('Uncategorized changes present in the changelog');
     });
   });
 
