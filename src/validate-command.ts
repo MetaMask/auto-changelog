@@ -153,7 +153,7 @@ export async function validate({
       const diff = generateDiff(validChangelog, invalidChangelog);
       return error(`Changelog not well-formatted. Diff:\n\n${diff}`);
     } else if (caughtError instanceof MissingDependencyEntriesError) {
-      if (fix && currentPr) {
+      if (dependencyCheckResult && fix && currentPr) {
         const prNumbers =
           dependencyCheckResult?.prNumbers &&
           dependencyCheckResult.prNumbers.length > 0

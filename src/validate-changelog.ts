@@ -95,15 +95,19 @@ export class ChangelogFormattingError extends InvalidChangelogError {
 export class MissingDependencyEntriesError extends InvalidChangelogError {
   readonly missingEntries: DependencyBump[];
 
+  readonly currentVersion: string | undefined;
+
   /**
    * Construct a missing dependency entries error.
    *
    * @param missingEntries - The dependency changes missing from the changelog.
+   * @param currentVersion - The current version being validated against.
    */
-  constructor(missingEntries: DependencyBump[]) {
+  constructor(missingEntries: DependencyBump[], currentVersion?: string) {
     const deps = missingEntries.map((entry) => entry.dependency).join(', ');
     super(`Missing changelog entries for dependency bumps: ${deps}`);
     this.missingEntries = missingEntries;
+    this.currentVersion = currentVersion;
   }
 }
 
@@ -285,7 +289,7 @@ export async function validateChangelog({
     }
 
     if (missingEntries.length > 0) {
-      throw new MissingDependencyEntriesError(missingEntries);
+      throw new MissingDependencyEntriesError(missingEntries, currentVersion);
     }
   }
 
