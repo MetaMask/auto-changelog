@@ -1,8 +1,8 @@
 import { Formatter } from './changelog';
-import { exitWithError, saveChangelog } from './cli-utils';
+import { error } from './cli-utils';
 import { Version } from './constants';
 import { updateChangelogWithDependencies } from './dependency-changelog';
-import { readFile } from './fs';
+import { readFile, writeFile } from './fs';
 import { generateDiff } from './generate-diff';
 import {
   getDependencyChangesForPackage,
@@ -121,7 +121,7 @@ export async function validate({
 
     // null means we're on the base branch or couldn't auto-detect
     if (result === null) {
-      return exitWithError(
+      return error(
         'Could not auto-detect git reference. Provide --fromRef or switch to a feature branch.',
       );
     }
@@ -142,17 +142,17 @@ export async function validate({
       dependencyCheckResult,
     });
     return undefined;
-  } catch (error) {
-    if (error instanceof ChangelogFormattingError) {
-      const { validChangelog, invalidChangelog } = error.data;
+  } catch (caughtError) {
+    if (caughtError instanceof ChangelogFormattingError) {
+      const { validChangelog, invalidChangelog } = caughtError.data;
       if (fix) {
-        await saveChangelog(changelogPath, validChangelog);
+        await writeFile(changelogPath, validChangelog);
         return undefined;
       }
 
       const diff = generateDiff(validChangelog, invalidChangelog);
-      return exitWithError(`Changelog not well-formatted. Diff:\n\n${diff}`);
-    } else if (error instanceof MissingDependencyEntriesError) {
+      return error(`Changelog not well-formatted. Diff:\n\n${diff}`);
+    } else if (caughtError instanceof MissingDependencyEntriesError) {
       if (fix && currentPr) {
         const prNumbers =
           dependencyCheckResult?.prNumbers &&
@@ -167,7 +167,7 @@ export async function validate({
           changelogContent.includes(`## [${currentVersion}]`);
         await updateChangelogWithDependencies({
           changelogPath,
-          dependencyChanges: error.missingEntries,
+          dependencyChanges: caughtError.missingEntries,
           currentVersion:
             dependencyCheckResult?.versionChanged && hasReleaseHeader
               ? currentVersion
@@ -179,19 +179,19 @@ export async function validate({
           packageRename,
         });
         console.log(
-          `Added ${error.missingEntries.length} missing dependency changelog entries.`,
+          `Added ${caughtError.missingEntries.length} missing dependency changelog entries.`,
         );
         return undefined;
       }
-      const deps = error.missingEntries
+      const deps = caughtError.missingEntries
         .map((entry) => entry.dependency)
         .join(', ');
-      return exitWithError(
+      return error(
         `Changelog is missing dependency bump entries for: ${deps}\nRun with --fix --currentPr <pr-number> to add them automatically.`,
       );
-    } else if (error instanceof InvalidChangelogError) {
-      return exitWithError(`Changelog is invalid: ${error.message}`);
+    } else if (caughtError instanceof InvalidChangelogError) {
+      return error(`Changelog is invalid: ${caughtError.message}`);
     }
-    throw error;
+    throw caughtError;
   }
 }

@@ -6,9 +6,9 @@ import { hideBin } from 'yargs/helpers';
 import yargs from 'yargs/yargs';
 
 import { format, Formatter } from './changelog';
-import { exitWithError, saveChangelog } from './cli-utils';
+import { error } from './cli-utils';
 import { unreleased, Version } from './constants';
-import { readFile } from './fs';
+import { readFile, writeFile } from './fs';
 import { createEmptyChangelog } from './init';
 import { getRepositoryUrl } from './repo';
 import { PackageRename } from './shared-types';
@@ -121,7 +121,7 @@ async function update({
   });
 
   if (newChangelogContent) {
-    await saveChangelog(changelogPath, newChangelogContent);
+    await writeFile(changelogPath, newChangelogContent);
     console.log('CHANGELOG.md updated.');
   } else {
     console.log('There are no new commits to add to the changelog.');
@@ -157,7 +157,7 @@ type InitOptions = {
  */
 async function init({ changelogPath, repoUrl, tagPrefix }: InitOptions) {
   const changelogContent = await createEmptyChangelog({ repoUrl, tagPrefix });
-  await saveChangelog(changelogPath, changelogContent);
+  await writeFile(changelogPath, changelogContent);
 }
 
 const rootDescription = `The root project directory. This determines where we \
@@ -363,23 +363,23 @@ async function main() {
     try {
       const stat = await fs.stat(projectRootDirectory);
       if (!stat.isDirectory()) {
-        return exitWithError(
+        return error(
           `Project root must be a directory: '${projectRootDirectory}'`,
         );
       }
-    } catch (error) {
-      if (hasErrorCode(error)) {
-        if (error.code === 'ENOENT') {
-          return exitWithError(
+    } catch (caughtError) {
+      if (hasErrorCode(caughtError)) {
+        if (caughtError.code === 'ENOENT') {
+          return error(
             `Root directory specified does not exist: '${projectRootDirectory}'`,
           );
-        } else if (error.code === 'EACCES') {
-          return exitWithError(
+        } else if (caughtError.code === 'EACCES') {
+          return error(
             `Access to root directory is forbidden by file access permissions: '${projectRootDirectory}'`,
           );
         }
       }
-      throw error;
+      throw caughtError;
     }
   }
 
@@ -401,49 +401,49 @@ async function main() {
       const manifestText = await readFile(manifestPath);
       const manifest = JSON.parse(manifestText);
       currentVersion = manifest.version;
-    } catch (error) {
-      if (hasErrorCode(error)) {
-        if (error.code === 'ENOENT') {
-          return exitWithError(
+    } catch (caughtError) {
+      if (hasErrorCode(caughtError)) {
+        if (caughtError.code === 'ENOENT') {
+          return error(
             `Package manifest not found at path: '${manifestPath}'\nRun this script from the project root directory, or set the project directory using the '--root' flag.`,
           );
-        } else if (error.code === 'EACCES') {
-          return exitWithError(
+        } else if (caughtError.code === 'EACCES') {
+          return error(
             `Access to package manifest is forbidden by file access permissions: '${manifestPath}'`,
           );
         }
       }
 
-      if (error instanceof Error && error.name === 'SyntaxError') {
-        return exitWithError(
+      if (caughtError instanceof Error && caughtError.name === 'SyntaxError') {
+        return error(
           `Package manifest cannot be parsed as JSON: '${manifestPath}'`,
         );
       }
-      throw error;
+      throw caughtError;
     }
   }
 
   if (!currentVersion) {
-    return exitWithError(
+    return error(
       `Version not found. Please set the --currentVersion flag, or run this as an npm script from a project with the 'version' field set.`,
     );
   } else if (currentVersion && semver.valid(currentVersion) === null) {
-    return exitWithError(
+    return error(
       `Current version is not valid SemVer: '${currentVersion}'`,
     );
   } else if (!repoUrl) {
-    return exitWithError(
+    return error(
       `npm package repository URL not found. Please set the '--repo' flag, or run this as an npm script from a project with the 'repository' field set.`,
     );
   } else if (!isValidUrl(repoUrl)) {
-    return exitWithError(`Invalid repo URL: '${repoUrl}'`);
+    return error(`Invalid repo URL: '${repoUrl}'`);
   }
 
   if (
     (versionBeforePackageRename && !tagPrefixBeforePackageRename) ||
     (!versionBeforePackageRename && tagPrefixBeforePackageRename)
   ) {
-    return exitWithError(
+    return error(
       '--version-before-package-rename and --tag-prefix-before-package-rename must be given together or not at all.',
     );
   }
@@ -457,11 +457,11 @@ async function main() {
     try {
       // eslint-disable-next-line no-bitwise
       await fs.access(changelogPath, fsConstants.F_OK | fsConstants.W_OK);
-    } catch (error) {
-      if (hasErrorCode(error) && error.code === 'ENOENT') {
-        return exitWithError(`File does not exist: '${changelogPath}'`);
+    } catch (caughtError) {
+      if (hasErrorCode(caughtError) && caughtError.code === 'ENOENT') {
+        return error(`File does not exist: '${changelogPath}'`);
       }
-      return exitWithError(`File is not writable: '${changelogPath}'`);
+      return error(`File is not writable: '${changelogPath}'`);
     }
   }
 
@@ -497,7 +497,7 @@ async function main() {
     }
 
     if (checkDeps && fix && !currentPr) {
-      return exitWithError(
+      return error(
         '--currentPr is required when --checkDeps and --fix are both enabled.',
       );
     }
@@ -530,6 +530,6 @@ async function main() {
   return undefined;
 }
 
-main().catch((error) => {
-  exitWithError(error);
+main().catch((caughtError) => {
+  error(caughtError);
 });
