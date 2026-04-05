@@ -687,4 +687,219 @@ describe('updateChangelogWithDependencyBumps', () => {
       `),
     );
   });
+
+  it('uses pre-parsed changelog and skips file read', async () => {
+    const initialContent = buildChangelog(outdent`
+
+      ## [Unreleased]
+
+      [Unreleased]: ${TEST_REPO_URL}/
+    `);
+    await writeFile(changelogPath, initialContent);
+
+    const { parseChangelog } = await import('./parse-changelog');
+    const parsedChangelog = parseChangelog({
+      changelogContent: initialContent,
+      repoUrl: TEST_REPO_URL,
+      tagPrefix: 'v',
+    });
+
+    await updateChangelogWithDependencyBumps({
+      changelogPath,
+      dependencyBumps: [
+        {
+          dependency: '@scope/b',
+          isBreaking: false,
+          oldVersion: '1.0.0',
+          newVersion: '2.0.0',
+        },
+      ],
+      prNumbers: ['123'],
+      repoUrl: TEST_REPO_URL,
+      formatter,
+      tagPrefix: 'v',
+      changelog: parsedChangelog,
+    });
+
+    const changelog = await readFile(changelogPath);
+    expect(changelog).toBe(
+      buildChangelog(outdent`
+        ## [Unreleased]
+        ### Changed
+        - Bump \`@scope/b\` from \`1.0.0\` to \`2.0.0\` ([#123](${TEST_REPO_URL}/pull/123))
+
+        [Unreleased]: ${TEST_REPO_URL}/
+      `),
+    );
+  });
+
+  it('returns stringified changelog when pre-parsed and no changes needed', async () => {
+    const initialContent = buildChangelog(outdent`
+
+      ## [Unreleased]
+      ### Changed
+      - Bump \`@scope/b\` from \`1.0.0\` to \`2.0.0\` ([#123](${TEST_REPO_URL}/pull/123))
+
+      [Unreleased]: ${TEST_REPO_URL}/
+    `);
+    await writeFile(changelogPath, initialContent);
+
+    const { parseChangelog } = await import('./parse-changelog');
+    const parsedChangelog = parseChangelog({
+      changelogContent: initialContent,
+      repoUrl: TEST_REPO_URL,
+      tagPrefix: 'v',
+    });
+
+    const result = await updateChangelogWithDependencyBumps({
+      changelogPath,
+      dependencyBumps: [
+        {
+          dependency: '@scope/b',
+          isBreaking: false,
+          oldVersion: '1.0.0',
+          newVersion: '2.0.0',
+        },
+      ],
+      prNumbers: ['123'],
+      repoUrl: TEST_REPO_URL,
+      formatter,
+      tagPrefix: 'v',
+      changelog: parsedChangelog,
+    });
+
+    expect(result).toBe(
+      buildChangelog(outdent`
+        ## [Unreleased]
+        ### Changed
+        - Bump \`@scope/b\` from \`1.0.0\` to \`2.0.0\` ([#123](${TEST_REPO_URL}/pull/123))
+
+        [Unreleased]: ${TEST_REPO_URL}/
+      `),
+    );
+  });
+
+  it('extracts PR numbers from description text when prNumbers array is empty', async () => {
+    await writeFile(
+      changelogPath,
+      buildChangelog(outdent`
+
+        ## [Unreleased]
+        ### Changed
+        - Bump \`@scope/b\` from \`1.0.0\` to \`1.5.0\` ([#100](${TEST_REPO_URL}/pull/100))
+
+        [Unreleased]: ${TEST_REPO_URL}/
+      `),
+    );
+
+    await updateChangelogWithDependencyBumps({
+      changelogPath,
+      dependencyBumps: [
+        {
+          dependency: '@scope/b',
+          isBreaking: false,
+          oldVersion: '1.5.0',
+          newVersion: '2.0.0',
+        },
+      ],
+      prNumbers: ['200'],
+      repoUrl: TEST_REPO_URL,
+      formatter,
+      tagPrefix: 'v',
+    });
+
+    const changelog = await readFile(changelogPath);
+    expect(changelog).toBe(
+      buildChangelog(outdent`
+        ## [Unreleased]
+        ### Changed
+        - Bump \`@scope/b\` from \`1.0.0\` to \`2.0.0\` ([#100](${TEST_REPO_URL}/pull/100), [#200](${TEST_REPO_URL}/pull/200))
+
+        [Unreleased]: ${TEST_REPO_URL}/
+      `),
+    );
+  });
+
+  it('deduplicates PR numbers when merging existing and new', async () => {
+    await writeFile(
+      changelogPath,
+      buildChangelog(outdent`
+
+        ## [Unreleased]
+        ### Changed
+        - Bump \`@scope/b\` from \`1.0.0\` to \`1.5.0\` ([#100](${TEST_REPO_URL}/pull/100), [#200](${TEST_REPO_URL}/pull/200))
+
+        [Unreleased]: ${TEST_REPO_URL}/
+      `),
+    );
+
+    await updateChangelogWithDependencyBumps({
+      changelogPath,
+      dependencyBumps: [
+        {
+          dependency: '@scope/b',
+          isBreaking: false,
+          oldVersion: '1.5.0',
+          newVersion: '2.0.0',
+        },
+      ],
+      prNumbers: ['100', '300'],
+      repoUrl: TEST_REPO_URL,
+      formatter,
+      tagPrefix: 'v',
+    });
+
+    const changelog = await readFile(changelogPath);
+    expect(changelog).toBe(
+      buildChangelog(outdent`
+        ## [Unreleased]
+        ### Changed
+        - Bump \`@scope/b\` from \`1.0.0\` to \`2.0.0\` ([#100](${TEST_REPO_URL}/pull/100), [#200](${TEST_REPO_URL}/pull/200), [#300](${TEST_REPO_URL}/pull/300))
+
+        [Unreleased]: ${TEST_REPO_URL}/
+      `),
+    );
+  });
+
+  it('adds new entries after existing manually-written entries', async () => {
+    await writeFile(
+      changelogPath,
+      buildChangelog(outdent`
+
+        ## [Unreleased]
+        ### Changed
+        - Some manual changelog entry ([#50](${TEST_REPO_URL}/pull/50))
+
+        [Unreleased]: ${TEST_REPO_URL}/
+      `),
+    );
+
+    await updateChangelogWithDependencyBumps({
+      changelogPath,
+      dependencyBumps: [
+        {
+          dependency: '@scope/b',
+          isBreaking: false,
+          oldVersion: '1.0.0',
+          newVersion: '2.0.0',
+        },
+      ],
+      prNumbers: ['123'],
+      repoUrl: TEST_REPO_URL,
+      formatter,
+      tagPrefix: 'v',
+    });
+
+    const changelog = await readFile(changelogPath);
+    expect(changelog).toBe(
+      buildChangelog(outdent`
+        ## [Unreleased]
+        ### Changed
+        - Some manual changelog entry ([#50](${TEST_REPO_URL}/pull/50))
+        - Bump \`@scope/b\` from \`1.0.0\` to \`2.0.0\` ([#123](${TEST_REPO_URL}/pull/123))
+
+        [Unreleased]: ${TEST_REPO_URL}/
+      `),
+    );
+  });
 });
