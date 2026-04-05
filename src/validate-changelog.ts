@@ -1,6 +1,6 @@
 import { Change, type DependencyBump, Formatter } from './changelog';
 import { Version, ChangeCategory } from './constants';
-import { findChangelogEntry } from './dependency-utils';
+import { findDependencyBumpChangelogEntry } from './find-dependency-bump-changelog-entry';
 import type { DependencyCheckResult } from './get-dependency-changes';
 import { parseChangelog } from './parse-changelog';
 import { PackageRename } from './shared-types';
@@ -264,10 +264,10 @@ export async function validateChangelog({
       missingEntries.push(...dependencyChanges);
     } else {
       for (const depChange of dependencyChanges) {
-        const result = findChangelogEntry(effectiveChangesSection, depChange);
+        const result = findDependencyBumpChangelogEntry(effectiveChangesSection, depChange);
         if (!result.hasExactMatch) {
           // Check if the entry exists with wrong breaking status
-          const wrongBreaking = findChangelogEntry(effectiveChangesSection, {
+          const wrongBreaking = findDependencyBumpChangelogEntry(effectiveChangesSection, {
             ...depChange,
             isBreaking: !depChange.isBreaking,
           });

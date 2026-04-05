@@ -14,16 +14,16 @@ export type ChangelogEntryCheckResult = {
 };
 
 /**
- * Finds a changelog entry for a dependency change using
+ * Finds a changelog entry for a dependency bump using
  * structured `dependencyBump` data on Change objects.
  *
  * @param releaseChanges - The release changes to search in.
- * @param change - The dependency change to find.
+ * @param dependencyBump - The dependency bump to find.
  * @returns Result indicating whether an entry exists and details about it.
  */
-export function findChangelogEntry(
+export function findDependencyBumpChangelogEntry(
   releaseChanges: ReleaseChanges,
-  change: DependencyBump,
+  dependencyBump: DependencyBump,
 ): ChangelogEntryCheckResult {
   const changedEntries = releaseChanges[ChangeCategory.Changed] ?? [];
 
@@ -35,16 +35,16 @@ export function findChangelogEntry(
     }
 
     if (
-      bump.dependency !== change.dependency ||
-      bump.isBreaking !== change.isBreaking
+      bump.dependency !== dependencyBump.dependency ||
+      bump.isBreaking !== dependencyBump.isBreaking
     ) {
       continue;
     }
 
     // Same dependency and breaking status
     if (
-      bump.oldVersion === change.oldVersion &&
-      bump.newVersion === change.newVersion
+      bump.oldVersion === dependencyBump.oldVersion &&
+      bump.newVersion === dependencyBump.newVersion
     ) {
       // Exact match
       return { hasExactMatch: true, existingEntry: entry, entryIndex: i };

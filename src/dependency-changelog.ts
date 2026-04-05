@@ -1,6 +1,6 @@
 import type { Change, DependencyBump, Formatter } from './changelog';
 import { ChangeCategory } from './constants';
-import { findChangelogEntry } from './dependency-utils';
+import { findDependencyBumpChangelogEntry } from './find-dependency-bump-changelog-entry';
 import { readFile, writeFile } from './fs';
 import { parseChangelog } from './parse-changelog';
 
@@ -110,7 +110,7 @@ export async function updateChangelogWithDependencies({
       continue;
     }
 
-    const entryCheck = findChangelogEntry(changesSection, change);
+    const entryCheck = findDependencyBumpChangelogEntry(changesSection, change);
     if (entryCheck.hasExactMatch) {
       continue;
     }

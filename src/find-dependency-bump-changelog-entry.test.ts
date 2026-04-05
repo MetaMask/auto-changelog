@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import type { Change, DependencyBump } from './changelog';
 import { ChangeCategory } from './constants';
-import { findChangelogEntry } from './dependency-utils';
+import { findDependencyBumpChangelogEntry } from './find-dependency-bump-changelog-entry';
 
-describe('dependency-utils', () => {
-  describe('findChangelogEntry', () => {
+describe('find-dependency-bump-changelog-entry', () => {
+  describe('findDependencyBumpChangelogEntry', () => {
     const createReleaseChanges = (
       changes: {
         description: string;
@@ -41,7 +41,7 @@ describe('dependency-utils', () => {
           newVersion: '2.0.0',
         };
 
-        const result = findChangelogEntry(releaseChanges, change);
+        const result = findDependencyBumpChangelogEntry(releaseChanges, change);
 
         expect(result.hasExactMatch).toBe(true);
         expect(result.existingEntry?.dependencyBump?.dependency).toBe(
@@ -71,7 +71,7 @@ describe('dependency-utils', () => {
           newVersion: '2.0.0',
         };
 
-        const result = findChangelogEntry(releaseChanges, change);
+        const result = findDependencyBumpChangelogEntry(releaseChanges, change);
 
         expect(result.hasExactMatch).toBe(true);
         expect(result.existingEntry?.dependencyBump?.isBreaking).toBe(true);
@@ -98,7 +98,7 @@ describe('dependency-utils', () => {
           newVersion: '2.0.0',
         };
 
-        const result = findChangelogEntry(releaseChanges, change);
+        const result = findDependencyBumpChangelogEntry(releaseChanges, change);
 
         expect(result.hasExactMatch).toBe(false);
       });
@@ -124,7 +124,7 @@ describe('dependency-utils', () => {
           newVersion: '2.0.0',
         };
 
-        const result = findChangelogEntry(releaseChanges, change);
+        const result = findDependencyBumpChangelogEntry(releaseChanges, change);
 
         expect(result.hasExactMatch).toBe(false);
       });
@@ -149,7 +149,7 @@ describe('dependency-utils', () => {
           newVersion: '2.0.0',
         };
 
-        const result = findChangelogEntry(releaseChanges, change);
+        const result = findDependencyBumpChangelogEntry(releaseChanges, change);
 
         expect(result.hasExactMatch).toBe(true);
       });
@@ -174,7 +174,7 @@ describe('dependency-utils', () => {
           newVersion: '2.0.0-rc.1',
         };
 
-        const result = findChangelogEntry(releaseChanges, change);
+        const result = findDependencyBumpChangelogEntry(releaseChanges, change);
 
         expect(result.hasExactMatch).toBe(true);
       });
@@ -217,7 +217,7 @@ describe('dependency-utils', () => {
           newVersion: '2.0.0',
         };
 
-        const result = findChangelogEntry(releaseChanges, change);
+        const result = findDependencyBumpChangelogEntry(releaseChanges, change);
 
         expect(result.hasExactMatch).toBe(true);
         expect(result.entryIndex).toBe(1);
@@ -248,7 +248,7 @@ describe('dependency-utils', () => {
           newVersion: '2.0.0',
         };
 
-        const result = findChangelogEntry(releaseChanges, change);
+        const result = findDependencyBumpChangelogEntry(releaseChanges, change);
 
         expect(result.hasExactMatch).toBe(false);
         expect(result.existingEntry?.dependencyBump?.newVersion).toBe('1.5.0');
@@ -276,7 +276,7 @@ describe('dependency-utils', () => {
           newVersion: '2.0.0',
         };
 
-        const result = findChangelogEntry(releaseChanges, change);
+        const result = findDependencyBumpChangelogEntry(releaseChanges, change);
 
         expect(result.hasExactMatch).toBe(false);
         expect(result.existingEntry?.dependencyBump?.isBreaking).toBe(true);
@@ -302,7 +302,7 @@ describe('dependency-utils', () => {
           newVersion: '2.0.0',
         };
 
-        const result = findChangelogEntry(releaseChanges, change);
+        const result = findDependencyBumpChangelogEntry(releaseChanges, change);
 
         expect(result.hasExactMatch).toBe(false);
         expect(result.existingEntry).toBeUndefined();
@@ -329,7 +329,7 @@ describe('dependency-utils', () => {
           newVersion: '2.0.0',
         };
 
-        const result = findChangelogEntry(releaseChanges, change);
+        const result = findDependencyBumpChangelogEntry(releaseChanges, change);
 
         expect(result.hasExactMatch).toBe(false);
         expect(result.existingEntry).toBeUndefined();
@@ -357,7 +357,7 @@ describe('dependency-utils', () => {
           newVersion: '2.0.0',
         };
 
-        const result = findChangelogEntry(releaseChanges, change);
+        const result = findDependencyBumpChangelogEntry(releaseChanges, change);
 
         expect(result.hasExactMatch).toBe(false);
         expect(result.existingEntry).toBeUndefined();
@@ -376,7 +376,7 @@ describe('dependency-utils', () => {
           newVersion: '2.0.0',
         };
 
-        const result = findChangelogEntry(releaseChanges, change);
+        const result = findDependencyBumpChangelogEntry(releaseChanges, change);
 
         expect(result.hasExactMatch).toBe(false);
         expect(result.existingEntry).toBeUndefined();
@@ -393,7 +393,7 @@ describe('dependency-utils', () => {
           newVersion: '2.0.0',
         };
 
-        const result = findChangelogEntry(releaseChanges, change);
+        const result = findDependencyBumpChangelogEntry(releaseChanges, change);
 
         expect(result.hasExactMatch).toBe(false);
         expect(result.existingEntry).toBeUndefined();
@@ -417,7 +417,7 @@ describe('dependency-utils', () => {
           newVersion: '2.0.0',
         };
 
-        const result = findChangelogEntry(releaseChanges, change);
+        const result = findDependencyBumpChangelogEntry(releaseChanges, change);
 
         expect(result.hasExactMatch).toBe(false);
         expect(result.existingEntry).toBeUndefined();
@@ -445,7 +445,7 @@ describe('dependency-utils', () => {
           newVersion: '2.0.0',
         };
 
-        const result = findChangelogEntry(releaseChanges, change);
+        const result = findDependencyBumpChangelogEntry(releaseChanges, change);
 
         expect(result.hasExactMatch).toBe(true);
       });
