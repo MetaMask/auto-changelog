@@ -177,6 +177,7 @@ export async function validate({
           formatter,
           tagPrefix,
           packageRename,
+          changelog: caughtError.changelog,
         });
         console.log(
           `Added ${caughtError.missingEntries.length} missing dependency changelog entries.`,

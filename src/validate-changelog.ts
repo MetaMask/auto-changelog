@@ -1,4 +1,4 @@
-import { Change, type DependencyBump, Formatter } from './changelog';
+import Changelog, { Change, type DependencyBump, Formatter } from './changelog';
 import { Version, ChangeCategory } from './constants';
 import { findDependencyBumpChangelogEntry } from './find-dependency-bump-changelog-entry';
 import type { DependencyCheckResult } from './get-dependency-changes';
@@ -97,16 +97,24 @@ export class MissingDependencyEntriesError extends InvalidChangelogError {
 
   readonly currentVersion: string | undefined;
 
+  readonly changelog: Changelog;
+
   /**
    * Construct a missing dependency entries error.
    *
    * @param missingEntries - The dependency changes missing from the changelog.
+   * @param changelog - The parsed changelog instance for reuse.
    * @param currentVersion - The current version being validated against.
    */
-  constructor(missingEntries: DependencyBump[], currentVersion?: string) {
+  constructor(
+    missingEntries: DependencyBump[],
+    changelog: Changelog,
+    currentVersion?: string,
+  ) {
     const deps = missingEntries.map((entry) => entry.dependency).join(', ');
     super(`Missing changelog entries for dependency bumps: ${deps}`);
     this.missingEntries = missingEntries;
+    this.changelog = changelog;
     this.currentVersion = currentVersion;
   }
 }
@@ -289,7 +297,11 @@ export async function validateChangelog({
     }
 
     if (missingEntries.length > 0) {
-      throw new MissingDependencyEntriesError(missingEntries, currentVersion);
+      throw new MissingDependencyEntriesError(
+        missingEntries,
+        changelog,
+        currentVersion,
+      );
     }
   }
 

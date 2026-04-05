@@ -1,3 +1,4 @@
+import type Changelog from './changelog';
 import type { Change, DependencyBump, Formatter } from './changelog';
 import { ChangeCategory } from './constants';
 import { findDependencyBumpChangelogEntry } from './find-dependency-bump-changelog-entry';
@@ -48,6 +49,8 @@ type UpdateChangelogWithDependencyBumpsOptions = {
     versionBeforeRename: string;
     tagPrefixBeforeRename: string;
   };
+  /** Pre-parsed changelog instance to avoid re-reading and re-parsing. */
+  changelog?: Changelog;
 };
 
 /**
@@ -66,6 +69,7 @@ type UpdateChangelogWithDependencyBumpsOptions = {
  * @param options.formatter - Formatter for changelog content.
  * @param options.tagPrefix - Tag prefix for the package.
  * @param options.packageRename - Package rename info if applicable.
+ * @param options.changelog - Pre-parsed changelog instance to skip re-reading.
  * @returns The updated changelog content.
  */
 export async function updateChangelogWithDependencyBumps({
@@ -77,24 +81,29 @@ export async function updateChangelogWithDependencyBumps({
   formatter,
   tagPrefix,
   packageRename,
+  changelog: existingChangelog,
 }: UpdateChangelogWithDependencyBumpsOptions): Promise<string> {
-  let changelogContent: string;
-  try {
-    changelogContent = await readFile(changelogPath);
-  } catch {
-    throw new Error(`Changelog not found at ${changelogPath}`);
-  }
+  let changelog = existingChangelog;
+  let changelogContent: string | undefined;
 
-  // Parse WITHOUT shouldExtractPrLinks to avoid reformatting PR links
-  // on entries we don't modify. We extract PR numbers inline only for
-  // entries we actually update.
-  const changelog = parseChangelog({
-    changelogContent,
-    repoUrl,
-    tagPrefix,
-    formatter,
-    ...(packageRename && { packageRename }),
-  });
+  if (!changelog) {
+    try {
+      changelogContent = await readFile(changelogPath);
+    } catch {
+      throw new Error(`Changelog not found at ${changelogPath}`);
+    }
+
+    // Parse WITHOUT shouldExtractPrLinks to avoid reformatting PR links
+    // on entries we don't modify. We extract PR numbers inline only for
+    // entries we actually update.
+    changelog = parseChangelog({
+      changelogContent,
+      repoUrl,
+      tagPrefix,
+      formatter,
+      ...(packageRename && { packageRename }),
+    });
+  }
 
   // Check which entries are missing or need updating
   const changesSection = currentVersion
@@ -149,7 +158,10 @@ export async function updateChangelogWithDependencyBumps({
 
   // If nothing changed, return original content without rewriting
   if (!hasUpdates && entriesToAdd.length === 0) {
-    return changelogContent;
+    if (changelogContent !== undefined) {
+      return changelogContent;
+    }
+    return await changelog.toString();
   }
 
   // Add new entries: non-breaking first, then breaking
