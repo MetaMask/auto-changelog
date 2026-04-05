@@ -1,18 +1,16 @@
+import { promises as fs } from 'fs';
+import os from 'os';
 import _outdent from 'outdent';
+import path from 'path';
 
-import { readFile, writeFile } from '../fs';
 import { getDependencyChanges } from '../get-dependency-changes';
 import { validate } from './validate';
 
 const outdent = _outdent({ trimTrailingNewline: false });
 
-// Only mock I/O and git — let internal logic (validateChangelog,
-// generateDiff, updateChangelogWithDependencies) run for real.
-jest.mock('../fs');
+// Only mock git — let fs and internal logic run for real.
 jest.mock('../get-dependency-changes');
 
-const readFileMock = readFile as jest.MockedFunction<typeof readFile>;
-const writeFileMock = writeFile as jest.MockedFunction<typeof writeFile>;
 const getDependencyChangesMock =
   getDependencyChanges as jest.MockedFunction<
     typeof getDependencyChanges
@@ -32,42 +30,52 @@ const wellFormattedChangelog = outdent`
   [Unreleased]: ${repoUrl}/
 `;
 
-const defaultOptions = {
-  changelogPath: '/repo/CHANGELOG.md',
-  currentVersion: '1.0.0' as const,
-  isReleaseCandidate: false,
-  repoUrl,
-  tagPrefix: 'v',
-  fix: false,
-  formatter: async (input: string) => input,
-  ensureValidPrLinksPresent: false,
-  manifestPath: '/repo/package.json',
-};
+let tmpDir: string;
+let changelogPath: string;
+
+async function writeChangelog(content: string) {
+  await fs.writeFile(changelogPath, content, 'utf-8');
+}
+
+async function readChangelog(): Promise<string> {
+  return fs.readFile(changelogPath, 'utf-8');
+}
+
+beforeEach(async () => {
+  tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'validate-test-'));
+  changelogPath = path.join(tmpDir, 'CHANGELOG.md');
+});
+
+afterEach(async () => {
+  await fs.rm(tmpDir, { recursive: true, force: true });
+});
+
+function defaultOptions() {
+  return {
+    changelogPath,
+    currentVersion: '1.0.0' as const,
+    isReleaseCandidate: false,
+    repoUrl,
+    tagPrefix: 'v',
+    fix: false,
+    formatter: async (input: string) => input,
+    ensureValidPrLinksPresent: false,
+    manifestPath: '/repo/package.json',
+  };
+}
 
 describe('validate', () => {
-  beforeEach(() => {
-    writeFileMock.mockResolvedValue(undefined);
-  });
-
   it('returns undefined for a well-formatted changelog', async () => {
-    readFileMock.mockResolvedValue(wellFormattedChangelog);
+    await writeChangelog(wellFormattedChangelog);
 
-    const result = await validate(defaultOptions);
+    const result = await validate(defaultOptions());
 
     expect(result).toBeUndefined();
   });
 
-  it('reads from the given changelogPath', async () => {
-    readFileMock.mockResolvedValue(wellFormattedChangelog);
-
-    await validate(defaultOptions);
-
-    expect(readFileMock).toHaveBeenCalledWith('/repo/CHANGELOG.md');
-  });
-
   describe('dependency checking', () => {
     it('calls getDependencyChanges when checkDeps is true', async () => {
-      readFileMock.mockResolvedValue(wellFormattedChangelog);
+      await writeChangelog(wellFormattedChangelog);
       getDependencyChangesMock.mockResolvedValue({
         dependencyChanges: [],
         prNumbers: [],
@@ -75,7 +83,7 @@ describe('validate', () => {
       });
 
       await validate({
-        ...defaultOptions,
+        ...defaultOptions(),
         checkDeps: true,
       });
 
@@ -87,14 +95,14 @@ describe('validate', () => {
     });
 
     it('sets exitCode=1 when getDependencyChanges returns null', async () => {
-      readFileMock.mockResolvedValue(wellFormattedChangelog);
+      await writeChangelog(wellFormattedChangelog);
       getDependencyChangesMock.mockResolvedValue(null);
       const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {
         // Do nothing
       });
 
       await validate({
-        ...defaultOptions,
+        ...defaultOptions(),
         checkDeps: true,
       });
 
@@ -107,7 +115,7 @@ describe('validate', () => {
     });
 
     it('passes fromRef, toRef, remote, and baseBranch options', async () => {
-      readFileMock.mockResolvedValue(wellFormattedChangelog);
+      await writeChangelog(wellFormattedChangelog);
       getDependencyChangesMock.mockResolvedValue({
         dependencyChanges: [],
         prNumbers: [],
@@ -115,7 +123,7 @@ describe('validate', () => {
       });
 
       await validate({
-        ...defaultOptions,
+        ...defaultOptions(),
         checkDeps: true,
         fromRef: 'abc123',
         toRef: 'def456',
@@ -134,17 +142,15 @@ describe('validate', () => {
     });
 
     it('does not call getDependencyChanges when checkDeps is false', async () => {
-      readFileMock.mockResolvedValue(wellFormattedChangelog);
+      await writeChangelog(wellFormattedChangelog);
 
-      await validate(defaultOptions);
+      await validate(defaultOptions());
 
       expect(getDependencyChangesMock).not.toHaveBeenCalled();
     });
   });
 
   describe('ChangelogFormattingError handling', () => {
-    // A changelog with wrong link reference definition triggers formatting error
-    // because the parsed+stringified output differs from the input.
     const poorlyFormattedChangelog = outdent`
       # Changelog
       All notable changes to this project will be documented in this file.
@@ -164,26 +170,25 @@ describe('validate', () => {
     `;
 
     it('fixes the changelog when fix=true', async () => {
-      readFileMock.mockResolvedValue(poorlyFormattedChangelog);
+      await writeChangelog(poorlyFormattedChangelog);
 
       await validate({
-        ...defaultOptions,
+        ...defaultOptions(),
         fix: true,
       });
 
-      expect(writeFileMock).toHaveBeenCalledWith(
-        '/repo/CHANGELOG.md',
-        expect.stringContaining('[1.0.0]'),
-      );
+      const written = await readChangelog();
+      expect(written).toContain('[1.0.0]');
+      expect(written).not.toContain('extra trailing line');
     });
 
     it('prints diff and sets exitCode=1 when fix=false', async () => {
-      readFileMock.mockResolvedValue(poorlyFormattedChangelog);
+      await writeChangelog(poorlyFormattedChangelog);
       const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {
         // Do nothing
       });
 
-      await validate(defaultOptions);
+      await validate(defaultOptions());
 
       expect(process.exitCode).toBe(1);
       expect(errorSpy).toHaveBeenCalledWith(
@@ -207,7 +212,7 @@ describe('validate', () => {
     ];
 
     it('auto-fixes when fix=true and currentPr provided', async () => {
-      readFileMock.mockResolvedValue(changelogWithoutDepEntry);
+      await writeChangelog(changelogWithoutDepEntry);
       getDependencyChangesMock.mockResolvedValue({
         dependencyChanges: missingEntries,
         prNumbers: ['100'],
@@ -218,17 +223,16 @@ describe('validate', () => {
       });
 
       await validate({
-        ...defaultOptions,
+        ...defaultOptions(),
         currentVersion: undefined,
         checkDeps: true,
         fix: true,
         currentPr: '200',
       });
 
-      // updateChangelogWithDependencies runs for real, writing via writeFile
-      expect(writeFileMock).toHaveBeenCalledWith(
-        '/repo/CHANGELOG.md',
-        expect.stringContaining('Bump `@scope/b` from `1.0.0` to `2.0.0`'),
+      const written = await readChangelog();
+      expect(written).toContain(
+        'Bump `@scope/b` from `1.0.0` to `2.0.0`',
       );
       expect(logSpy).toHaveBeenCalledWith(
         expect.stringContaining('1 missing dependency'),
@@ -237,7 +241,7 @@ describe('validate', () => {
     });
 
     it('adds entries to Unreleased when currentVersion is set but isReleaseCandidate is false', async () => {
-      readFileMock.mockResolvedValue(changelogWithoutDepEntry);
+      await writeChangelog(changelogWithoutDepEntry);
       getDependencyChangesMock.mockResolvedValue({
         dependencyChanges: missingEntries,
         prNumbers: ['100'],
@@ -248,7 +252,7 @@ describe('validate', () => {
       });
 
       await validate({
-        ...defaultOptions,
+        ...defaultOptions(),
         currentVersion: '1.0.0',
         isReleaseCandidate: false,
         checkDeps: true,
@@ -256,10 +260,9 @@ describe('validate', () => {
         currentPr: '200',
       });
 
-      // Entry should be under Unreleased, not under 1.0.0
-      const writtenContent = writeFileMock.mock.calls[0][1];
-      const unreleasedIndex = writtenContent.indexOf('## [Unreleased]');
-      const bumpIndex = writtenContent.indexOf('Bump `@scope/b`');
+      const written = await readChangelog();
+      const unreleasedIndex = written.indexOf('## [Unreleased]');
+      const bumpIndex = written.indexOf('Bump `@scope/b`');
       expect(unreleasedIndex).not.toBe(-1);
       expect(bumpIndex).not.toBe(-1);
       expect(bumpIndex).toBeGreaterThan(unreleasedIndex);
@@ -267,7 +270,7 @@ describe('validate', () => {
     });
 
     it('adds entries to Unreleased when versionChanged is true but release header is missing', async () => {
-      readFileMock.mockResolvedValue(changelogWithoutDepEntry);
+      await writeChangelog(changelogWithoutDepEntry);
       getDependencyChangesMock.mockResolvedValue({
         dependencyChanges: missingEntries,
         prNumbers: ['100'],
@@ -278,7 +281,7 @@ describe('validate', () => {
       });
 
       await validate({
-        ...defaultOptions,
+        ...defaultOptions(),
         currentVersion: '2.0.0',
         isReleaseCandidate: false,
         checkDeps: true,
@@ -286,19 +289,18 @@ describe('validate', () => {
         currentPr: '200',
       });
 
-      // No ## [2.0.0] header exists, so entries should go to Unreleased
-      const writtenContent = writeFileMock.mock.calls[0][1];
-      const unreleasedIndex = writtenContent.indexOf('## [Unreleased]');
-      const bumpIndex = writtenContent.indexOf('Bump `@scope/b`');
+      const written = await readChangelog();
+      const unreleasedIndex = written.indexOf('## [Unreleased]');
+      const bumpIndex = written.indexOf('Bump `@scope/b`');
       expect(unreleasedIndex).not.toBe(-1);
       expect(bumpIndex).not.toBe(-1);
       expect(bumpIndex).toBeGreaterThan(unreleasedIndex);
-      expect(writtenContent).not.toContain('## [2.0.0]');
+      expect(written).not.toContain('## [2.0.0]');
       logSpy.mockRestore();
     });
 
     it('falls back to currentPr when dependencyCheckResult has no prNumbers', async () => {
-      readFileMock.mockResolvedValue(changelogWithoutDepEntry);
+      await writeChangelog(changelogWithoutDepEntry);
       getDependencyChangesMock.mockResolvedValue({
         dependencyChanges: missingEntries,
         prNumbers: [],
@@ -309,23 +311,20 @@ describe('validate', () => {
       });
 
       await validate({
-        ...defaultOptions,
+        ...defaultOptions(),
         currentVersion: undefined,
         checkDeps: true,
         fix: true,
         currentPr: '200',
       });
 
-      // With no prNumbers from git, the currentPr '200' is used
-      expect(writeFileMock).toHaveBeenCalledWith(
-        '/repo/CHANGELOG.md',
-        expect.stringContaining('#200'),
-      );
+      const written = await readChangelog();
+      expect(written).toContain('#200');
       logSpy.mockRestore();
     });
 
     it('prints error with fix instructions when fix=false', async () => {
-      readFileMock.mockResolvedValue(changelogWithoutDepEntry);
+      await writeChangelog(changelogWithoutDepEntry);
       getDependencyChangesMock.mockResolvedValue({
         dependencyChanges: missingEntries,
         prNumbers: [],
@@ -336,7 +335,7 @@ describe('validate', () => {
       });
 
       await validate({
-        ...defaultOptions,
+        ...defaultOptions(),
         checkDeps: true,
       });
 
@@ -352,7 +351,7 @@ describe('validate', () => {
     });
 
     it('prints error when fix=true but no currentPr', async () => {
-      readFileMock.mockResolvedValue(changelogWithoutDepEntry);
+      await writeChangelog(changelogWithoutDepEntry);
       getDependencyChangesMock.mockResolvedValue({
         dependencyChanges: missingEntries,
         prNumbers: [],
@@ -363,7 +362,7 @@ describe('validate', () => {
       });
 
       await validate({
-        ...defaultOptions,
+        ...defaultOptions(),
         checkDeps: true,
         fix: true,
       });
@@ -376,8 +375,6 @@ describe('validate', () => {
 
   describe('InvalidChangelogError handling', () => {
     it('prints the error message and exits with error', async () => {
-      // Trigger UnreleasedChangesError (extends InvalidChangelogError)
-      // by setting isReleaseCandidate with unreleased changes
       const changelogWithUnreleasedAndRelease = outdent`
         # Changelog
         All notable changes to this project will be documented in this file.
@@ -396,13 +393,13 @@ describe('validate', () => {
         [Unreleased]: ${repoUrl}/compare/v1.0.0...HEAD
         [1.0.0]: ${repoUrl}/releases/tag/v1.0.0
       `;
-      readFileMock.mockResolvedValue(changelogWithUnreleasedAndRelease);
+      await writeChangelog(changelogWithUnreleasedAndRelease);
       const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {
         // Do nothing
       });
 
       await validate({
-        ...defaultOptions,
+        ...defaultOptions(),
         isReleaseCandidate: true,
       });
 
@@ -417,9 +414,11 @@ describe('validate', () => {
 
   describe('unexpected errors', () => {
     it('rethrows non-changelog errors', async () => {
-      readFileMock.mockRejectedValue(new Error('ENOENT'));
+      // Use a path that doesn't exist to trigger a real fs error
+      const opts = defaultOptions();
+      opts.changelogPath = path.join(tmpDir, 'nonexistent', 'CHANGELOG.md');
 
-      await expect(validate(defaultOptions)).rejects.toThrow('ENOENT');
+      await expect(validate(opts)).rejects.toThrow();
     });
   });
 });
