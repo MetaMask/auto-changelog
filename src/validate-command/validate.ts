@@ -3,6 +3,7 @@ import { Version } from '../constants';
 import { readFile, writeFile } from '../fs';
 import { generateDiff } from '../generate-diff';
 import {
+  BaseRefNotFoundError,
   getDependencyChanges,
   type DependencyCheckResult,
 } from '../get-dependency-changes';
@@ -112,22 +113,22 @@ export async function validate({
 
   let dependencyCheckResult: DependencyCheckResult | undefined;
   if (checkDeps) {
-    const result = await getDependencyChanges({
-      manifestPath,
-      fromRef,
-      toRef,
-      remote,
-      baseBranch,
-    });
-
-    // null means we're on the base branch or couldn't auto-detect
-    if (result === null) {
-      return error(
-        'Could not auto-detect git reference. Provide --fromRef or switch to a feature branch.',
-      );
+    try {
+      dependencyCheckResult = await getDependencyChanges({
+        manifestPath,
+        fromRef,
+        toRef,
+        remote,
+        baseBranch,
+      });
+    } catch (caughtError) {
+      if (caughtError instanceof BaseRefNotFoundError) {
+        return error(
+          `${caughtError.message}. Provide --fromRef or switch to a feature branch.`,
+        );
+      }
+      throw caughtError;
     }
-
-    dependencyCheckResult = result;
   }
 
   try {

@@ -4,6 +4,16 @@ import type { DependencyBump } from './changelog';
 import { runCommand } from './run-command';
 
 /**
+ * Thrown when the base ref cannot be auto-detected, typically because
+ * the current branch IS the base branch or the remote is unreachable.
+ */
+export class BaseRefNotFoundError extends Error {
+  constructor(reason: string) {
+    super(`Could not auto-detect git reference: ${reason}`);
+  }
+}
+
+/**
  * Gets the content of a file at a specific git reference.
  *
  * @param filePath - Repo-relative path to the file.
@@ -172,7 +182,8 @@ type GetDependencyChangesOptions = {
  * @param options.remote - Remote name for auto-detection.
  * @param options.baseBranch - Base branch for auto-detection (only used when
  * fromRef is not provided). For stacked PRs, set this to the parent branch.
- * @returns Dependency check result, or null if on base branch.
+ * @returns Dependency check result.
+ * @throws {BaseRefNotFoundError} If the base ref cannot be auto-detected.
  */
 export async function getDependencyChanges({
   manifestPath,
@@ -180,7 +191,7 @@ export async function getDependencyChanges({
   toRef = 'HEAD',
   remote = 'origin',
   baseBranch = `${remote}/main`,
-}: GetDependencyChangesOptions): Promise<DependencyCheckResult | null> {
+}: GetDependencyChangesOptions): Promise<DependencyCheckResult> {
   const workingDir = path.dirname(manifestPath);
   let actualFromRef = fromRef;
 
@@ -199,11 +210,17 @@ export async function getDependencyChanges({
       });
 
       if (headSha === baseSha) {
-        return null;
+        throw new BaseRefNotFoundError(
+          'HEAD is the same as the base branch',
+        );
       }
-    } catch {
-      // Could not resolve base branch ref
-      return null;
+    } catch (error) {
+      if (error instanceof BaseRefNotFoundError) {
+        throw error;
+      }
+      throw new BaseRefNotFoundError(
+        `could not resolve base branch '${baseBranch}'`,
+      );
     }
 
     try {
@@ -213,8 +230,9 @@ export async function getDependencyChanges({
         { cwd: workingDir },
       );
     } catch {
-      // Could not find merge base
-      return null;
+      throw new BaseRefNotFoundError(
+        `could not find merge base with '${baseBranch}'`,
+      );
     }
   }
 

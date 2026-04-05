@@ -23,45 +23,45 @@ function mockExecaResponses(...responses: ({ stdout: string } | Error)[]) {
 }
 
 describe('getDependencyChanges', () => {
-  it('returns null when on base branch without fromRef (SHA comparison)', async () => {
+  it('throws BaseRefNotFoundError when on base branch without fromRef (SHA comparison)', async () => {
     // Mock rev-parse HEAD, rev-parse origin/main (same SHA → on base branch)
     mockExecaResponses(
       { stdout: 'abc123' }, // rev-parse HEAD
       { stdout: 'abc123' }, // rev-parse origin/main
     );
 
-    const result = await getDependencyChanges({
-      manifestPath: '/repo/packages/a/package.json',
-    });
-
-    expect(result).toBeNull();
+    await expect(
+      getDependencyChanges({
+        manifestPath: '/repo/packages/a/package.json',
+      }),
+    ).rejects.toThrow('Could not auto-detect git reference');
   });
 
-  it('returns null when merge-base fails', async () => {
+  it('throws BaseRefNotFoundError when merge-base fails', async () => {
     mockExecaResponses(
       { stdout: 'abc123' }, // rev-parse HEAD
       { stdout: 'def456' }, // rev-parse origin/main (different SHA)
       new Error('no merge base'), // merge-base fails
     );
 
-    const result = await getDependencyChanges({
-      manifestPath: '/repo/packages/a/package.json',
-    });
-
-    expect(result).toBeNull();
+    await expect(
+      getDependencyChanges({
+        manifestPath: '/repo/packages/a/package.json',
+      }),
+    ).rejects.toThrow('Could not auto-detect git reference');
   });
 
-  it('returns null when base branch ref cannot be resolved', async () => {
+  it('throws BaseRefNotFoundError when base branch ref cannot be resolved', async () => {
     mockExecaResponses(
       { stdout: 'abc123' }, // rev-parse HEAD
       new Error('unknown revision'), // rev-parse origin/main fails
     );
 
-    const result = await getDependencyChanges({
-      manifestPath: '/repo/packages/a/package.json',
-    });
-
-    expect(result).toBeNull();
+    await expect(
+      getDependencyChanges({
+        manifestPath: '/repo/packages/a/package.json',
+      }),
+    ).rejects.toThrow('Could not auto-detect git reference');
   });
 
   it('returns empty when old file does not exist (new package)', async () => {

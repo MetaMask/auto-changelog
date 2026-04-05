@@ -4,6 +4,7 @@ export {
   type ReleaseChanges,
 } from './changelog';
 export {
+  BaseRefNotFoundError,
   getDependencyChanges,
   type DependencyCheckResult,
 } from './get-dependency-changes';

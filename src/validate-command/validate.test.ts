@@ -3,13 +3,22 @@ import os from 'os';
 import _outdent from 'outdent';
 import path from 'path';
 
-import { getDependencyChanges } from '../get-dependency-changes';
+import {
+  BaseRefNotFoundError,
+  getDependencyChanges,
+} from '../get-dependency-changes';
 import { validate } from './validate';
 
 const outdent = _outdent({ trimTrailingNewline: false });
 
-// Only mock git — let fs and internal logic run for real.
-jest.mock('../get-dependency-changes');
+// Only mock the getDependencyChanges function — keep BaseRefNotFoundError real.
+jest.mock('../get-dependency-changes', () => {
+  const actual = jest.requireActual('../get-dependency-changes');
+  return {
+    ...actual,
+    getDependencyChanges: jest.fn(),
+  };
+});
 
 const getDependencyChangesMock =
   getDependencyChanges as jest.MockedFunction<
@@ -94,9 +103,9 @@ describe('validate', () => {
       );
     });
 
-    it('sets exitCode=1 when getDependencyChanges returns null', async () => {
+    it('sets exitCode=1 when getDependencyChanges throws BaseRefNotFoundError', async () => {
       await writeChangelog(wellFormattedChangelog);
-      getDependencyChangesMock.mockResolvedValue(null);
+      getDependencyChangesMock.mockRejectedValue(new BaseRefNotFoundError('on base branch'));
       const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {
         // Do nothing
       });
