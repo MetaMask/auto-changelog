@@ -174,7 +174,7 @@ type GetDependencyChangesOptions = {
  * fromRef is not provided). For stacked PRs, set this to the parent branch.
  * @returns Dependency check result, or null if on base branch.
  */
-export async function getDependencyChangesForPackage({
+export async function getDependencyChanges({
   manifestPath,
   fromRef,
   toRef = 'HEAD',

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import execa from 'execa';
 
-import { getDependencyChangesForPackage } from './get-dependency-changes';
+import { getDependencyChanges } from './get-dependency-changes';
 
 jest.mock('execa');
 
@@ -22,7 +22,7 @@ function mockExecaResponses(...responses: ({ stdout: string } | Error)[]) {
   }
 }
 
-describe('getDependencyChangesForPackage', () => {
+describe('getDependencyChanges', () => {
   it('returns null when on base branch without fromRef (SHA comparison)', async () => {
     // Mock rev-parse HEAD, rev-parse origin/main (same SHA → on base branch)
     mockExecaResponses(
@@ -30,7 +30,7 @@ describe('getDependencyChangesForPackage', () => {
       { stdout: 'abc123' }, // rev-parse origin/main
     );
 
-    const result = await getDependencyChangesForPackage({
+    const result = await getDependencyChanges({
       manifestPath: '/repo/packages/a/package.json',
     });
 
@@ -44,7 +44,7 @@ describe('getDependencyChangesForPackage', () => {
       new Error('no merge base'), // merge-base fails
     );
 
-    const result = await getDependencyChangesForPackage({
+    const result = await getDependencyChanges({
       manifestPath: '/repo/packages/a/package.json',
     });
 
@@ -57,7 +57,7 @@ describe('getDependencyChangesForPackage', () => {
       new Error('unknown revision'), // rev-parse origin/main fails
     );
 
-    const result = await getDependencyChangesForPackage({
+    const result = await getDependencyChanges({
       manifestPath: '/repo/packages/a/package.json',
     });
 
@@ -69,7 +69,7 @@ describe('getDependencyChangesForPackage', () => {
       new Error('does not exist'), // git show fromRef:path (old file missing)
     );
 
-    const result = await getDependencyChangesForPackage({
+    const result = await getDependencyChanges({
       manifestPath: '/repo/packages/a/package.json',
       fromRef: 'abc123',
     });
@@ -99,7 +99,7 @@ describe('getDependencyChangesForPackage', () => {
       { stdout: '' }, // git log (no PRs)
     );
 
-    const result = await getDependencyChangesForPackage({
+    const result = await getDependencyChanges({
       manifestPath: '/repo/packages/a/package.json',
       fromRef: 'abc123',
     });
@@ -119,7 +119,7 @@ describe('getDependencyChangesForPackage', () => {
 
     mockExecaResponses({ stdout: oldPkg }, { stdout: newPkg }, { stdout: '' });
 
-    const result = await getDependencyChangesForPackage({
+    const result = await getDependencyChanges({
       manifestPath: '/repo/packages/a/package.json',
       fromRef: 'abc123',
     });
@@ -150,7 +150,7 @@ describe('getDependencyChangesForPackage', () => {
 
     mockExecaResponses({ stdout: oldPkg }, { stdout: newPkg }, { stdout: '' });
 
-    const result = await getDependencyChangesForPackage({
+    const result = await getDependencyChanges({
       manifestPath: '/repo/packages/a/package.json',
       fromRef: 'abc123',
     });
@@ -181,7 +181,7 @@ describe('getDependencyChangesForPackage', () => {
 
     mockExecaResponses({ stdout: oldPkg }, { stdout: newPkg }, { stdout: '' });
 
-    const result = await getDependencyChangesForPackage({
+    const result = await getDependencyChanges({
       manifestPath: '/repo/packages/a/package.json',
       fromRef: 'abc123',
     });
@@ -215,7 +215,7 @@ describe('getDependencyChangesForPackage', () => {
 
     mockExecaResponses({ stdout: oldPkg }, { stdout: newPkg }, { stdout: '' });
 
-    const result = await getDependencyChangesForPackage({
+    const result = await getDependencyChanges({
       manifestPath: '/repo/packages/a/package.json',
       fromRef: 'abc123',
     });
@@ -247,7 +247,7 @@ describe('getDependencyChangesForPackage', () => {
 
     mockExecaResponses({ stdout: oldPkg }, { stdout: newPkg }, { stdout: '' });
 
-    const result = await getDependencyChangesForPackage({
+    const result = await getDependencyChanges({
       manifestPath: '/repo/packages/a/package.json',
       fromRef: 'abc123',
     });
@@ -267,7 +267,7 @@ describe('getDependencyChangesForPackage', () => {
 
     mockExecaResponses({ stdout: oldPkg }, { stdout: newPkg }, { stdout: '' });
 
-    const result = await getDependencyChangesForPackage({
+    const result = await getDependencyChanges({
       manifestPath: '/repo/packages/a/package.json',
       fromRef: 'abc123',
     });
@@ -287,7 +287,7 @@ describe('getDependencyChangesForPackage', () => {
 
     mockExecaResponses({ stdout: oldPkg }, { stdout: newPkg }, { stdout: '' });
 
-    const result = await getDependencyChangesForPackage({
+    const result = await getDependencyChanges({
       manifestPath: '/repo/packages/a/package.json',
       fromRef: 'abc123',
     });
@@ -314,7 +314,7 @@ describe('getDependencyChangesForPackage', () => {
 
     mockExecaResponses({ stdout: oldPkg }, { stdout: newPkg }, { stdout: '' });
 
-    const result = await getDependencyChangesForPackage({
+    const result = await getDependencyChanges({
       manifestPath: '/repo/packages/a/package.json',
       fromRef: 'abc123',
     });
@@ -341,7 +341,7 @@ describe('getDependencyChangesForPackage', () => {
 
     mockExecaResponses({ stdout: oldPkg }, { stdout: newPkg }, { stdout: '' });
 
-    const result = await getDependencyChangesForPackage({
+    const result = await getDependencyChanges({
       manifestPath: '/repo/packages/a/package.json',
       fromRef: 'abc123',
     });
@@ -362,7 +362,7 @@ describe('getDependencyChangesForPackage', () => {
       { stdout: '' }, // git log
     );
 
-    const result = await getDependencyChangesForPackage({
+    const result = await getDependencyChanges({
       manifestPath: '/repo/packages/a/package.json',
     });
 
@@ -391,7 +391,7 @@ describe('getDependencyChangesForPackage', () => {
       { stdout: '' },
     );
 
-    await getDependencyChangesForPackage({
+    await getDependencyChanges({
       manifestPath: '/repo/packages/a/package.json',
       baseBranch: 'upstream/develop',
     });
@@ -416,7 +416,7 @@ describe('getDependencyChangesForPackage', () => {
       { stdout: '' },
     );
 
-    await getDependencyChangesForPackage({
+    await getDependencyChanges({
       manifestPath: '/repo/packages/a/package.json',
       remote: 'upstream',
     });
@@ -437,7 +437,7 @@ describe('getDependencyChangesForPackage', () => {
     );
 
     await expect(
-      getDependencyChangesForPackage({
+      getDependencyChanges({
         manifestPath: '/repo/packages/a/package.json',
         fromRef: 'abc123',
       }),
@@ -460,7 +460,7 @@ describe('getDependencyChangesForPackage', () => {
       { stdout: 'Bump @scope/b (#100)\nBump @scope/b (#200)' },
     );
 
-    const result = await getDependencyChangesForPackage({
+    const result = await getDependencyChanges({
       manifestPath: '/repo/packages/a/package.json',
       fromRef: 'abc123',
     });
@@ -484,7 +484,7 @@ describe('getDependencyChangesForPackage', () => {
       { stdout: 'Bump deps (#100)\nAnother bump (#100)' },
     );
 
-    const result = await getDependencyChangesForPackage({
+    const result = await getDependencyChanges({
       manifestPath: '/repo/packages/a/package.json',
       fromRef: 'abc123',
     });
@@ -508,7 +508,7 @@ describe('getDependencyChangesForPackage', () => {
       { stdout: 'Bump deps (#100) (#200)' },
     );
 
-    const result = await getDependencyChangesForPackage({
+    const result = await getDependencyChanges({
       manifestPath: '/repo/packages/a/package.json',
       fromRef: 'abc123',
     });
@@ -523,7 +523,7 @@ describe('getDependencyChangesForPackage', () => {
     );
 
     await expect(
-      getDependencyChangesForPackage({
+      getDependencyChanges({
         manifestPath: '/repo/packages/a/package.json',
         fromRef: 'abc123',
       }),
@@ -539,7 +539,7 @@ describe('getDependencyChangesForPackage', () => {
     );
 
     await expect(
-      getDependencyChangesForPackage({
+      getDependencyChanges({
         manifestPath: '/repo/packages/a/package.json',
         fromRef: 'abc123',
       }),
@@ -562,7 +562,7 @@ describe('getDependencyChangesForPackage', () => {
       new Error('git log failed'), // git log fails
     );
 
-    const result = await getDependencyChangesForPackage({
+    const result = await getDependencyChanges({
       manifestPath: '/repo/packages/a/package.json',
       fromRef: 'abc123',
     });

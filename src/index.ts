@@ -4,7 +4,7 @@ export {
   type ReleaseChanges,
 } from './changelog';
 export {
-  getDependencyChangesForPackage,
+  getDependencyChanges,
   type DependencyCheckResult,
 } from './get-dependency-changes';
 export { createEmptyChangelog } from './init';

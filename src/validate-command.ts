@@ -5,7 +5,7 @@ import { updateChangelogWithDependencyBumps } from './update-changelog-with-depe
 import { readFile, writeFile } from './fs';
 import { generateDiff } from './generate-diff';
 import {
-  getDependencyChangesForPackage,
+  getDependencyChanges,
   type DependencyCheckResult,
 } from './get-dependency-changes';
 import { PackageRename } from './shared-types';
@@ -111,7 +111,7 @@ export async function validate({
 
   let dependencyCheckResult: DependencyCheckResult | undefined;
   if (checkDeps) {
-    const result = await getDependencyChangesForPackage({
+    const result = await getDependencyChanges({
       manifestPath,
       fromRef,
       toRef,

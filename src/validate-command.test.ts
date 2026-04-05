@@ -1,7 +1,7 @@
 import _outdent from 'outdent';
 
 import { readFile, writeFile } from './fs';
-import { getDependencyChangesForPackage } from './get-dependency-changes';
+import { getDependencyChanges } from './get-dependency-changes';
 import { validate } from './validate-command';
 
 const outdent = _outdent({ trimTrailingNewline: false });
@@ -13,9 +13,9 @@ jest.mock('./get-dependency-changes');
 
 const readFileMock = readFile as jest.MockedFunction<typeof readFile>;
 const writeFileMock = writeFile as jest.MockedFunction<typeof writeFile>;
-const getDependencyChangesForPackageMock =
-  getDependencyChangesForPackage as jest.MockedFunction<
-    typeof getDependencyChangesForPackage
+const getDependencyChangesMock =
+  getDependencyChanges as jest.MockedFunction<
+    typeof getDependencyChanges
   >;
 
 const repoUrl = 'https://github.com/Org/Repo';
@@ -66,9 +66,9 @@ describe('validate', () => {
   });
 
   describe('dependency checking', () => {
-    it('calls getDependencyChangesForPackage when checkDeps is true', async () => {
+    it('calls getDependencyChanges when checkDeps is true', async () => {
       readFileMock.mockResolvedValue(wellFormattedChangelog);
-      getDependencyChangesForPackageMock.mockResolvedValue({
+      getDependencyChangesMock.mockResolvedValue({
         dependencyChanges: [],
         prNumbers: [],
         versionChanged: false,
@@ -79,16 +79,16 @@ describe('validate', () => {
         checkDeps: true,
       });
 
-      expect(getDependencyChangesForPackageMock).toHaveBeenCalledWith(
+      expect(getDependencyChangesMock).toHaveBeenCalledWith(
         expect.objectContaining({
           manifestPath: '/repo/package.json',
         }),
       );
     });
 
-    it('sets exitCode=1 when getDependencyChangesForPackage returns null', async () => {
+    it('sets exitCode=1 when getDependencyChanges returns null', async () => {
       readFileMock.mockResolvedValue(wellFormattedChangelog);
-      getDependencyChangesForPackageMock.mockResolvedValue(null);
+      getDependencyChangesMock.mockResolvedValue(null);
       const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {
         // Do nothing
       });
@@ -108,7 +108,7 @@ describe('validate', () => {
 
     it('passes fromRef, toRef, remote, and baseBranch options', async () => {
       readFileMock.mockResolvedValue(wellFormattedChangelog);
-      getDependencyChangesForPackageMock.mockResolvedValue({
+      getDependencyChangesMock.mockResolvedValue({
         dependencyChanges: [],
         prNumbers: [],
         versionChanged: false,
@@ -123,7 +123,7 @@ describe('validate', () => {
         baseBranch: 'upstream/develop',
       });
 
-      expect(getDependencyChangesForPackageMock).toHaveBeenCalledWith(
+      expect(getDependencyChangesMock).toHaveBeenCalledWith(
         expect.objectContaining({
           fromRef: 'abc123',
           toRef: 'def456',
@@ -133,12 +133,12 @@ describe('validate', () => {
       );
     });
 
-    it('does not call getDependencyChangesForPackage when checkDeps is false', async () => {
+    it('does not call getDependencyChanges when checkDeps is false', async () => {
       readFileMock.mockResolvedValue(wellFormattedChangelog);
 
       await validate(defaultOptions);
 
-      expect(getDependencyChangesForPackageMock).not.toHaveBeenCalled();
+      expect(getDependencyChangesMock).not.toHaveBeenCalled();
     });
   });
 
@@ -208,7 +208,7 @@ describe('validate', () => {
 
     it('auto-fixes when fix=true and currentPr provided', async () => {
       readFileMock.mockResolvedValue(changelogWithoutDepEntry);
-      getDependencyChangesForPackageMock.mockResolvedValue({
+      getDependencyChangesMock.mockResolvedValue({
         dependencyChanges: missingEntries,
         prNumbers: ['100'],
         versionChanged: false,
@@ -238,7 +238,7 @@ describe('validate', () => {
 
     it('adds entries to Unreleased when currentVersion is set but isReleaseCandidate is false', async () => {
       readFileMock.mockResolvedValue(changelogWithoutDepEntry);
-      getDependencyChangesForPackageMock.mockResolvedValue({
+      getDependencyChangesMock.mockResolvedValue({
         dependencyChanges: missingEntries,
         prNumbers: ['100'],
         versionChanged: false,
@@ -268,7 +268,7 @@ describe('validate', () => {
 
     it('adds entries to Unreleased when versionChanged is true but release header is missing', async () => {
       readFileMock.mockResolvedValue(changelogWithoutDepEntry);
-      getDependencyChangesForPackageMock.mockResolvedValue({
+      getDependencyChangesMock.mockResolvedValue({
         dependencyChanges: missingEntries,
         prNumbers: ['100'],
         versionChanged: true,
@@ -299,7 +299,7 @@ describe('validate', () => {
 
     it('falls back to currentPr when dependencyCheckResult has no prNumbers', async () => {
       readFileMock.mockResolvedValue(changelogWithoutDepEntry);
-      getDependencyChangesForPackageMock.mockResolvedValue({
+      getDependencyChangesMock.mockResolvedValue({
         dependencyChanges: missingEntries,
         prNumbers: [],
         versionChanged: false,
@@ -326,7 +326,7 @@ describe('validate', () => {
 
     it('prints error with fix instructions when fix=false', async () => {
       readFileMock.mockResolvedValue(changelogWithoutDepEntry);
-      getDependencyChangesForPackageMock.mockResolvedValue({
+      getDependencyChangesMock.mockResolvedValue({
         dependencyChanges: missingEntries,
         prNumbers: [],
         versionChanged: false,
@@ -353,7 +353,7 @@ describe('validate', () => {
 
     it('prints error when fix=true but no currentPr', async () => {
       readFileMock.mockResolvedValue(changelogWithoutDepEntry);
-      getDependencyChangesForPackageMock.mockResolvedValue({
+      getDependencyChangesMock.mockResolvedValue({
         dependencyChanges: missingEntries,
         prNumbers: [],
         versionChanged: false,
