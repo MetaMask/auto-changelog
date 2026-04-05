@@ -4,8 +4,8 @@ import _outdent from 'outdent';
 import path from 'path';
 
 import type { DependencyBump } from './changelog';
-import { updateChangelogWithDependencyBumps } from './update-changelog-with-dependency-bumps';
 import { readFile, writeFile } from './fs';
+import { updateChangelogWithDependencyBumps } from './update-changelog-with-dependency-bumps';
 
 const outdent = _outdent({ trimTrailingNewline: false });
 

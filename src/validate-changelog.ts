@@ -216,22 +216,14 @@ export async function validateChangelog({
     shouldExtractPrLinks: ensureValidPrLinksPresent,
   });
 
-  validateReleaseCandidateState(
-    changelog,
-    isReleaseCandidate,
-    currentVersion,
-  );
+  validateReleaseCandidateState(changelog, isReleaseCandidate, currentVersion);
 
   if (ensureValidPrLinksPresent) {
     validatePrLinks(changelog);
   }
 
   if (dependencyCheckResult) {
-    validateDependencyBumps(
-      changelog,
-      dependencyCheckResult,
-      currentVersion,
-    );
+    validateDependencyBumps(changelog, dependencyCheckResult, currentVersion);
   }
 
   await validateFormatting(changelog, normalizedChangelogContent);

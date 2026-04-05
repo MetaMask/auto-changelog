@@ -210,13 +210,11 @@ export async function getDependencyChanges({
       });
 
       if (headSha === baseSha) {
-        throw new BaseRefNotFoundError(
-          'HEAD is the same as the base branch',
-        );
+        throw new BaseRefNotFoundError('HEAD is the same as the base branch');
       }
-    } catch (error) {
-      if (error instanceof BaseRefNotFoundError) {
-        throw error;
+    } catch (caughtError) {
+      if (caughtError instanceof BaseRefNotFoundError) {
+        throw caughtError;
       }
       throw new BaseRefNotFoundError(
         `could not resolve base branch '${baseBranch}'`,

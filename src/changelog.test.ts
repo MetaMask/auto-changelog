@@ -296,7 +296,9 @@ describe('Changelog', () => {
           category: ChangeCategory.Changed,
           entryIndex: 0,
         });
-      }).toThrow("Could not find category 'Changed' in release section 'Unreleased'");
+      }).toThrow(
+        "Could not find category 'Changed' in release section 'Unreleased'",
+      );
     });
 
     it('updates a change in a specific release version', () => {

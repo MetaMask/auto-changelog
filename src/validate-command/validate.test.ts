@@ -20,10 +20,9 @@ jest.mock('../get-dependency-changes', () => {
   };
 });
 
-const getDependencyChangesMock =
-  getDependencyChanges as jest.MockedFunction<
-    typeof getDependencyChanges
-  >;
+const getDependencyChangesMock = getDependencyChanges as jest.MockedFunction<
+  typeof getDependencyChanges
+>;
 
 const repoUrl = 'https://github.com/Org/Repo';
 
@@ -39,41 +38,56 @@ const wellFormattedChangelog = outdent`
   [Unreleased]: ${repoUrl}/
 `;
 
-let tmpDir: string;
-let changelogPath: string;
-
-async function writeChangelog(content: string) {
-  await fs.writeFile(changelogPath, content, 'utf-8');
-}
-
-async function readChangelog(): Promise<string> {
-  return fs.readFile(changelogPath, 'utf-8');
-}
-
-beforeEach(async () => {
-  tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'validate-test-'));
-  changelogPath = path.join(tmpDir, 'CHANGELOG.md');
-});
-
-afterEach(async () => {
-  await fs.rm(tmpDir, { recursive: true, force: true });
-});
-
-function defaultOptions() {
-  return {
-    changelogPath,
-    currentVersion: '1.0.0' as const,
-    isReleaseCandidate: false,
-    repoUrl,
-    tagPrefix: 'v',
-    fix: false,
-    formatter: async (input: string) => input,
-    ensureValidPrLinksPresent: false,
-    manifestPath: '/repo/package.json',
-  };
-}
-
 describe('validate', () => {
+  let tmpDir: string;
+  let changelogPath: string;
+
+  /**
+   * Write changelog content to the temp file.
+   *
+   * @param content - The changelog content.
+   */
+  async function writeChangelog(content: string) {
+    await fs.writeFile(changelogPath, content, 'utf-8');
+  }
+
+  /**
+   * Read changelog content from the temp file.
+   *
+   * @returns The changelog content.
+   */
+  async function readChangelog(): Promise<string> {
+    return fs.readFile(changelogPath, 'utf-8');
+  }
+
+  beforeEach(async () => {
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'validate-test-'));
+    changelogPath = path.join(tmpDir, 'CHANGELOG.md');
+  });
+
+  afterEach(async () => {
+    await fs.rm(tmpDir, { recursive: true, force: true });
+  });
+
+  /**
+   * Build default validate options using the temp changelog path.
+   *
+   * @returns Default validate options.
+   */
+  function defaultOptions() {
+    return {
+      changelogPath,
+      currentVersion: '1.0.0' as const,
+      isReleaseCandidate: false,
+      repoUrl,
+      tagPrefix: 'v',
+      fix: false,
+      formatter: async (input: string) => input,
+      ensureValidPrLinksPresent: false,
+      manifestPath: '/repo/package.json',
+    };
+  }
+
   it('returns undefined for a well-formatted changelog', async () => {
     await writeChangelog(wellFormattedChangelog);
 
@@ -105,7 +119,9 @@ describe('validate', () => {
 
     it('sets exitCode=1 when getDependencyChanges throws BaseRefNotFoundError', async () => {
       await writeChangelog(wellFormattedChangelog);
-      getDependencyChangesMock.mockRejectedValue(new BaseRefNotFoundError('on base branch'));
+      getDependencyChangesMock.mockRejectedValue(
+        new BaseRefNotFoundError('on base branch'),
+      );
       const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {
         // Do nothing
       });
@@ -240,9 +256,7 @@ describe('validate', () => {
       });
 
       const written = await readChangelog();
-      expect(written).toContain(
-        'Bump `@scope/b` from `1.0.0` to `2.0.0`',
-      );
+      expect(written).toContain('Bump `@scope/b` from `1.0.0` to `2.0.0`');
       expect(logSpy).toHaveBeenCalledWith(
         expect.stringContaining('1 missing dependency'),
       );
@@ -427,7 +441,7 @@ describe('validate', () => {
       const opts = defaultOptions();
       opts.changelogPath = path.join(tmpDir, 'nonexistent', 'CHANGELOG.md');
 
-      await expect(validate(opts)).rejects.toThrow();
+      await expect(validate(opts)).rejects.toThrow('ENOENT');
     });
   });
 });

@@ -15,7 +15,6 @@ import {
   MissingDependencyEntriesError,
   validateChangelog,
 } from '../validate-changelog';
-
 import { error } from './cli-utils';
 
 /**

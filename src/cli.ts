@@ -6,14 +6,13 @@ import { hideBin } from 'yargs/helpers';
 import yargs from 'yargs/yargs';
 
 import { format, Formatter } from './changelog';
-import { error } from './validate-command';
 import { unreleased, Version } from './constants';
 import { readFile, writeFile } from './fs';
 import { createEmptyChangelog } from './init';
 import { getRepositoryUrl } from './repo';
 import { PackageRename } from './shared-types';
 import { updateChangelog } from './update-changelog';
-import { validate } from './validate-command';
+import { error, validate } from './validate-command';
 
 const updateEpilog = `New commits will be added to the "${unreleased}" section (or \
 to the section for the current release if the '--rc' flag is used) in reverse \
@@ -38,7 +37,7 @@ function isValidUrl(proposedUrl: string) {
     // eslint-disable-next-line no-new
     new URL(proposedUrl);
     return true;
-  } catch (error) {
+  } catch {
     return false;
   }
 }
@@ -131,13 +130,13 @@ async function update({
 /**
  * Returns whether an error has an error code or not.
  *
- * @param error - The error to check.
- * @returns True if the error is a real error and has a code property, false otherwise.
+ * @param value - The value to check.
+ * @returns True if the value is an Error with a code property, false otherwise.
  */
-function hasErrorCode(error: unknown): error is Error & { code: unknown } {
+function hasErrorCode(value: unknown): value is Error & { code: unknown } {
   return (
-    error instanceof Error &&
-    Object.prototype.hasOwnProperty.call(error, 'code')
+    value instanceof Error &&
+    Object.prototype.hasOwnProperty.call(value, 'code')
   );
 }
 
@@ -428,9 +427,7 @@ async function main() {
       `Version not found. Please set the --currentVersion flag, or run this as an npm script from a project with the 'version' field set.`,
     );
   } else if (currentVersion && semver.valid(currentVersion) === null) {
-    return error(
-      `Current version is not valid SemVer: '${currentVersion}'`,
-    );
+    return error(`Current version is not valid SemVer: '${currentVersion}'`);
   } else if (!repoUrl) {
     return error(
       `npm package repository URL not found. Please set the '--repo' flag, or run this as an npm script from a project with the 'repository' field set.`,
