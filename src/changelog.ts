@@ -454,10 +454,21 @@ type UpdateChangeOptions = {
   version?: Version;
   category: ChangeCategory;
   entryIndex: number;
-  description?: string;
   prNumbers?: string[];
-  dependencyBump?: DependencyBump;
-};
+} & (
+  | {
+      description: string;
+      dependencyBump?: DependencyBump;
+    }
+  | {
+      description?: string;
+      dependencyBump: DependencyBump;
+    }
+  | {
+      description?: undefined;
+      dependencyBump?: undefined;
+    }
+);
 
 /**
  * A changelog that complies with the
@@ -622,31 +633,28 @@ export default class Changelog {
    * @param options.prNumbers - New PR numbers (optional).
    * @param options.dependencyBump - New dependency bump data (optional).
    */
-  updateChange({
-    version,
-    category,
-    entryIndex,
-    description,
-    prNumbers,
-    dependencyBump,
-  }: UpdateChangeOptions) {
+  updateChange(options: UpdateChangeOptions) {
+    const { version, category, entryIndex, prNumbers } = options;
+
     const release = version
       ? this.#changes[version]
       : this.#changes[unreleased];
 
     if (!release) {
-      const message = version
-        ? `Specified release version does not exist: '${version}'`
-        : `Could not find 'Unreleased' section`;
-      throw new Error(message);
+      throw new Error(
+        version
+          ? `Could not find ${version ? `release: '${version}'` : `'${unreleased}' section`}`
+          : `Could not find '${unreleased}' section`,
+      );
     }
 
     const releaseCategory = release[category];
     if (!releaseCategory) {
       throw new Error(
-        `No '${category}' category in the ${version ?? 'Unreleased'} section`,
+        `Could not find category '${category}' in release section '${version ?? unreleased}'`,
       );
     }
+
     if (entryIndex < 0 || entryIndex >= releaseCategory.length) {
       throw new Error(
         `No change at index ${entryIndex} in category '${category}'`,
@@ -654,14 +662,22 @@ export default class Changelog {
     }
 
     const change = releaseCategory[entryIndex];
+
+    const description =
+      'description' in options ? options.description : undefined;
+    const dependencyBump =
+      'dependencyBump' in options ? options.dependencyBump : undefined;
+
     if (description !== undefined) {
       change.description = description;
+      if (dependencyBump !== undefined) {
+        change.dependencyBump = dependencyBump;
+      }
     } else if (dependencyBump !== undefined) {
       change.description = formatDependencyBumpDescription(dependencyBump);
-    }
-    if (dependencyBump !== undefined) {
       change.dependencyBump = dependencyBump;
     }
+
     if (prNumbers !== undefined) {
       change.prNumbers = prNumbers;
     }

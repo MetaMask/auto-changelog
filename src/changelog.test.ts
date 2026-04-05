@@ -249,7 +249,7 @@ describe('Changelog', () => {
           category: ChangeCategory.Changed,
           entryIndex: 0,
         });
-      }).toThrow('Specified release version does not exist');
+      }).toThrow("Could not find release: '9.9.9'");
     });
 
     it('throws when entryIndex is out of bounds (positive)', () => {
@@ -296,7 +296,7 @@ describe('Changelog', () => {
           category: ChangeCategory.Changed,
           entryIndex: 0,
         });
-      }).toThrow("No 'Changed' category in the Unreleased section");
+      }).toThrow("Could not find category 'Changed' in release section 'Unreleased'");
     });
 
     it('updates a change in a specific release version', () => {
