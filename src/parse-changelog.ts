@@ -7,7 +7,12 @@ import { PackageRename } from './shared-types';
 /**
  * Parse a dependency bump description into structured data.
  *
- * Detects the pattern `[**BREAKING:** ]Bump \`dep\` from \`old\` to \`new\``.
+ * Detects the following patterns (case-insensitive verb):
+ * - `[**BREAKING:** ]Bump \`dep\` from \`old\` to \`new\``
+ * - `[**BREAKING:** ]Update \`dep\` from \`old\` to \`new\``
+ * - `[**BREAKING:** ]Upgrade \`dep\` from \`old\` to \`new\``
+ * - `[**BREAKING:** ]Update \`dep\` to \`new\`` (oldVersion omitted)
+ * - `[**BREAKING:** ]Upgrade \`dep\` to \`new\`` (oldVersion omitted)
  *
  * Note: The dependency type is inferred heuristically from the description:
  * entries with `**BREAKING:**` prefix are classified as `peerDependencies`,
@@ -22,18 +27,33 @@ import { PackageRename } from './shared-types';
 function parsePossibleDependencyBumpDescription(
   description: string,
 ): DependencyBump | undefined {
-  const match = description.match(
-    /^(\*\*BREAKING:\*\*\s+)?Bump `([^`]+)` from `([^`]+)` to `([^`]+)`/u,
+  // Full form: Bump/Update/Upgrade `dep` from `old` to `new`
+  const fullMatch = description.match(
+    /^(\*\*BREAKING:\*\*\s+)?(?:Bump|Update|Upgrade) `([^`]+)` from `([^`]+)` to `([^`]+)`/u,
   );
-  if (!match) {
-    return undefined;
+  if (fullMatch) {
+    return {
+      dependency: fullMatch[2],
+      isBreaking: Boolean(fullMatch[1]),
+      oldVersion: fullMatch[3],
+      newVersion: fullMatch[4],
+    };
   }
-  return {
-    dependency: match[2],
-    isBreaking: Boolean(match[1]),
-    oldVersion: match[3],
-    newVersion: match[4],
-  };
+
+  // Short form: Update/Upgrade `dep` to `new` (no "from")
+  const shortMatch = description.match(
+    /^(\*\*BREAKING:\*\*\s+)?(?:Bump|Update|Upgrade) `([^`]+)` to `([^`]+)`/u,
+  );
+  if (shortMatch) {
+    return {
+      dependency: shortMatch[2],
+      isBreaking: Boolean(shortMatch[1]),
+      oldVersion: '',
+      newVersion: shortMatch[3],
+    };
+  }
+
+  return undefined;
 }
 
 /**
