@@ -643,7 +643,7 @@ export default class Changelog {
     if (!release) {
       throw new Error(
         version
-          ? `Could not find ${version ? `release: '${version}'` : `'${unreleased}' section`}`
+          ? `Could not find release: '${version}'`
           : `Could not find '${unreleased}' section`,
       );
     }
