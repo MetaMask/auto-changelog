@@ -552,8 +552,8 @@ describe('updateChangelogWithDependencyBumps', () => {
       buildChangelog(outdent`
         ## [Unreleased]
         ### Changed
-        - Bump \`@scope/c\` from \`1.0.0\` to \`2.0.0\` ([#200](${TEST_REPO_URL}/pull/200))
         - Bump \`@scope/b\` from \`1.0.0\` to \`2.0.0\` ([#100](${TEST_REPO_URL}/pull/100), [#200](${TEST_REPO_URL}/pull/200))
+        - Bump \`@scope/c\` from \`1.0.0\` to \`2.0.0\` ([#200](${TEST_REPO_URL}/pull/200))
 
         [Unreleased]: ${TEST_REPO_URL}/
       `),

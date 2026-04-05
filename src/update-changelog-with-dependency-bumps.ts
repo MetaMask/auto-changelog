@@ -164,27 +164,18 @@ export async function updateChangelogWithDependencyBumps({
     return await changelog.toString();
   }
 
-  // Add new entries: non-breaking first, then breaking
-  // (since addToStart=true, breaking added last end up on top)
-  const nonBreaking = entriesToAdd.filter((entry) => !entry.isBreaking);
+  // Add new entries after existing ones (addToStart: false).
+  // Breaking entries first, then non-breaking.
   const breaking = entriesToAdd.filter((entry) => entry.isBreaking);
+  const nonBreaking = entriesToAdd.filter((entry) => !entry.isBreaking);
 
-  // Add in reverse order so they appear in correct order
-  for (let i = nonBreaking.length - 1; i >= 0; i--) {
+  for (const bump of [...breaking, ...nonBreaking]) {
     changelog.addChange({
+      addToStart: false,
       category: ChangeCategory.Changed,
       ...(currentVersion && { version: currentVersion }),
       prNumbers,
-      dependencyBump: nonBreaking[i],
-    });
-  }
-
-  for (let i = breaking.length - 1; i >= 0; i--) {
-    changelog.addChange({
-      category: ChangeCategory.Changed,
-      ...(currentVersion && { version: currentVersion }),
-      prNumbers,
-      dependencyBump: breaking[i],
+      dependencyBump: bump,
     });
   }
 
