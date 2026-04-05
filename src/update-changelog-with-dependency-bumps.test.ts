@@ -4,7 +4,7 @@ import _outdent from 'outdent';
 import path from 'path';
 
 import type { DependencyBump } from './changelog';
-import { updateChangelogWithDependencies } from './dependency-changelog';
+import { updateChangelogWithDependencyBumps } from './update-changelog-with-dependency-bumps';
 import { readFile, writeFile } from './fs';
 
 const outdent = _outdent({ trimTrailingNewline: false });
@@ -30,7 +30,7 @@ function buildChangelog(variantContent: string): string {
   return `${invariantContent}\n${variantContent}`;
 }
 
-describe('updateChangelogWithDependencies', () => {
+describe('updateChangelogWithDependencyBumps', () => {
   let tempDir: string;
   let changelogPath: string;
 
@@ -56,7 +56,7 @@ describe('updateChangelogWithDependencies', () => {
       `),
     );
 
-    const dependencyChanges: DependencyBump[] = [
+    const dependencyBumps: DependencyBump[] = [
       {
         dependency: '@scope/b',
         isBreaking: false,
@@ -65,9 +65,9 @@ describe('updateChangelogWithDependencies', () => {
       },
     ];
 
-    await updateChangelogWithDependencies({
+    await updateChangelogWithDependencyBumps({
       changelogPath,
-      dependencyChanges,
+      dependencyBumps,
       prNumbers: ['123'],
       repoUrl: TEST_REPO_URL,
       formatter,
@@ -97,7 +97,7 @@ describe('updateChangelogWithDependencies', () => {
       `),
     );
 
-    const dependencyChanges: DependencyBump[] = [
+    const dependencyBumps: DependencyBump[] = [
       {
         dependency: '@scope/b',
         isBreaking: true,
@@ -106,9 +106,9 @@ describe('updateChangelogWithDependencies', () => {
       },
     ];
 
-    await updateChangelogWithDependencies({
+    await updateChangelogWithDependencyBumps({
       changelogPath,
-      dependencyChanges,
+      dependencyBumps,
       prNumbers: ['123'],
       repoUrl: TEST_REPO_URL,
       formatter,
@@ -140,7 +140,7 @@ describe('updateChangelogWithDependencies', () => {
       `),
     );
 
-    const dependencyChanges: DependencyBump[] = [
+    const dependencyBumps: DependencyBump[] = [
       {
         dependency: '@scope/b',
         isBreaking: false,
@@ -149,9 +149,9 @@ describe('updateChangelogWithDependencies', () => {
       },
     ];
 
-    await updateChangelogWithDependencies({
+    await updateChangelogWithDependencyBumps({
       changelogPath,
-      dependencyChanges,
+      dependencyBumps,
       prNumbers: ['200'],
       repoUrl: TEST_REPO_URL,
       formatter,
@@ -187,7 +187,7 @@ describe('updateChangelogWithDependencies', () => {
       `),
     );
 
-    const dependencyChanges: DependencyBump[] = [
+    const dependencyBumps: DependencyBump[] = [
       {
         dependency: '@scope/b',
         isBreaking: false,
@@ -196,9 +196,9 @@ describe('updateChangelogWithDependencies', () => {
       },
     ];
 
-    await updateChangelogWithDependencies({
+    await updateChangelogWithDependencyBumps({
       changelogPath,
-      dependencyChanges,
+      dependencyBumps,
       currentVersion: '2.0.0',
       prNumbers: ['123'],
       repoUrl: TEST_REPO_URL,
@@ -240,7 +240,7 @@ describe('updateChangelogWithDependencies', () => {
       `),
     );
 
-    const dependencyChanges: DependencyBump[] = [
+    const dependencyBumps: DependencyBump[] = [
       {
         dependency: '@scope/b',
         isBreaking: true,
@@ -249,9 +249,9 @@ describe('updateChangelogWithDependencies', () => {
       },
     ];
 
-    await updateChangelogWithDependencies({
+    await updateChangelogWithDependencyBumps({
       changelogPath,
-      dependencyChanges,
+      dependencyBumps,
       currentVersion: '2.0.0',
       prNumbers: ['123'],
       repoUrl: TEST_REPO_URL,
@@ -290,7 +290,7 @@ describe('updateChangelogWithDependencies', () => {
       `),
     );
 
-    const dependencyChanges: DependencyBump[] = [
+    const dependencyBumps: DependencyBump[] = [
       {
         dependency: '@scope/b',
         isBreaking: false,
@@ -300,9 +300,9 @@ describe('updateChangelogWithDependencies', () => {
     ];
 
     await expect(
-      updateChangelogWithDependencies({
+      updateChangelogWithDependencyBumps({
         changelogPath,
-        dependencyChanges,
+        dependencyBumps,
         currentVersion: '2.0.0', // Version section doesn't exist yet
         prNumbers: ['123'],
         repoUrl: TEST_REPO_URL,
@@ -323,7 +323,7 @@ describe('updateChangelogWithDependencies', () => {
       `),
     );
 
-    const dependencyChanges: DependencyBump[] = [
+    const dependencyBumps: DependencyBump[] = [
       {
         dependency: '@scope/b',
         isBreaking: false,
@@ -338,9 +338,9 @@ describe('updateChangelogWithDependencies', () => {
       },
     ];
 
-    await updateChangelogWithDependencies({
+    await updateChangelogWithDependencyBumps({
       changelogPath,
-      dependencyChanges,
+      dependencyBumps,
       prNumbers: ['123'],
       repoUrl: TEST_REPO_URL,
       formatter,
@@ -371,7 +371,7 @@ describe('updateChangelogWithDependencies', () => {
       `),
     );
 
-    const dependencyChanges: DependencyBump[] = [
+    const dependencyBumps: DependencyBump[] = [
       {
         dependency: '@scope/b',
         isBreaking: false,
@@ -386,9 +386,9 @@ describe('updateChangelogWithDependencies', () => {
       },
     ];
 
-    await updateChangelogWithDependencies({
+    await updateChangelogWithDependencyBumps({
       changelogPath,
-      dependencyChanges,
+      dependencyBumps,
       prNumbers: ['777'],
       repoUrl: TEST_REPO_URL,
       formatter,
@@ -419,7 +419,7 @@ describe('updateChangelogWithDependencies', () => {
       `),
     );
 
-    const dependencyChanges: DependencyBump[] = [
+    const dependencyBumps: DependencyBump[] = [
       {
         dependency: 'lodash',
         isBreaking: false,
@@ -428,9 +428,9 @@ describe('updateChangelogWithDependencies', () => {
       },
     ];
 
-    await updateChangelogWithDependencies({
+    await updateChangelogWithDependencyBumps({
       changelogPath,
-      dependencyChanges,
+      dependencyBumps,
       prNumbers: ['789'],
       repoUrl: TEST_REPO_URL,
       formatter,
@@ -452,7 +452,7 @@ describe('updateChangelogWithDependencies', () => {
   it('throws error when changelog does not exist', async () => {
     const nonExistentPath = path.join(tempDir, 'nonexistent', 'CHANGELOG.md');
 
-    const dependencyChanges: DependencyBump[] = [
+    const dependencyBumps: DependencyBump[] = [
       {
         dependency: '@scope/b',
         isBreaking: false,
@@ -462,9 +462,9 @@ describe('updateChangelogWithDependencies', () => {
     ];
 
     await expect(
-      updateChangelogWithDependencies({
+      updateChangelogWithDependencyBumps({
         changelogPath: nonExistentPath,
-        dependencyChanges,
+        dependencyBumps,
         prNumbers: ['123'],
         repoUrl: TEST_REPO_URL,
         formatter,
@@ -485,7 +485,7 @@ describe('updateChangelogWithDependencies', () => {
 
     await writeFile(changelogPath, initialChangelog);
 
-    const dependencyChanges: DependencyBump[] = [
+    const dependencyBumps: DependencyBump[] = [
       {
         dependency: '@scope/b',
         isBreaking: false,
@@ -494,9 +494,9 @@ describe('updateChangelogWithDependencies', () => {
       },
     ];
 
-    await updateChangelogWithDependencies({
+    await updateChangelogWithDependencyBumps({
       changelogPath,
-      dependencyChanges,
+      dependencyBumps,
       prNumbers: ['123'],
       repoUrl: TEST_REPO_URL,
       formatter,
@@ -521,7 +521,7 @@ describe('updateChangelogWithDependencies', () => {
       `),
     );
 
-    const dependencyChanges: DependencyBump[] = [
+    const dependencyBumps: DependencyBump[] = [
       // This one needs updating (version changed)
       {
         dependency: '@scope/b',
@@ -538,9 +538,9 @@ describe('updateChangelogWithDependencies', () => {
       },
     ];
 
-    await updateChangelogWithDependencies({
+    await updateChangelogWithDependencyBumps({
       changelogPath,
-      dependencyChanges,
+      dependencyBumps,
       prNumbers: ['200'],
       repoUrl: TEST_REPO_URL,
       formatter,
@@ -571,7 +571,7 @@ describe('updateChangelogWithDependencies', () => {
       `),
     );
 
-    const dependencyChanges: DependencyBump[] = [
+    const dependencyBumps: DependencyBump[] = [
       {
         dependency: '@scope/b',
         isBreaking: false,
@@ -580,9 +580,9 @@ describe('updateChangelogWithDependencies', () => {
       },
     ];
 
-    await updateChangelogWithDependencies({
+    await updateChangelogWithDependencyBumps({
       changelogPath,
-      dependencyChanges,
+      dependencyBumps,
       prNumbers: ['123'],
       repoUrl: TEST_REPO_URL,
       formatter,
@@ -618,9 +618,9 @@ describe('updateChangelogWithDependencies', () => {
       `),
     );
 
-    await updateChangelogWithDependencies({
+    await updateChangelogWithDependencyBumps({
       changelogPath,
-      dependencyChanges: [
+      dependencyBumps: [
         {
           dependency: '@scope/b',
           isBreaking: true,
@@ -660,9 +660,9 @@ describe('updateChangelogWithDependencies', () => {
       `),
     );
 
-    await updateChangelogWithDependencies({
+    await updateChangelogWithDependencyBumps({
       changelogPath,
-      dependencyChanges: [
+      dependencyBumps: [
         {
           dependency: '@scope/b',
           isBreaking: true,

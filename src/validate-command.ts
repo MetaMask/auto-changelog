@@ -1,7 +1,7 @@
 import { Formatter } from './changelog';
 import { error } from './cli-utils';
 import { Version } from './constants';
-import { updateChangelogWithDependencies } from './dependency-changelog';
+import { updateChangelogWithDependencyBumps } from './update-changelog-with-dependency-bumps';
 import { readFile, writeFile } from './fs';
 import { generateDiff } from './generate-diff';
 import {
@@ -165,9 +165,9 @@ export async function validate({
         const hasReleaseHeader =
           currentVersion !== undefined &&
           changelogContent.includes(`## [${currentVersion}]`);
-        await updateChangelogWithDependencies({
+        await updateChangelogWithDependencyBumps({
           changelogPath,
-          dependencyChanges: caughtError.missingEntries,
+          dependencyBumps: caughtError.missingEntries,
           currentVersion:
             dependencyCheckResult?.versionChanged && hasReleaseHeader
               ? currentVersion

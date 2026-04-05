@@ -26,13 +26,13 @@ function extractPrNumbersFromEntry(entry: Change): string[] {
 }
 
 /**
- * Options for updating a single changelog with dependency entries.
+ * Options for updating a changelog with dependency bump entries.
  */
-type UpdateChangelogWithDependenciesOptions = {
+type UpdateChangelogWithDependencyBumpsOptions = {
   /** Path to the changelog file. */
   changelogPath: string;
-  /** Dependency changes to add. */
-  dependencyChanges: DependencyBump[];
+  /** Dependency bumps to add. */
+  dependencyBumps: DependencyBump[];
   /** Current version of the package (if being released). */
   currentVersion?: string;
   /** PR numbers to use in entries. */
@@ -59,7 +59,7 @@ type UpdateChangelogWithDependenciesOptions = {
  *
  * @param options - Options.
  * @param options.changelogPath - Path to the changelog file.
- * @param options.dependencyChanges - Dependency changes to add.
+ * @param options.dependencyBumps - Dependency bumps to add.
  * @param options.currentVersion - Current version of the package (if being released).
  * @param options.prNumbers - PR numbers to use in entries.
  * @param options.repoUrl - Repository URL for PR links.
@@ -68,16 +68,16 @@ type UpdateChangelogWithDependenciesOptions = {
  * @param options.packageRename - Package rename info if applicable.
  * @returns The updated changelog content.
  */
-export async function updateChangelogWithDependencies({
+export async function updateChangelogWithDependencyBumps({
   changelogPath,
-  dependencyChanges,
+  dependencyBumps,
   currentVersion,
   prNumbers,
   repoUrl,
   formatter,
   tagPrefix,
   packageRename,
-}: UpdateChangelogWithDependenciesOptions): Promise<string> {
+}: UpdateChangelogWithDependencyBumpsOptions): Promise<string> {
   let changelogContent: string;
   try {
     changelogContent = await readFile(changelogPath);
@@ -104,13 +104,13 @@ export async function updateChangelogWithDependencies({
   const entriesToAdd: DependencyBump[] = [];
   let hasUpdates = false;
 
-  for (const change of dependencyChanges) {
+  for (const bump of dependencyBumps) {
     if (!changesSection || Object.keys(changesSection).length === 0) {
-      entriesToAdd.push(change);
+      entriesToAdd.push(bump);
       continue;
     }
 
-    const entryCheck = findDependencyBumpChangelogEntry(changesSection, change);
+    const entryCheck = findDependencyBumpChangelogEntry(changesSection, bump);
     if (entryCheck.hasExactMatch) {
       continue;
     }
@@ -136,14 +136,14 @@ export async function updateChangelogWithDependencies({
         category: ChangeCategory.Changed,
         entryIndex: entryCheck.entryIndex,
         dependencyBump: {
-          ...change,
-          oldVersion: existingOldVersion ?? change.oldVersion,
+          ...bump,
+          oldVersion: existingOldVersion ?? bump.oldVersion,
         },
         prNumbers: mergedPrNumbers,
       });
       hasUpdates = true;
     } else {
-      entriesToAdd.push(change);
+      entriesToAdd.push(bump);
     }
   }
 
