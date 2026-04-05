@@ -1,20 +1,21 @@
-import { Formatter } from './changelog';
-import { error } from './cli-utils';
-import { Version } from './constants';
-import { updateChangelogWithDependencyBumps } from './update-changelog-with-dependency-bumps';
-import { readFile, writeFile } from './fs';
-import { generateDiff } from './generate-diff';
+import { Formatter } from '../changelog';
+import { Version } from '../constants';
+import { readFile, writeFile } from '../fs';
+import { generateDiff } from '../generate-diff';
 import {
   getDependencyChanges,
   type DependencyCheckResult,
-} from './get-dependency-changes';
-import { PackageRename } from './shared-types';
+} from '../get-dependency-changes';
+import { PackageRename } from '../shared-types';
+import { updateChangelogWithDependencyBumps } from '../update-changelog-with-dependency-bumps';
 import {
   ChangelogFormattingError,
   InvalidChangelogError,
   MissingDependencyEntriesError,
   validateChangelog,
-} from './validate-changelog';
+} from '../validate-changelog';
+
+import { error } from './cli-utils';
 
 /**
  * Options for validating a changelog.

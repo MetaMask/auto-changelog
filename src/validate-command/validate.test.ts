@@ -1,15 +1,15 @@
 import _outdent from 'outdent';
 
-import { readFile, writeFile } from './fs';
-import { getDependencyChanges } from './get-dependency-changes';
-import { validate } from './validate-command';
+import { readFile, writeFile } from '../fs';
+import { getDependencyChanges } from '../get-dependency-changes';
+import { validate } from './validate';
 
 const outdent = _outdent({ trimTrailingNewline: false });
 
 // Only mock I/O and git — let internal logic (validateChangelog,
 // generateDiff, updateChangelogWithDependencies) run for real.
-jest.mock('./fs');
-jest.mock('./get-dependency-changes');
+jest.mock('../fs');
+jest.mock('../get-dependency-changes');
 
 const readFileMock = readFile as jest.MockedFunction<typeof readFile>;
 const writeFileMock = writeFile as jest.MockedFunction<typeof writeFile>;

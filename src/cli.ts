@@ -6,7 +6,7 @@ import { hideBin } from 'yargs/helpers';
 import yargs from 'yargs/yargs';
 
 import { format, Formatter } from './changelog';
-import { error } from './cli-utils';
+import { error } from './validate-command';
 import { unreleased, Version } from './constants';
 import { readFile, writeFile } from './fs';
 import { createEmptyChangelog } from './init';
