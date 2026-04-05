@@ -1010,7 +1010,7 @@ describe('validateChangelog', () => {
       ).rejects.toThrow('Missing changelog entries for dependency bumps');
     });
 
-    it('should pass when expected peerDependency entry with BREAKING prefix is found', async () => {
+    it('should pass when expected peerDependency entry with BREAKING prefix is found in changelog', async () => {
       const changelogContent = outdent`
         # Changelog
         All notable changes to this project will be documented in this file.
