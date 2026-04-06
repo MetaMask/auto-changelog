@@ -340,21 +340,25 @@ function validateDependencyBumps(
         depChange,
       );
       if (!result.hasExactMatch) {
-        // Check if the entry exists with wrong breaking status
-        const wrongBreaking = findDependencyBumpChangelogEntry(
-          effectiveChangesSection,
-          {
-            ...depChange,
-            isBreaking: !depChange.isBreaking,
-          },
-        );
-        if (wrongBreaking.existingEntry) {
-          const expected = depChange.isBreaking
-            ? 'with **BREAKING:** prefix (peerDependency)'
-            : 'without **BREAKING:** prefix (regular dependency)';
-          throw new InvalidChangelogError(
-            `Dependency \`${depChange.dependency}\` has a changelog entry but ${expected} is expected`,
+        // If a stale-version match exists with the correct breaking status,
+        // just mark it as missing so the fix handler can update it.
+        // Only check for wrong-breaking when no correct entry exists at all.
+        if (!result.existingEntry) {
+          const wrongBreaking = findDependencyBumpChangelogEntry(
+            effectiveChangesSection,
+            {
+              ...depChange,
+              isBreaking: !depChange.isBreaking,
+            },
           );
+          if (wrongBreaking.existingEntry) {
+            const expected = depChange.isBreaking
+              ? 'with **BREAKING:** prefix (peerDependency)'
+              : 'without **BREAKING:** prefix (regular dependency)';
+            throw new InvalidChangelogError(
+              `Dependency \`${depChange.dependency}\` has a changelog entry but ${expected} is expected`,
+            );
+          }
         }
         missingEntries.push(depChange);
       }
