@@ -258,7 +258,7 @@ describe('validate', () => {
       const written = await readChangelog();
       expect(written).toContain('Bump `@scope/b` from `1.0.0` to `2.0.0`');
       expect(logSpy).toHaveBeenCalledWith(
-        expect.stringContaining('1 missing dependency'),
+        expect.stringContaining('1 dependency changelog entry'),
       );
       logSpy.mockRestore();
     });

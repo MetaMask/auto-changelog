@@ -180,8 +180,9 @@ export async function validate({
           packageRename,
           changelog: caughtError.changelog,
         });
+        const count = caughtError.missingEntries.length;
         console.log(
-          `Added ${caughtError.missingEntries.length} missing dependency changelog entries.`,
+          `Fixed ${count} dependency changelog ${count === 1 ? 'entry' : 'entries'} (added or updated).`,
         );
         return undefined;
       }
