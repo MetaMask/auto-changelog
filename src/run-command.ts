@@ -6,13 +6,15 @@ import execa from 'execa';
  *
  * @param command - The command to run, e.g. "git".
  * @param args - The arguments to the command.
- * @returns An array of the non-empty lines returned by the command.
+ * @param options - Options passed directly to execa.
+ * @returns The stdout output as a string.
  */
 export async function runCommand(
   command: string,
   args: string[],
+  options?: execa.Options,
 ): Promise<string> {
-  return (await execa(command, [...args])).stdout;
+  return (await execa(command, [...args], options)).stdout;
 }
 
 /**
@@ -22,13 +24,15 @@ export async function runCommand(
  *
  * @param command - The command to run, e.g. "git".
  * @param args - The arguments to the command.
+ * @param options - Options passed directly to execa.
  * @returns An array of the non-empty lines returned by the command.
  */
 export async function runCommandAndSplit(
   command: string,
   args: string[],
+  options?: execa.Options,
 ): Promise<string[]> {
-  return (await execa(command, [...args])).stdout
+  return (await execa(command, [...args], options)).stdout
     .trim()
     .split('\n')
     .filter((line) => line !== '');

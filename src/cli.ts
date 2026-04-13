@@ -7,16 +7,12 @@ import yargs from 'yargs/yargs';
 
 import { format, Formatter } from './changelog';
 import { unreleased, Version } from './constants';
-import { generateDiff } from './generate-diff';
+import { readFile, writeFile } from './fs';
 import { createEmptyChangelog } from './init';
 import { getRepositoryUrl } from './repo';
 import { PackageRename } from './shared-types';
 import { updateChangelog } from './update-changelog';
-import {
-  ChangelogFormattingError,
-  InvalidChangelogError,
-  validateChangelog,
-} from './validate-changelog';
+import { error, validate } from './validate-command';
 
 const updateEpilog = `New commits will be added to the "${unreleased}" section (or \
 to the section for the current release if the '--rc' flag is used) in reverse \
@@ -41,44 +37,9 @@ function isValidUrl(proposedUrl: string) {
     // eslint-disable-next-line no-new
     new URL(proposedUrl);
     return true;
-  } catch (error) {
+  } catch {
     return false;
   }
-}
-
-/**
- * Exit the process with the given error.
- *
- * @param errorMessage - The error message to exit with.
- */
-function exitWithError(errorMessage: string) {
-  console.error(errorMessage);
-  process.exitCode = 1;
-}
-
-/**
- * Read the changelog contents from the filesystem.
- *
- * @param changelogPath - The path to the changelog file.
- * @returns The changelog contents.
- */
-async function readChangelog(changelogPath: string) {
-  return await fs.readFile(changelogPath, {
-    encoding: 'utf8',
-  });
-}
-
-/**
- * Save the changelog to the filesystem.
- *
- * @param changelogPath - The path to the changelog file.
- * @param newChangelogContent - The new changelog contents to save.
- */
-async function saveChangelog(
-  changelogPath: string,
-  newChangelogContent: string,
-) {
-  await fs.writeFile(changelogPath, newChangelogContent);
 }
 
 type UpdateOptions = {
@@ -141,7 +102,7 @@ async function update({
   useShortPrLink,
   requirePrNumbers,
 }: UpdateOptions) {
-  const changelogContent = await readChangelog(changelogPath);
+  const changelogContent = await readFile(changelogPath);
 
   const newChangelogContent = await updateChangelog({
     changelogContent,
@@ -159,100 +120,23 @@ async function update({
   });
 
   if (newChangelogContent) {
-    await saveChangelog(changelogPath, newChangelogContent);
+    await writeFile(changelogPath, newChangelogContent);
     console.log('CHANGELOG.md updated.');
   } else {
     console.log('There are no new commits to add to the changelog.');
   }
 }
 
-type ValidateOptions = {
-  changelogPath: string;
-  currentVersion?: Version;
-  isReleaseCandidate: boolean;
-  repoUrl: string;
-  tagPrefix: string;
-  fix: boolean;
-  formatter: Formatter;
-  /**
-   * The package rename properties, used in case of package is renamed
-   */
-  packageRename?: PackageRename;
-  /**
-   * Whether to validate that each changelog entry has one or more links to
-   * associated pull requests within the repository (true) or not (false).
-   */
-  ensureValidPrLinksPresent: boolean;
-};
-
-/**
- * Validate the changelog.
- *
- * @param options - Validation options.
- * @param options.changelogPath - The path to the changelog file.
- * @param options.currentVersion - The current project version.
- * @param options.isReleaseCandidate - Whether the current branch is a release candidate or not.
- * @param options.repoUrl - The GitHub repository URL for the current project.
- * @param options.tagPrefix - The prefix used in tags before the version number.
- * @param options.fix - Whether to attempt to fix the changelog or not.
- * @param options.formatter - A custom Markdown formatter to use.
- * @param options.packageRename - The package rename properties.
- * @param options.ensureValidPrLinksPresent - Whether to validate that each
- * changelog entry has one or more links to associated pull requests within the
- * repository (true) or not (false).
- */
-async function validate({
-  changelogPath,
-  currentVersion,
-  isReleaseCandidate,
-  repoUrl,
-  tagPrefix,
-  fix,
-  formatter,
-  packageRename,
-  ensureValidPrLinksPresent,
-}: ValidateOptions) {
-  const changelogContent = await readChangelog(changelogPath);
-
-  try {
-    await validateChangelog({
-      changelogContent,
-      currentVersion,
-      repoUrl,
-      isReleaseCandidate,
-      tagPrefix,
-      formatter,
-      packageRename,
-      ensureValidPrLinksPresent,
-    });
-    return undefined;
-  } catch (error) {
-    if (error instanceof ChangelogFormattingError) {
-      const { validChangelog, invalidChangelog } = error.data;
-      if (fix) {
-        await saveChangelog(changelogPath, validChangelog);
-        return undefined;
-      }
-
-      const diff = generateDiff(validChangelog, invalidChangelog);
-      return exitWithError(`Changelog not well-formatted. Diff:\n\n${diff}`);
-    } else if (error instanceof InvalidChangelogError) {
-      return exitWithError(`Changelog is invalid: ${error.message}`);
-    }
-    throw error;
-  }
-}
-
 /**
  * Returns whether an error has an error code or not.
  *
- * @param error - The error to check.
- * @returns True if the error is a real error and has a code property, false otherwise.
+ * @param value - The value to check.
+ * @returns True if the value is an Error with a code property, false otherwise.
  */
-function hasErrorCode(error: unknown): error is Error & { code: unknown } {
+function hasErrorCode(value: unknown): value is Error & { code: unknown } {
   return (
-    error instanceof Error &&
-    Object.prototype.hasOwnProperty.call(error, 'code')
+    value instanceof Error &&
+    Object.prototype.hasOwnProperty.call(value, 'code')
   );
 }
 
@@ -272,7 +156,7 @@ type InitOptions = {
  */
 async function init({ changelogPath, repoUrl, tagPrefix }: InitOptions) {
   const changelogContent = await createEmptyChangelog({ repoUrl, tagPrefix });
-  await saveChangelog(changelogPath, changelogContent);
+  await writeFile(changelogPath, changelogContent);
 }
 
 const rootDescription = `The root project directory. This determines where we \
@@ -403,6 +287,41 @@ async function main() {
               'Verify that each changelog entry has one or more links to associated pull requests within the repository',
             type: 'boolean',
           })
+          // Dependency bump checking options
+          .option('checkDeps', {
+            default: false,
+            description:
+              'Check that changelog has entries for dependency version bumps.',
+            type: 'boolean',
+          })
+          .option('fromRef', {
+            describe:
+              'Starting git reference for dependency checking. If not provided, auto-detects from merge base with the base branch.',
+            type: 'string',
+          })
+          .option('toRef', {
+            describe: 'Ending git reference for dependency checking.',
+            type: 'string',
+            default: 'HEAD',
+          })
+          .option('remote', {
+            alias: 'r',
+            describe:
+              'Remote name for auto-detecting the base branch (used with --checkDeps).',
+            default: 'origin',
+            type: 'string',
+          })
+          .option('baseBranch', {
+            alias: 'b',
+            describe:
+              "Base branch reference to compare against (defaults to <remote>/main). For stacked PRs (branch off a branch), set this to the parent branch so only the current branch's changes are checked.",
+            type: 'string',
+          })
+          .option('currentPr', {
+            describe:
+              'PR number to use in changelog entries. Required when --checkDeps and --fix are both enabled.',
+            type: 'string',
+          })
           .epilog(validateEpilog),
     )
     .command('init', 'Initialize a new empty changelog', (_yargs) => {
@@ -430,87 +349,98 @@ async function main() {
     useChangelogEntry,
     useShortPrLink,
     requirePrNumbers,
+    // Dependency checking options
+    checkDeps,
+    fromRef,
+    toRef,
+    remote,
+    baseBranch,
+    currentPr,
   } = argv;
   let { currentVersion } = argv;
-
   if (projectRootDirectory) {
     try {
       const stat = await fs.stat(projectRootDirectory);
       if (!stat.isDirectory()) {
-        return exitWithError(
+        return error(
           `Project root must be a directory: '${projectRootDirectory}'`,
         );
       }
-    } catch (error) {
-      if (hasErrorCode(error)) {
-        if (error.code === 'ENOENT') {
-          return exitWithError(
+    } catch (caughtError) {
+      if (hasErrorCode(caughtError)) {
+        if (caughtError.code === 'ENOENT') {
+          return error(
             `Root directory specified does not exist: '${projectRootDirectory}'`,
           );
-        } else if (error.code === 'EACCES') {
-          return exitWithError(
+        } else if (caughtError.code === 'EACCES') {
+          return error(
             `Access to root directory is forbidden by file access permissions: '${projectRootDirectory}'`,
           );
         }
       }
-      throw error;
+      throw caughtError;
     }
   }
 
-  if (!currentVersion) {
-    const manifestPath = projectRootDirectory
-      ? path.join(projectRootDirectory, 'package.json')
-      : path.resolve('package.json');
+  if (!argv._) {
+    throw new Error('No command provided');
+  }
+  const command = argv._[0];
 
+  const formatter = async (changelog: string) => {
+    return usePrettier ? await format(changelog) : changelog;
+  };
+
+  const manifestPath = projectRootDirectory
+    ? path.join(projectRootDirectory, 'package.json')
+    : path.resolve('package.json');
+
+  if (!currentVersion) {
     try {
-      const manifestText = await fs.readFile(manifestPath, {
-        encoding: 'utf-8',
-      });
+      const manifestText = await readFile(manifestPath);
       const manifest = JSON.parse(manifestText);
       currentVersion = manifest.version;
-    } catch (error) {
-      if (hasErrorCode(error)) {
-        if (error.code === 'ENOENT') {
-          return exitWithError(
+    } catch (caughtError) {
+      if (hasErrorCode(caughtError)) {
+        if (caughtError.code === 'ENOENT') {
+          return error(
             `Package manifest not found at path: '${manifestPath}'\nRun this script from the project root directory, or set the project directory using the '--root' flag.`,
           );
-        } else if (error.code === 'EACCES') {
-          return exitWithError(
+        } else if (caughtError.code === 'EACCES') {
+          return error(
             `Access to package manifest is forbidden by file access permissions: '${manifestPath}'`,
           );
         }
       }
 
-      if (error instanceof Error && error.name === 'SyntaxError') {
-        return exitWithError(
+      if (caughtError instanceof Error && caughtError.name === 'SyntaxError') {
+        return error(
           `Package manifest cannot be parsed as JSON: '${manifestPath}'`,
         );
       }
-      throw error;
+      throw caughtError;
     }
   }
 
   if (!currentVersion) {
-    return exitWithError(
+    return error(
       `Version not found. Please set the --currentVersion flag, or run this as an npm script from a project with the 'version' field set.`,
     );
   } else if (currentVersion && semver.valid(currentVersion) === null) {
-    return exitWithError(
-      `Current version is not valid SemVer: '${currentVersion}'`,
-    );
+    return error(`Current version is not valid SemVer: '${currentVersion}'`);
   } else if (!repoUrl) {
-    return exitWithError(
+    return error(
       `npm package repository URL not found. Please set the '--repo' flag, or run this as an npm script from a project with the 'repository' field set.`,
     );
   } else if (!isValidUrl(repoUrl)) {
-    return exitWithError(`Invalid repo URL: '${repoUrl}'`);
+    return error(`Invalid repo URL: '${repoUrl}'`);
   }
 
   if (
     (versionBeforePackageRename && !tagPrefixBeforePackageRename) ||
     (!versionBeforePackageRename && tagPrefixBeforePackageRename)
   ) {
-    return exitWithError(
+    return error(
       '--version-before-package-rename and --tag-prefix-before-package-rename must be given together or not at all.',
     );
   }
@@ -520,26 +450,17 @@ async function main() {
     changelogPath = path.resolve(projectRootDirectory, changelogFilename);
   }
 
-  if (!argv._) {
-    throw new Error('No command provided');
-  }
-  const command = argv._[0];
-
   if (command !== 'init') {
     try {
       // eslint-disable-next-line no-bitwise
       await fs.access(changelogPath, fsConstants.F_OK | fsConstants.W_OK);
-    } catch (error) {
-      if (hasErrorCode(error) && error.code === 'ENOENT') {
-        return exitWithError(`File does not exist: '${changelogPath}'`);
+    } catch (caughtError) {
+      if (hasErrorCode(caughtError) && caughtError.code === 'ENOENT') {
+        return error(`File does not exist: '${changelogPath}'`);
       }
-      return exitWithError(`File is not writable: '${changelogPath}'`);
+      return error(`File is not writable: '${changelogPath}'`);
     }
   }
-
-  const formatter = async (changelog: string) => {
-    return usePrettier ? await format(changelog) : changelog;
-  };
 
   if (command === 'update') {
     let packageRename: PackageRename | undefined;
@@ -571,6 +492,13 @@ async function main() {
         tagPrefixBeforeRename: tagPrefixBeforePackageRename,
       };
     }
+
+    if (checkDeps && fix && !currentPr) {
+      return error(
+        '--currentPr is required when --checkDeps and --fix are both enabled.',
+      );
+    }
+
     await validate({
       changelogPath,
       currentVersion,
@@ -581,6 +509,13 @@ async function main() {
       formatter,
       packageRename,
       ensureValidPrLinksPresent: prLinks,
+      checkDeps,
+      manifestPath,
+      fromRef,
+      toRef,
+      remote,
+      baseBranch,
+      currentPr,
     });
   } else if (command === 'init') {
     await init({
@@ -592,6 +527,6 @@ async function main() {
   return undefined;
 }
 
-main().catch((error) => {
-  exitWithError(error);
+main().catch((caughtError) => {
+  error(caughtError);
 });

@@ -1,5 +1,7 @@
-import { Change, Formatter } from './changelog';
+import Changelog, { Change, type DependencyBump, Formatter } from './changelog';
 import { Version, ChangeCategory } from './constants';
+import { findDependencyBumpChangelogEntry } from './find-dependency-bump-changelog-entry';
+import type { DependencyCheckResult } from './get-dependency-changes';
 import { parseChangelog } from './parse-changelog';
 import { PackageRename } from './shared-types';
 
@@ -87,6 +89,36 @@ export class ChangelogFormattingError extends InvalidChangelogError {
   }
 }
 
+/**
+ * Indicates that changelog entries for dependency bumps are missing.
+ */
+export class MissingDependencyEntriesError extends InvalidChangelogError {
+  readonly missingEntries: DependencyBump[];
+
+  readonly currentVersion: string | undefined;
+
+  readonly changelog: Changelog;
+
+  /**
+   * Construct a missing dependency entries error.
+   *
+   * @param missingEntries - The dependency changes missing from the changelog.
+   * @param changelog - The parsed changelog instance for reuse.
+   * @param currentVersion - The current version being validated against.
+   */
+  constructor(
+    missingEntries: DependencyBump[],
+    changelog: Changelog,
+    currentVersion?: string,
+  ) {
+    const deps = missingEntries.map((entry) => entry.dependency).join(', ');
+    super(`Missing changelog entries for dependency bumps: ${deps}`);
+    this.missingEntries = missingEntries;
+    this.changelog = changelog;
+    this.currentVersion = currentVersion;
+  }
+}
+
 type ValidateChangelogOptions = {
   changelogContent: string;
   currentVersion?: Version;
@@ -103,6 +135,13 @@ type ValidateChangelogOptions = {
    * associated pull requests within the repository (true) or not (false).
    */
   ensureValidPrLinksPresent?: boolean;
+  /**
+   * Dependency changes detected from comparing package manifests.
+   * When provided, the changelog will be checked for entries corresponding to
+   * each dependency bump. If `versionChanged` is true, entries are checked
+   * in the `currentVersion` release section; otherwise the Unreleased section.
+   */
+  dependencyCheckResult?: DependencyCheckResult;
 };
 
 /**
@@ -137,6 +176,11 @@ function normalizeLineEndings(value: string): string {
  * @param options.ensureValidPrLinksPresent - Whether to validate that each
  * changelog entry has one or more links to associated pull requests within the
  * repository (true) or not (false).
+ * @param options.dependencyCheckResult - Dependency changes detected from
+ * comparing package manifests. When provided, the changelog will be checked for
+ * entries corresponding to each dependency bump. If `versionChanged` is true,
+ * entries are checked in the `currentVersion` release section; otherwise the
+ * Unreleased section.
  * @throws `InvalidChangelogError` - Will throw if the changelog is invalid
  * @throws `MissingCurrentVersionError` - Will throw if `isReleaseCandidate` is
  * `true` and the changelog is missing the release header for the current
@@ -148,6 +192,8 @@ function normalizeLineEndings(value: string): string {
  * @throws `ChangelogFormattingError` - Will throw if there is a formatting error.
  * @throws `MissingPullRequestLinkError` if a changelog entry is missing a pull
  * request link.
+ * @throws `MissingDependencyEntriesError` if dependency changes are provided
+ * but the changelog is missing entries for them.
  */
 export async function validateChangelog({
   changelogContent,
@@ -158,6 +204,7 @@ export async function validateChangelog({
   formatter = undefined,
   packageRename,
   ensureValidPrLinksPresent,
+  dependencyCheckResult,
 }: ValidateChangelogOptions) {
   const normalizedChangelogContent = normalizeLineEndings(changelogContent);
   const changelog = parseChangelog({
@@ -168,56 +215,190 @@ export async function validateChangelog({
     packageRename,
     shouldExtractPrLinks: ensureValidPrLinksPresent,
   });
-  const hasUnreleasedChanges =
-    Object.keys(changelog.getUnreleasedChanges()).length !== 0;
-  const releaseChanges = currentVersion
-    ? changelog.getReleaseChanges(currentVersion)
-    : undefined;
 
-  if (isReleaseCandidate) {
-    if (!currentVersion) {
-      throw new Error(
-        `A version must be specified if 'isReleaseCandidate' is set.`,
-      );
-    } else if (
-      !changelog
-        .getReleases()
-        .find((release) => release.version === currentVersion)
-    ) {
-      throw new MissingCurrentVersionError(currentVersion);
-    } else if (hasUnreleasedChanges) {
-      throw new UnreleasedChangesError();
-    } else if (
-      releaseChanges?.[ChangeCategory.Uncategorized]?.length &&
-      releaseChanges?.[ChangeCategory.Uncategorized]?.length !== 0
-    ) {
-      throw new UncategorizedChangesError();
-    }
-  }
+  validateReleaseCandidateState(changelog, isReleaseCandidate, currentVersion);
 
   if (ensureValidPrLinksPresent) {
-    for (const release of changelog.getReleases()) {
-      const releaseChangesForVersion = changelog.getReleaseChanges(
-        release.version,
-      );
-      for (const changes of Object.values(releaseChangesForVersion)) {
-        for (const change of changes) {
-          if (change.prNumbers.length === 0) {
-            throw new MissingPullRequestLinksError(change, release.version);
-          }
+    validatePrLinks(changelog);
+  }
+
+  if (dependencyCheckResult) {
+    validateDependencyBumps(changelog, dependencyCheckResult, currentVersion);
+  }
+
+  await validateFormatting(changelog, normalizedChangelogContent);
+
+  validateNonEmptyReleases(changelog);
+}
+
+/**
+ * Validate release candidate constraints: version header exists, no
+ * unreleased changes, and no uncategorized changes.
+ *
+ * @param changelog - The parsed changelog.
+ * @param isReleaseCandidate - Whether this is a release candidate.
+ * @param currentVersion - The current version.
+ */
+function validateReleaseCandidateState(
+  changelog: Changelog,
+  isReleaseCandidate: boolean,
+  currentVersion: Version | undefined,
+) {
+  if (!isReleaseCandidate) {
+    return;
+  }
+
+  if (!currentVersion) {
+    throw new Error(
+      `A version must be specified if 'isReleaseCandidate' is set.`,
+    );
+  }
+
+  if (
+    !changelog
+      .getReleases()
+      .find((release) => release.version === currentVersion)
+  ) {
+    throw new MissingCurrentVersionError(currentVersion);
+  }
+
+  const hasUnreleasedChanges =
+    Object.keys(changelog.getUnreleasedChanges()).length !== 0;
+  if (hasUnreleasedChanges) {
+    throw new UnreleasedChangesError();
+  }
+
+  const releaseChanges = changelog.getReleaseChanges(currentVersion);
+  if (
+    releaseChanges?.[ChangeCategory.Uncategorized]?.length &&
+    releaseChanges?.[ChangeCategory.Uncategorized]?.length !== 0
+  ) {
+    throw new UncategorizedChangesError();
+  }
+}
+
+/**
+ * Validate that every change entry has at least one PR link.
+ *
+ * @param changelog - The parsed changelog.
+ */
+function validatePrLinks(changelog: Changelog) {
+  for (const release of changelog.getReleases()) {
+    const releaseChangesForVersion = changelog.getReleaseChanges(
+      release.version,
+    );
+    for (const changes of Object.values(releaseChangesForVersion)) {
+      for (const change of changes) {
+        if (change.prNumbers.length === 0) {
+          throw new MissingPullRequestLinksError(change, release.version);
         }
       }
     }
   }
+}
 
-  const validChangelog = await changelog.toString();
-  if (normalizeLineEndings(validChangelog) !== normalizedChangelogContent) {
-    throw new ChangelogFormattingError({
-      validChangelog,
-      invalidChangelog: normalizedChangelogContent,
-    });
+/**
+ * Validate that dependency bumps detected in the diff have corresponding
+ * changelog entries.
+ *
+ * @param changelog - The parsed changelog.
+ * @param dependencyCheckResult - The dependency check result from the diff.
+ * @param currentVersion - The current version.
+ */
+function validateDependencyBumps(
+  changelog: Changelog,
+  dependencyCheckResult: DependencyCheckResult,
+  currentVersion: Version | undefined,
+) {
+  const { dependencyChanges } = dependencyCheckResult;
+  if (!dependencyChanges || dependencyChanges.length === 0) {
+    return;
   }
 
+  const releaseChanges = currentVersion
+    ? changelog.getReleaseChanges(currentVersion)
+    : undefined;
+
+  // Check the release section only when the package version was actually
+  // bumped (versionChanged) AND the release header exists. On a release
+  // branch where this package is NOT being released, entries belong in
+  // Unreleased. Fall back to Unreleased when the release section is missing.
+  const changesSection =
+    dependencyCheckResult.versionChanged && currentVersion && releaseChanges
+      ? releaseChanges
+      : changelog.getUnreleasedChanges();
+
+  const missingEntries: DependencyBump[] = [];
+  const effectiveChangesSection = changesSection ?? {};
+
+  if (Object.keys(effectiveChangesSection).length === 0) {
+    missingEntries.push(...dependencyChanges);
+  } else {
+    for (const depChange of dependencyChanges) {
+      const result = findDependencyBumpChangelogEntry(
+        effectiveChangesSection,
+        depChange,
+      );
+      if (!result.hasExactMatch) {
+        // If a stale-version match exists with the correct breaking status,
+        // just mark it as missing so the fix handler can update it.
+        // Only check for wrong-breaking when no correct entry exists at all.
+        if (!result.existingEntry) {
+          const wrongBreaking = findDependencyBumpChangelogEntry(
+            effectiveChangesSection,
+            {
+              ...depChange,
+              isBreaking: !depChange.isBreaking,
+            },
+          );
+          if (wrongBreaking.existingEntry) {
+            const expected = depChange.isBreaking
+              ? 'with **BREAKING:** prefix (peerDependency)'
+              : 'without **BREAKING:** prefix (regular dependency)';
+            throw new InvalidChangelogError(
+              `Dependency \`${depChange.dependency}\` has a changelog entry but ${expected} is expected`,
+            );
+          }
+        }
+        missingEntries.push(depChange);
+      }
+    }
+  }
+
+  if (missingEntries.length > 0) {
+    throw new MissingDependencyEntriesError(
+      missingEntries,
+      changelog,
+      currentVersion,
+    );
+  }
+}
+
+/**
+ * Validate that the stringified changelog matches the original content.
+ *
+ * @param changelog - The parsed changelog.
+ * @param normalizedContent - The normalized original changelog content.
+ */
+async function validateFormatting(
+  changelog: Changelog,
+  normalizedContent: string,
+) {
+  const validChangelog = await changelog.toString();
+  if (normalizeLineEndings(validChangelog) !== normalizedContent) {
+    throw new ChangelogFormattingError({
+      validChangelog,
+      invalidChangelog: normalizedContent,
+    });
+  }
+}
+
+/**
+ * Validate that every release has at least one changelog entry.
+ *
+ * @param changelog - The parsed changelog.
+ */
+function validateNonEmptyReleases(changelog: Changelog) {
   for (const release of changelog.getReleases()) {
     const releaseChangesForVersion = changelog.getReleaseChanges(
       release.version,

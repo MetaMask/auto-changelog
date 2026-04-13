@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add `--checkDeps` flag to `validate` command for dependency bump changelog validation ([#267](https://github.com/MetaMask/auto-changelog/pull/267))
+  - Compares `dependencies` and `peerDependencies` in `package.json` between git refs to detect version changes
+  - With `--fix --currentPr <number>`, automatically adds missing changelog entries
+  - Additional CLI options: `--fromRef`, `--toRef`, `--remote`, `--baseBranch`
+- Add `dependencyBump` support to `Changelog` class with `addChange()` and new `updateChange()` method ([#267](https://github.com/MetaMask/auto-changelog/pull/267))
+- Detect `Bump`, `Update`, and `Upgrade` forms of dependency bump entries when parsing changelogs ([#267](https://github.com/MetaMask/auto-changelog/pull/267))
+- Export `getDependencyChanges`, `BaseRefNotFoundError`, `DependencyBump`, and `MissingDependencyEntriesError` from package entry point ([#267](https://github.com/MetaMask/auto-changelog/pull/267))
+
 ### Changed
 
 - **BREAKING:** Throw error if any release section has no changelog entries ([#275](https://github.com/MetaMask/auto-changelog/pull/275))
