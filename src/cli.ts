@@ -5,7 +5,7 @@ import type { Argv } from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import yargs from 'yargs/yargs';
 
-import { format, Formatter } from './changelog';
+import { format, Formatter, FormatterName } from './changelog';
 import { unreleased, Version } from './constants';
 import { readFile, writeFile } from './fs';
 import { createEmptyChangelog } from './init';
@@ -233,9 +233,15 @@ async function main() {
               'Automatically categorize commits based on their messages.',
           })
           .option('prettier', {
-            default: true,
             description: `Expect the changelog to be formatted with Prettier.`,
+            deprecated: 'Use "--formatter prettier" instead.',
             type: 'boolean',
+          })
+          .option('formatter', {
+            description: 'The formatter to use for formatting the changelog.',
+            choices: ['prettier', 'oxfmt'],
+            default: 'prettier',
+            type: 'string',
           })
           .option('useChangelogEntry', {
             default: false,
@@ -277,9 +283,15 @@ async function main() {
             type: 'boolean',
           })
           .option('prettier', {
-            default: false,
             description: `Expect the changelog to be formatted with Prettier.`,
+            deprecated: 'Use "--formatter prettier" instead.',
             type: 'boolean',
+          })
+          .option('formatter', {
+            description: 'The formatter to use for formatting the changelog.',
+            choices: ['prettier', 'oxfmt', 'none'],
+            default: 'none',
+            type: 'string',
           })
           .option('prLinks', {
             default: false,
@@ -342,6 +354,7 @@ async function main() {
     tagPrefix,
     fix,
     prettier: usePrettier,
+    formatter: formatterOption,
     versionBeforePackageRename,
     tagPrefixBeforePackageRename,
     autoCategorize,
@@ -388,7 +401,22 @@ async function main() {
   const command = argv._[0];
 
   const formatter = async (changelog: string) => {
-    return usePrettier ? await format(changelog) : changelog;
+    // If the deprecated `--prettier` flag is used, it takes precedence over the
+    // `--formatter` option. Otherwise, use the specified formatter, unless it's
+    // "none".
+    if (typeof usePrettier === 'boolean') {
+      if (usePrettier) {
+        return await format(changelog, 'prettier');
+      }
+
+      return changelog;
+    }
+
+    if (formatterOption && formatterOption !== 'none') {
+      return await format(changelog, formatterOption as FormatterName);
+    }
+
+    return changelog;
   };
 
   const manifestPath = projectRootDirectory
