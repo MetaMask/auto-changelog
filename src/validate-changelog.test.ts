@@ -711,7 +711,7 @@ describe('validateChangelog', () => {
           repoUrl:
             'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
           isReleaseCandidate: false,
-          formatter: format,
+          formatter: async (value) => await format(value, 'prettier'),
         }),
       ).resolves.not.toThrow();
     });
@@ -930,7 +930,7 @@ describe('validateChangelog', () => {
           repoUrl:
             'https://github.com/ExampleUsernameOrOrganization/ExampleRepository',
           isReleaseCandidate: false,
-          formatter: async (value: string) => await format(value),
+          formatter: async (value) => await format(value, 'prettier'),
         }),
       ).resolves.not.toThrow();
     });
