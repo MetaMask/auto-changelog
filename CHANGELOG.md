@@ -7,8 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [6.0.0]
-
 ### Added
 
 - Add `--checkDeps` flag to `validate` command for dependency bump changelog validation ([#267](https://github.com/MetaMask/auto-changelog/pull/267))
@@ -17,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Additional CLI options: `--fromRef`, `--toRef`, `--remote`, `--baseBranch`
 - Add `dependencyBump` support to `Changelog` class with `addChange()` and new `updateChange()` method ([#267](https://github.com/MetaMask/auto-changelog/pull/267))
 - Detect `Bump`, `Update`, and `Upgrade` forms of dependency bump entries when parsing changelogs ([#267](https://github.com/MetaMask/auto-changelog/pull/267))
-- Export `getDependencyChanges`, `BaseRefNotFoundError`, `DependencyBump`, `DependencyCheckResult`, and `MissingDependencyEntriesError` from package entry point ([#267](https://github.com/MetaMask/auto-changelog/pull/267))
+- Export `getDependencyChanges`, `BaseRefNotFoundError`, `DependencyBump`, and `MissingDependencyEntriesError` from package entry point ([#267](https://github.com/MetaMask/auto-changelog/pull/267))
 
 ### Changed
 
@@ -300,8 +298,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Monorepo support ([#41](https://github.com/MetaMask/auto-changelog/pull/41))
   - Configurable repository URL, version, and changelog file path ([#33](https://github.com/MetaMask/auto-changelog/pull/33), [#31](https://github.com/MetaMask/auto-changelog/pull/31), [#30](https://github.com/MetaMask/auto-changelog/pull/30))
 
-[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v6.0.0...HEAD
-[6.0.0]: https://github.com/MetaMask/auto-changelog/compare/v5.3.2...v6.0.0
+[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v5.3.2...HEAD
 [5.3.2]: https://github.com/MetaMask/auto-changelog/compare/v5.3.1...v5.3.2
 [5.3.1]: https://github.com/MetaMask/auto-changelog/compare/v5.3.0...v5.3.1
 [5.3.0]: https://github.com/MetaMask/auto-changelog/compare/v5.2.0...v5.3.0
