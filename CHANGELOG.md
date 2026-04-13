@@ -9,11 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [6.0.0]
 
-### Uncategorized
-
-- Revert "6.0.0" ([#281](https://github.com/MetaMask/auto-changelog/pull/281))
-- 5.4.0 ([#280](https://github.com/MetaMask/auto-changelog/pull/280))
-
 ### Added
 
 - Add `--checkDeps` flag to `validate` command for dependency bump changelog validation ([#267](https://github.com/MetaMask/auto-changelog/pull/267))
