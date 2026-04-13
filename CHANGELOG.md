@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.4.0]
+
 ### Added
 
 - Add `--checkDeps` flag to `validate` command for dependency bump changelog validation ([#267](https://github.com/MetaMask/auto-changelog/pull/267))
@@ -298,7 +300,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Monorepo support ([#41](https://github.com/MetaMask/auto-changelog/pull/41))
   - Configurable repository URL, version, and changelog file path ([#33](https://github.com/MetaMask/auto-changelog/pull/33), [#31](https://github.com/MetaMask/auto-changelog/pull/31), [#30](https://github.com/MetaMask/auto-changelog/pull/30))
 
-[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v5.3.2...HEAD
+[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v5.4.0...HEAD
+[5.4.0]: https://github.com/MetaMask/auto-changelog/compare/v5.3.2...v5.4.0
 [5.3.2]: https://github.com/MetaMask/auto-changelog/compare/v5.3.1...v5.3.2
 [5.3.1]: https://github.com/MetaMask/auto-changelog/compare/v5.3.0...v5.3.1
 [5.3.0]: https://github.com/MetaMask/auto-changelog/compare/v5.2.0...v5.3.0
