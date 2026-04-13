@@ -1,5 +1,3 @@
-import * as markdown from 'prettier/plugins/markdown';
-import { format as formatWithPrettier } from 'prettier/standalone';
 import semver from 'semver';
 
 import {
@@ -8,19 +6,27 @@ import {
   unreleased,
   Version,
 } from './constants';
+import * as formatters from './formatters';
 import { PackageRename } from './shared-types';
+
+/**
+ * The name of the formatter to use when formatting the changelog string.
+ */
+export type FormatterName = keyof typeof formatters;
 
 /**
  * Format a Markdown changelog string.
  *
  * @param changelog - The changelog string to format.
+ * @param formatter - The name of the formatter to use.
  * @returns The formatted changelog string.
  */
-export async function format(changelog: string): Promise<string> {
-  return formatWithPrettier(changelog, {
-    parser: 'markdown',
-    plugins: [markdown],
-  });
+export async function format(
+  changelog: string,
+  formatter: FormatterName,
+): Promise<string> {
+  // eslint-disable-next-line import/namespace
+  return await formatters[formatter](changelog);
 }
 
 /**

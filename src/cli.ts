@@ -5,7 +5,7 @@ import type { Argv } from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import yargs from 'yargs/yargs';
 
-import { format, Formatter } from './changelog';
+import { format, Formatter, FormatterName } from './changelog';
 import { unreleased, Version } from './constants';
 import { readFile, writeFile } from './fs';
 import { createEmptyChangelog } from './init';
@@ -237,6 +237,12 @@ async function main() {
             description: `Expect the changelog to be formatted with Prettier.`,
             type: 'boolean',
           })
+          .option('formatter', {
+            description: 'The formatter to use for formatting the changelog.',
+            choices: ['prettier', 'oxfmt'],
+            type: 'string',
+            conflicts: ['prettier'],
+          })
           .option('useChangelogEntry', {
             default: false,
             description:
@@ -279,7 +285,14 @@ async function main() {
           .option('prettier', {
             default: false,
             description: `Expect the changelog to be formatted with Prettier.`,
+            deprecated: 'Use "--formatter prettier" instead.',
             type: 'boolean',
+          })
+          .option('formatter', {
+            description: 'The formatter to use for formatting the changelog.',
+            choices: ['prettier', 'oxfmt'],
+            type: 'string',
+            conflicts: ['prettier'],
           })
           .option('prLinks', {
             default: false,
@@ -342,6 +355,7 @@ async function main() {
     tagPrefix,
     fix,
     prettier: usePrettier,
+    formatter: formatterOption,
     versionBeforePackageRename,
     tagPrefixBeforePackageRename,
     autoCategorize,
@@ -387,8 +401,12 @@ async function main() {
   }
   const command = argv._[0];
 
+  const formatterTool = usePrettier
+    ? 'prettier'
+    : (formatterOption as FormatterName);
+
   const formatter = async (changelog: string) => {
-    return usePrettier ? await format(changelog) : changelog;
+    return await format(changelog, formatterTool);
   };
 
   const manifestPath = projectRootDirectory
