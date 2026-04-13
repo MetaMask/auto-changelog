@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Additional CLI options: `--fromRef`, `--toRef`, `--remote`, `--baseBranch`
 - Add `dependencyBump` support to `Changelog` class with `addChange()` and new `updateChange()` method ([#267](https://github.com/MetaMask/auto-changelog/pull/267))
 - Detect `Bump`, `Update`, and `Upgrade` forms of dependency bump entries when parsing changelogs ([#267](https://github.com/MetaMask/auto-changelog/pull/267))
-- Export `getDependencyChanges`, `BaseRefNotFoundError`, `DependencyBump`, and `MissingDependencyEntriesError` from package entry point ([#267](https://github.com/MetaMask/auto-changelog/pull/267))
+- Export `getDependencyChanges`, `BaseRefNotFoundError`, `DependencyBump`, `DependencyCheckResult`, and `MissingDependencyEntriesError` from package entry point ([#267](https://github.com/MetaMask/auto-changelog/pull/267))
 
 ### Changed
 
