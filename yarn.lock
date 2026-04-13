@@ -872,8 +872,13 @@ __metadata:
     typescript: ~4.8.4
     yargs: ^17.0.1
   peerDependencies:
-    oxfmt: "*"
+    oxfmt: ^0.45.0
     prettier: ">=3.0.0"
+  peerDependenciesMeta:
+    oxfmt:
+      optional: true
+    prettier:
+      optional: true
   bin:
     auto-changelog: dist/cli.mjs
   languageName: unknown
