@@ -233,15 +233,15 @@ async function main() {
               'Automatically categorize commits based on their messages.',
           })
           .option('prettier', {
-            default: true,
             description: `Expect the changelog to be formatted with Prettier.`,
+            deprecated: 'Use "--formatter prettier" instead.',
             type: 'boolean',
           })
           .option('formatter', {
             description: 'The formatter to use for formatting the changelog.',
             choices: ['prettier', 'oxfmt'],
+            default: 'prettier',
             type: 'string',
-            conflicts: ['prettier'],
           })
           .option('useChangelogEntry', {
             default: false,
@@ -283,16 +283,15 @@ async function main() {
             type: 'boolean',
           })
           .option('prettier', {
-            default: false,
             description: `Expect the changelog to be formatted with Prettier.`,
             deprecated: 'Use "--formatter prettier" instead.',
             type: 'boolean',
           })
           .option('formatter', {
             description: 'The formatter to use for formatting the changelog.',
-            choices: ['prettier', 'oxfmt'],
+            choices: ['prettier', 'oxfmt', 'none'],
+            default: 'none',
             type: 'string',
-            conflicts: ['prettier'],
           })
           .option('prLinks', {
             default: false,
@@ -401,12 +400,23 @@ async function main() {
   }
   const command = argv._[0];
 
-  const formatterTool = usePrettier
-    ? 'prettier'
-    : (formatterOption as FormatterName);
-
   const formatter = async (changelog: string) => {
-    return await format(changelog, formatterTool);
+    // If the deprecated `--prettier` flag is used, it takes precedence over the
+    // `--formatter` option. Otherwise, use the specified formatter, unless it's
+    // "none".
+    if (typeof usePrettier === 'boolean') {
+      if (usePrettier) {
+        return await format(changelog, 'prettier');
+      }
+
+      return changelog;
+    }
+
+    if (formatterOption && formatterOption !== 'none') {
+      return await format(changelog, formatterOption as FormatterName);
+    }
+
+    return changelog;
   };
 
   const manifestPath = projectRootDirectory
