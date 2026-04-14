@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.1.0]
+
+### Added
+
+- Add `--formatter` option and support Oxfmt for formatting changelog ([#283](https://github.com/MetaMask/auto-changelog/pull/283), [#285](https://github.com/MetaMask/auto-changelog/pull/285))
+  - The `oxfmt` and `prettier` formatters are now available through the API as well.
+
 ## [6.0.0]
 
 ### Added
@@ -300,7 +307,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Monorepo support ([#41](https://github.com/MetaMask/auto-changelog/pull/41))
   - Configurable repository URL, version, and changelog file path ([#33](https://github.com/MetaMask/auto-changelog/pull/33), [#31](https://github.com/MetaMask/auto-changelog/pull/31), [#30](https://github.com/MetaMask/auto-changelog/pull/30))
 
-[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v6.0.0...HEAD
+[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v6.1.0...HEAD
+[6.1.0]: https://github.com/MetaMask/auto-changelog/compare/v6.0.0...v6.1.0
 [6.0.0]: https://github.com/MetaMask/auto-changelog/compare/v5.3.2...v6.0.0
 [5.3.2]: https://github.com/MetaMask/auto-changelog/compare/v5.3.1...v5.3.2
 [5.3.1]: https://github.com/MetaMask/auto-changelog/compare/v5.3.0...v5.3.1
