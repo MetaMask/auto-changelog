@@ -3,6 +3,7 @@ export {
   type DependencyBump,
   type ReleaseChanges,
 } from './changelog';
+export { oxfmt, prettier } from './formatters';
 export {
   BaseRefNotFoundError,
   getDependencyChanges,
