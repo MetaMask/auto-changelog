@@ -100,6 +100,46 @@ describe('updateChangelog', () => {
   });
 });
 
+describe('updateChangelog entry order', () => {
+  it('should add entries in chronological order (earliest first)', async () => {
+    // getNewChangeEntries returns commits in reverse chronological order
+    // (newest first) because git rev-list outputs newest commits first.
+    const newestFirstEntries = [
+      {
+        description: 'Third commit (#103)',
+        subject: 'Third commit (#103)',
+      },
+      {
+        description: 'Second commit (#102)',
+        subject: 'Second commit (#102)',
+      },
+      {
+        description: 'First commit (#101)',
+        subject: 'First commit (#101)',
+      },
+    ];
+    jest
+      .spyOn(ChangeLogUtils, 'getNewChangeEntries')
+      .mockResolvedValue(newestFirstEntries);
+
+    const result = await ChangeLogManager.updateChangelog({
+      ...changelogData,
+      autoCategorize: false,
+    });
+
+    // In the changelog, entries should appear in forward chronological
+    // order (earliest first), matching natural reading order.
+    expect(result).toBeDefined();
+    const changelog = result as string;
+    const firstIndex = changelog.indexOf('First commit (#101)');
+    const secondIndex = changelog.indexOf('Second commit (#102)');
+    const thirdIndex = changelog.indexOf('Third commit (#103)');
+
+    expect(firstIndex).toBeLessThan(secondIndex);
+    expect(secondIndex).toBeLessThan(thirdIndex);
+  });
+});
+
 describe('getCategory', () => {
   it('categorizes feat: prefix as Added', () => {
     const description = 'feat: add new feature';

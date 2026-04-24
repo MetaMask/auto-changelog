@@ -213,7 +213,7 @@ export async function updateChangelog({
     requirePrNumbers,
   });
 
-  for (const entry of newChangeEntries.reverse()) {
+  for (const entry of newChangeEntries) {
     const category = autoCategorize
       ? getCategory(entry.subject)
       : ChangeCategory.Uncategorized;
