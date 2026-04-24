@@ -210,6 +210,33 @@ describe('getNewChangeEntries', () => {
     });
   });
 
+  describe('revert commits', () => {
+    it('should use the last PR number for revert commits that reference the original PR', async () => {
+      mockRunCommandAndSplit.mockResolvedValueOnce(['commit1']);
+      mockRunCommand.mockResolvedValueOnce(
+        'Revert "Remove useRequestQueue toggle (#4941)" (#5065)',
+      );
+
+      const result = await getNewChangeEntries({
+        mostRecentTag: 'v1.0.0',
+        repoUrl,
+        loggedPrNumbers: ['4941'],
+        loggedDescriptions: [],
+        useChangelogEntry: false,
+        useShortPrLink: false,
+      });
+
+      expect(result).toStrictEqual([
+        {
+          description:
+            'Revert "Remove useRequestQueue toggle (#4941)" ([#5065](https://github.com/MetaMask/metamask-mobile/pull/5065))',
+          subject:
+            'Revert "Remove useRequestQueue toggle (#4941)" (#5065)',
+        },
+      ]);
+    });
+  });
+
   describe('edge cases', () => {
     it('should return empty array when there are no commits', async () => {
       mockRunCommandAndSplit.mockResolvedValueOnce([]);
