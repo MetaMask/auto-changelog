@@ -994,6 +994,87 @@ describe('parseChangelog', () => {
       });
     });
 
+    it('should parse changelog with two adjacent parenthesized PR link groups (legacy form)', () => {
+      const changelogContent = createChangelog(
+        COMMON_HEADER,
+        outdent`
+          ## [1.0.0]
+          ### Changed
+          - Change something ([#100](${repoUrl}/pull/100)), ([#200](${repoUrl}/pull/200))
+        `,
+        COMMON_REFERENCE_LINKS_1,
+      );
+
+      const changelog = parseChangelog({
+        changelogContent,
+        repoUrl,
+        shouldExtractPrLinks: true,
+      });
+
+      expect(changelog.getReleaseChanges('1.0.0')).toStrictEqual({
+        Changed: [
+          {
+            description: 'Change something',
+            prNumbers: ['100', '200'],
+          },
+        ],
+      });
+    });
+
+    it('should parse changelog with three adjacent parenthesized PR link groups (legacy form)', () => {
+      const changelogContent = createChangelog(
+        COMMON_HEADER,
+        outdent`
+          ## [1.0.0]
+          ### Changed
+          - Change something ([#100](${repoUrl}/pull/100)), ([#200](${repoUrl}/pull/200)), ([#300](${repoUrl}/pull/300))
+        `,
+        COMMON_REFERENCE_LINKS_1,
+      );
+
+      const changelog = parseChangelog({
+        changelogContent,
+        repoUrl,
+        shouldExtractPrLinks: true,
+      });
+
+      expect(changelog.getReleaseChanges('1.0.0')).toStrictEqual({
+        Changed: [
+          {
+            description: 'Change something',
+            prNumbers: ['100', '200', '300'],
+          },
+        ],
+      });
+    });
+
+    it('should parse changelog mixing canonical and legacy PR link group forms', () => {
+      const changelogContent = createChangelog(
+        COMMON_HEADER,
+        outdent`
+          ## [1.0.0]
+          ### Changed
+          - Change something ([#100](${repoUrl}/pull/100), [#200](${repoUrl}/pull/200)), ([#300](${repoUrl}/pull/300))
+        `,
+        COMMON_REFERENCE_LINKS_1,
+      );
+
+      const changelog = parseChangelog({
+        changelogContent,
+        repoUrl,
+        shouldExtractPrLinks: true,
+      });
+
+      expect(changelog.getReleaseChanges('1.0.0')).toStrictEqual({
+        Changed: [
+          {
+            description: 'Change something',
+            prNumbers: ['100', '200', '300'],
+          },
+        ],
+      });
+    });
+
     it('should parse changelog with pull request links at end of first line of change description with sub-bullets', () => {
       const changelogContent = createChangelog(
         COMMON_HEADER,
