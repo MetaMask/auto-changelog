@@ -295,10 +295,18 @@ function extractPrLinks(
   // changelog entries include links to PRs from other repos like packages that were bumped.
   // We don't want to accidentally extract those.
 
+  // A single parenthesized group of one or more comma-separated long PR
+  // links, e.g. `([#123](...))` or `([#123](...), [#456](...))`.
+  const longLinkGroup = `\\(\\s*(?:\\[#\\d+\\]\\([^)]*${repoName}[^)]*\\)\\s*,?\\s*)+\\)`;
+
   // eslint-disable-next-line prefer-regex-literals
   const longGroupMatchPattern = new RegExp(
-    // Example of long match group: " ([#123](...), [#456](...))"
-    `\\s+\\(\\s*(\\[#\\d+\\]\\([^)]*${repoName}[^)]*\\)\\s*,?\\s*)+\\)`,
+    // Match the canonical form `(... , ...)` and the legacy form where
+    // multiple parenthesized groups are written next to each other separated
+    // by commas: `([#123](...)), ([#456](...))`. In the legacy form the
+    // inter-group `, ` must be consumed so it isn't left behind in the
+    // description after replacement.
+    `\\s+${longLinkGroup}(?:\\s*,\\s*${longLinkGroup})*`,
     'gu',
   );
 
