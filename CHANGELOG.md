@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.1.1]
+
 ### Fixed
 
 - Consume comma separators between adjacent legacy long-form PR link groups (e.g. `([#A](url)), ([#B](url))`) when parsing change entries so they are not left behind in the description after PR-link extraction. ([#286](https://github.com/MetaMask/auto-changelog/pull/286))
@@ -311,7 +313,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Monorepo support ([#41](https://github.com/MetaMask/auto-changelog/pull/41))
   - Configurable repository URL, version, and changelog file path ([#33](https://github.com/MetaMask/auto-changelog/pull/33), [#31](https://github.com/MetaMask/auto-changelog/pull/31), [#30](https://github.com/MetaMask/auto-changelog/pull/30))
 
-[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v6.1.0...HEAD
+[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v6.1.1...HEAD
+[6.1.1]: https://github.com/MetaMask/auto-changelog/compare/v6.1.0...v6.1.1
 [6.1.0]: https://github.com/MetaMask/auto-changelog/compare/v6.0.0...v6.1.0
 [6.0.0]: https://github.com/MetaMask/auto-changelog/compare/v5.3.2...v6.0.0
 [5.3.2]: https://github.com/MetaMask/auto-changelog/compare/v5.3.1...v5.3.2
