@@ -39,6 +39,9 @@
     "test": "jest && attw --pack",
     "test:watch": "jest --watch"
   },
+  "resolutions": {
+    "fflate": "0.8.2"
+  },
   "dependencies": {
     "@octokit/rest": "^20.0.0",
     "diff": "^5.0.0",
