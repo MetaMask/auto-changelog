@@ -2,12 +2,19 @@
   "name": "@metamask/auto-changelog",
   "version": "6.1.1",
   "description": "Utilities for validating and updating \"Keep a Changelog\" formatted changelogs",
+  "license": "(MIT OR Apache-2.0)",
   "repository": {
     "type": "git",
     "url": "https://github.com/MetaMask/auto-changelog.git"
   },
-  "license": "(MIT OR Apache-2.0)",
+  "bin": "dist/cli.mjs",
+  "files": [
+    "dist"
+  ],
   "sideEffects": false,
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
   "exports": {
     ".": {
       "import": {
@@ -21,13 +28,10 @@
     },
     "./package.json": "./package.json"
   },
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.mjs",
-  "types": "./dist/index.d.cts",
-  "bin": "dist/cli.mjs",
-  "files": [
-    "dist"
-  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "scripts": {
     "build": "ts-bridge --project tsconfig.build.json --clean",
     "changelog": "node dist/cli.mjs",
@@ -93,14 +97,10 @@
   "resolutions": {
     "fflate": "0.8.2"
   },
-  "packageManager": "yarn@3.2.4",
   "engines": {
     "node": "^18.20 || ^20.17 || >=22"
   },
-  "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org/"
-  },
+  "packageManager": "yarn@3.2.4",
   "lavamoat": {
     "allowScripts": {
       "@lavamoat/preinstall-always-fail": false
