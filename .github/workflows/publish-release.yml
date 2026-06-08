@@ -7,6 +7,10 @@ on:
         required: false
       SLACK_WEBHOOK_URL:
         required: true
+
+permissions:
+  contents: read
+
 jobs:
   publish-release:
     permissions:
