@@ -18,14 +18,17 @@ const getNewChangeEntriesMockData = [
   {
     description: 'Fixed a critical bug (#123)',
     subject: 'fix: Fixed a critical bug (#123)',
+    hasChangelogEntry: false,
   },
   {
     description: 'New cool feature (#124)',
     subject: 'feat: New cool feature (#124)',
+    hasChangelogEntry: false,
   },
   {
     description: 'Release thingy (#124)',
     subject: 'release: Release thingy (#124)',
+    hasChangelogEntry: false,
   },
 ];
 
@@ -141,5 +144,161 @@ describe('getCategory', () => {
   it('returns category with category scope', () => {
     const description = 'feat(bridge): add new feature for the bridge scope';
     expect(getCategory(description)).toBe(ChangeCategory.Added);
+  });
+
+  describe('leading-verb categorization (no usable prefix)', () => {
+    it('categorizes an entry starting with "Fixed" as Fixed', () => {
+      expect(getCategory('Fixed a bug in the send flow')).toBe(
+        ChangeCategory.Fixed,
+      );
+    });
+
+    it('categorizes an entry starting with "Added" as Added', () => {
+      expect(getCategory('Added a new settings tab')).toBe(
+        ChangeCategory.Added,
+      );
+    });
+
+    it('categorizes an entry starting with "Removed" as Removed', () => {
+      expect(getCategory('Removed old token import flow')).toBe(
+        ChangeCategory.Removed,
+      );
+    });
+
+    it('categorizes an entry starting with "Updated" as Changed', () => {
+      expect(getCategory('Updated the notifications UI')).toBe(
+        ChangeCategory.Changed,
+      );
+    });
+
+    it.each(['Update the notifications UI', 'Bump the controller version'])(
+      'categorizes an imperative %s entry as Changed',
+      (description) => {
+        expect(getCategory(description)).toBe(ChangeCategory.Changed);
+      },
+    );
+
+    it('categorizes an entry starting with "Deprecated" as Deprecated', () => {
+      expect(getCategory('Deprecated the legacy API')).toBe(
+        ChangeCategory.Deprecated,
+      );
+    });
+
+    it('categorizes an entry starting with "Improved" as Changed', () => {
+      expect(getCategory('Improved the swap confirmation screen')).toBe(
+        ChangeCategory.Changed,
+      );
+    });
+
+    it('is case-insensitive on the leading verb', () => {
+      expect(getCategory('fixed a lowercase-verb entry')).toBe(
+        ChangeCategory.Fixed,
+      );
+    });
+
+    it('lets the leading verb categorize a chore entry with a changelog entry', () => {
+      // A `chore:` prefix carries no category, so when the author wrote a
+      // `CHANGELOG entry:` the leading verb of the remaining text is used.
+      expect(getCategory('chore: Removed old token import flow', true)).toBe(
+        ChangeCategory.Removed,
+      );
+    });
+
+    it('does not guess a category for an entry without a recognized verb', () => {
+      expect(getCategory('Ux changes')).toBe(ChangeCategory.Uncategorized);
+    });
+
+    it('prefers a concrete conventional prefix over the leading verb', () => {
+      // `fix:` maps to Fixed regardless of the following verb.
+      expect(getCategory('fix: Added handling for the edge case')).toBe(
+        ChangeCategory.Fixed,
+      );
+    });
+
+    it('categorizes a category-less prefix (perf) by its leading verb', () => {
+      // `perf:` carries no category, so the prefix is stripped and the
+      // remaining leading verb ("Improved") categorizes the entry.
+      expect(getCategory('perf: Improved the swap load time')).toBe(
+        ChangeCategory.Changed,
+      );
+    });
+
+    it('categorizes a category-less prefix (docs) by its leading verb', () => {
+      expect(getCategory('docs: Added a troubleshooting guide')).toBe(
+        ChangeCategory.Added,
+      );
+    });
+
+    it('categorizes a bump prefix by its leading verb', () => {
+      expect(getCategory('bump: Bumped the base controller to v10')).toBe(
+        ChangeCategory.Changed,
+      );
+    });
+
+    it('returns Uncategorized for a category-less prefix without a recognized verb', () => {
+      expect(getCategory('perf: micro-optimize the render loop')).toBe(
+        ChangeCategory.Uncategorized,
+      );
+    });
+  });
+
+  describe('chore commits without a CHANGELOG entry', () => {
+    it('excludes a chore commit that has no authored changelog entry', () => {
+      expect(
+        getCategory(
+          'chore: migrate MOBILE_BUNDLESIZE_TOKEN to OIDC token exchange',
+          false,
+        ),
+      ).toBe(ChangeCategory.Excluded);
+    });
+
+    it('excludes a chore commit by default (no changelog entry)', () => {
+      expect(getCategory('chore: bump some internal dependency')).toBe(
+        ChangeCategory.Excluded,
+      );
+    });
+
+    it('includes a chore commit when an authored changelog entry exists', () => {
+      expect(getCategory('chore: some internal refactor', true)).toBe(
+        ChangeCategory.Uncategorized,
+      );
+    });
+
+    it('excludes a scoped chore commit with no changelog entry', () => {
+      expect(getCategory('chore(deps): bump lockfile', false)).toBe(
+        ChangeCategory.Excluded,
+      );
+    });
+  });
+
+  describe('exclusion keyword matching', () => {
+    it('excludes an entry whose description contains a keyword as a whole word', () => {
+      expect(getCategory('Migrated a token to OIDC token exchange', true)).toBe(
+        ChangeCategory.Excluded,
+      );
+    });
+
+    it('does not exclude an entry that merely contains a keyword as a substring', () => {
+      // "oidc" appears inside "avoidcache" but must not trigger exclusion.
+      expect(getCategory('Fixed avoidcache logic', true)).toBe(
+        ChangeCategory.Fixed,
+      );
+    });
+
+    it('still matches a hyphenated ticket-style keyword (cp-, INFRA-)', () => {
+      expect(getCategory('cp-1234 backport the fix', true)).toBe(
+        ChangeCategory.Excluded,
+      );
+      expect(getCategory('INFRA-999 update the pipeline', true)).toBe(
+        ChangeCategory.Excluded,
+      );
+    });
+
+    it('does not exclude a longer word that merely starts with a keyword', () => {
+      // "e2ee" must not be excluded by the "e2e" keyword.
+      expect(getCategory('Improved the e2ee handshake', true)).toBe(
+        ChangeCategory.Changed,
+      );
+    });
   });
 });

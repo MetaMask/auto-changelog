@@ -9,7 +9,7 @@ import { format, Formatter, FormatterName } from './changelog';
 import { unreleased, Version } from './constants';
 import { readFile, writeFile } from './fs';
 import { createEmptyChangelog } from './init';
-import { getRepositoryUrl } from './repo';
+import { findNearestPackageJson, getRepositoryUrl } from './repo';
 import { PackageRename } from './shared-types';
 import { updateChangelog } from './update-changelog';
 import { error, validate } from './validate-command';
@@ -419,9 +419,13 @@ async function main() {
     return changelog;
   };
 
+  // When a project root is given, use its `package.json`. Otherwise walk up
+  // from the current working directory to the nearest `package.json` (falling
+  // back to the cwd itself if none is found, so the error message below still
+  // points at a sensible path).
   const manifestPath = projectRootDirectory
     ? path.join(projectRootDirectory, 'package.json')
-    : path.resolve('package.json');
+    : (findNearestPackageJson() ?? path.resolve('package.json'));
 
   if (!currentVersion) {
     try {
