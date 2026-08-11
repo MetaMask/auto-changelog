@@ -111,15 +111,15 @@ export const keywordsToIndicateExcluded: string[] = [
 
 /**
  * Maps a lowercase leading verb of a "Keep a Changelog"-style entry to its
- * category. The MetaMask PR template asks authors to write user-facing entries
- * in the past tense (e.g. "Added a new tab...", "Fixed a bug..."), so when a
- * commit has no usable Conventional Commit prefix we can still categorize the
- * entry deterministically from its first word.
+ * category. MetaMask client PR templates ask authors to write user-facing
+ * entries in the past tense (e.g. "Added a new tab...", "Fixed a bug..."),
+ * so when a commit has no usable Conventional Commit prefix we can still
+ * categorize the entry deterministically from its first word.
  *
  * Only unambiguous, closed-set verbs are included; entries that do not begin
  * with one of these words remain uncategorized rather than being guessed.
  */
-export const changelogVerbToCategory: Record<string, ChangeCategory> = {
+export const CHANGELOG_VERB_TO_CATEGORY: Record<string, ChangeCategory> = {
   added: ChangeCategory.Added,
   adds: ChangeCategory.Added,
   add: ChangeCategory.Added,
@@ -139,18 +139,19 @@ export const changelogVerbToCategory: Record<string, ChangeCategory> = {
   improved: ChangeCategory.Changed,
   improves: ChangeCategory.Changed,
   improve: ChangeCategory.Changed,
+  migrated: ChangeCategory.Changed,
+  migrate: ChangeCategory.Changed,
 };
 
 /**
  * Maps a lowercase leading verb (imperative or third-person present) of a
  * changelog entry to its past-tense form.
  *
- * The MetaMask PR template asks for past-tense, user-facing entries, but many
- * entries fall back to a commit subject written in the imperative mood
- * ("Add ...", "Fix ...", "Migrate ..."). This map lets us convert only the
- * leading verb to past tense so the rendered changelog reads consistently.
- *
- * Design constraints.
+ * For MetaMask client repos, PR templates asks for past-tense, user-facing
+ * entries, but many entries fall back to a commit subject written in the
+ * imperative mood ("Add ...", "Fix ...", "Migrate ..."). This map lets us
+ * convert only the leading verb to past tense so the rendered changelog reads
+ * consistently.
  *
  * Every past form is spelled out explicitly (no generative morphology), so
  * irregular verbs and doubled-consonant spellings are always correct.
@@ -164,7 +165,7 @@ export const changelogVerbToCategory: Record<string, ChangeCategory> = {
  * The value is the capitalized past form, since descriptions have already been
  * capitalized by the time conversion runs.
  */
-export const leadingVerbToPastTense: Record<string, string> = {
+export const LEADING_VERB_TO_PAST_TENSE: Record<string, string> = {
   add: 'Added',
   adds: 'Added',
   align: 'Aligned',

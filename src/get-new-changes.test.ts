@@ -1,19 +1,9 @@
-import { Octokit } from '@octokit/rest';
+import nock from 'nock';
 
 import { getNewChangeEntries } from './get-new-changes';
 import { runCommand, runCommandAndSplit } from './run-command';
 
 jest.mock('./run-command');
-
-// Mock Octokit so the `useChangelogEntry` path (which fetches PR labels) does
-// not make network calls. The Jest config has `resetMocks: true`, so the
-// constructor implementation is re-established in `beforeEach` below.
-const mockPullsGet = jest.fn();
-jest.mock('@octokit/rest', () => ({
-  Octokit: jest.fn(),
-}));
-
-const mockOctokit = Octokit as unknown as jest.Mock;
 
 const mockRunCommand = runCommand as jest.MockedFunction<typeof runCommand>;
 const mockRunCommandAndSplit = runCommandAndSplit as jest.MockedFunction<
@@ -22,9 +12,34 @@ const mockRunCommandAndSplit = runCommandAndSplit as jest.MockedFunction<
 
 const repoUrl = 'https://github.com/MetaMask/metamask-mobile';
 
+/**
+ * Mock GitHub's pull request labels endpoint.
+ *
+ * @param labels - The label names to return.
+ * @returns The Nock scope for the mocked endpoint.
+ */
+function mockPrLabels(labels: string[] = []) {
+  return nock('https://api.github.com')
+    .persist()
+    .get(/\/repos\/MetaMask\/metamask-mobile\/pulls\/\d+/u)
+    .reply(200, { labels: labels.map((name) => ({ name })) });
+}
+
 describe('getNewChangeEntries', () => {
+  beforeAll(() => {
+    nock.disableNetConnect();
+  });
+
   beforeEach(() => {
     mockRunCommandAndSplit.mockResolvedValue([]);
+  });
+
+  afterEach(() => {
+    nock.cleanAll();
+  });
+
+  afterAll(() => {
+    nock.enableNetConnect();
   });
 
   describe('PR-tagged commits', () => {
@@ -57,6 +72,52 @@ describe('getNewChangeEntries', () => {
           hasChangelogEntry: false,
         },
       ]);
+    });
+
+    it('logs commit decisions when verbose is enabled', async () => {
+      mockRunCommandAndSplit.mockResolvedValueOnce(['commit1']);
+      mockRunCommand.mockResolvedValueOnce('add feature (#12345)');
+      const errorSpy = jest
+        .spyOn(console, 'error')
+        .mockImplementation(() => undefined);
+
+      await getNewChangeEntries({
+        mostRecentTag: 'v1.0.0',
+        repoUrl,
+        loggedPrNumbers: [],
+        loggedDescriptions: [],
+        useChangelogEntry: false,
+        useShortPrLink: false,
+        verbose: true,
+      });
+
+      expect(errorSpy).toHaveBeenCalledWith(
+        '[auto-changelog] commit=commit1 subject="add feature (#12345)"',
+      );
+      expect(errorSpy).toHaveBeenCalledWith(
+        '[auto-changelog] commit=commit1 accepted source-pr=12345 canonical-pr=12345 cherry-pick=false',
+      );
+      errorSpy.mockRestore();
+    });
+
+    it('does not log commit decisions by default', async () => {
+      mockRunCommandAndSplit.mockResolvedValueOnce(['commit1']);
+      mockRunCommand.mockResolvedValueOnce('add feature (#12345)');
+      const errorSpy = jest
+        .spyOn(console, 'error')
+        .mockImplementation(() => undefined);
+
+      await getNewChangeEntries({
+        mostRecentTag: 'v1.0.0',
+        repoUrl,
+        loggedPrNumbers: [],
+        loggedDescriptions: [],
+        useChangelogEntry: false,
+        useShortPrLink: false,
+      });
+
+      expect(errorSpy).not.toHaveBeenCalled();
+      errorSpy.mockRestore();
     });
 
     it('should exclude commits with PR numbers already in changelog', async () => {
@@ -156,6 +217,115 @@ describe('getNewChangeEntries', () => {
     });
   });
 
+  describe('backfill prevention', () => {
+    it('skips a candidate older than the target changelog section frontier', async () => {
+      mockRunCommandAndSplit
+        .mockResolvedValueOnce(['candidate-commit'])
+        .mockResolvedValueOnce([
+          'frontier-commit\0fix: establish frontier (#12344)',
+        ])
+        .mockResolvedValueOnce(['frontier-commit', 'candidate-commit']);
+      mockRunCommand.mockResolvedValueOnce(
+        'fix: resolve a historical issue (#12345)',
+      );
+      const errorSpy = jest
+        .spyOn(console, 'error')
+        .mockImplementation(() => undefined);
+
+      const result = await getNewChangeEntries({
+        mostRecentTag: 'v1.0.0',
+        repoUrl,
+        loggedPrNumbers: [],
+        loggedDescriptions: [],
+        targetSectionPrNumbers: ['12344'],
+        useChangelogEntry: false,
+        useShortPrLink: false,
+        preventBackfill: true,
+        verbose: true,
+      });
+
+      expect(result).toStrictEqual([]);
+      expect(mockRunCommandAndSplit).toHaveBeenCalledWith('git', [
+        'log',
+        '--format=%H%x00%s',
+        '--extended-regexp',
+        '--grep=(\\(#(12344)\\)|Merge pull request #(12344) from)',
+        'HEAD',
+      ]);
+      expect(mockRunCommandAndSplit).toHaveBeenCalledWith('git', [
+        'rev-list',
+        'frontier-commit',
+      ]);
+      expect(errorSpy).toHaveBeenCalledWith(
+        '[auto-changelog] skipped pr=12345 reason=older-than-changelog-frontier',
+      );
+      errorSpy.mockRestore();
+    });
+
+    it('uses a merge commit as a target changelog section frontier', async () => {
+      mockRunCommandAndSplit
+        .mockResolvedValueOnce(['candidate-commit'])
+        .mockResolvedValueOnce([
+          'frontier-commit\0Merge pull request #12344 from feature-branch',
+        ])
+        .mockResolvedValueOnce(['frontier-commit', 'candidate-commit']);
+      mockRunCommand.mockResolvedValueOnce(
+        'fix: resolve a historical issue (#12345)',
+      );
+
+      const result = await getNewChangeEntries({
+        mostRecentTag: 'v1.0.0',
+        repoUrl,
+        loggedPrNumbers: [],
+        loggedDescriptions: [],
+        targetSectionPrNumbers: ['12344'],
+        useChangelogEntry: false,
+        useShortPrLink: false,
+        preventBackfill: true,
+      });
+
+      expect(result).toStrictEqual([]);
+      expect(mockRunCommandAndSplit).toHaveBeenCalledWith('git', [
+        'log',
+        '--format=%H%x00%s',
+        '--extended-regexp',
+        '--grep=(\\(#(12344)\\)|Merge pull request #(12344) from)',
+        'HEAD',
+      ]);
+    });
+
+    it('does not prevent backfill unless enabled', async () => {
+      mockRunCommandAndSplit.mockResolvedValueOnce(['candidate-commit']);
+      mockRunCommand.mockResolvedValueOnce(
+        'fix: resolve a historical issue (#12345)',
+      );
+
+      const result = await getNewChangeEntries({
+        mostRecentTag: 'v1.0.0',
+        repoUrl,
+        loggedPrNumbers: [],
+        loggedDescriptions: [],
+        targetSectionPrNumbers: ['12344'],
+        useChangelogEntry: false,
+        useShortPrLink: false,
+      });
+
+      expect(result).toStrictEqual([
+        {
+          description:
+            'fix: resolve a historical issue ([#12345](https://github.com/MetaMask/metamask-mobile/pull/12345))',
+          subject: 'fix: resolve a historical issue (#12345)',
+          hasChangelogEntry: false,
+        },
+      ]);
+      expect(mockRunCommandAndSplit).not.toHaveBeenCalledWith('git', [
+        'log',
+        '--format=%H%x00%s',
+        'HEAD',
+      ]);
+    });
+  });
+
   describe('merge commits', () => {
     it('should extract PR numbers from merge commits', async () => {
       mockRunCommandAndSplit.mockResolvedValueOnce(['commit1', 'commit2']);
@@ -226,11 +396,7 @@ describe('getNewChangeEntries', () => {
     beforeEach(() => {
       // eslint-disable-next-line node/no-process-env
       process.env.GITHUB_TOKEN = 'test-token';
-      // `resetMocks: true` wipes the constructor implementation between tests.
-      mockOctokit.mockImplementation(() => ({
-        rest: { pulls: { get: mockPullsGet } },
-      }));
-      mockPullsGet.mockResolvedValue({ data: { labels: [] } });
+      mockPrLabels();
     });
 
     afterEach(() => {
@@ -331,6 +497,146 @@ describe('getNewChangeEntries', () => {
           hasChangelogEntry: true,
         },
       ]);
+    });
+
+    it('uses the original PR number for an explicitly identified cherry-pick', async () => {
+      mockRunCommandAndSplit.mockResolvedValueOnce(['cherrypick']);
+      mockRunCommand
+        .mockResolvedValueOnce(
+          'Cherry-picking commits from main to release/8.2.1-ota for PR #33289 (#33328)',
+        )
+        .mockResolvedValueOnce('CHANGELOG entry: Fixed something important');
+
+      const result = await getNewChangeEntries({
+        mostRecentTag: 'v1.0.0',
+        repoUrl,
+        loggedPrNumbers: [],
+        loggedDescriptions: [],
+        useChangelogEntry: true,
+        useShortPrLink: true,
+      });
+
+      expect(result).toStrictEqual([
+        {
+          description: 'Fixed something important (#33289)',
+          subject: 'Fixed something important',
+          hasChangelogEntry: true,
+        },
+      ]);
+    });
+
+    it.each([
+      [
+        'release(runway): cherry-pick fix: resolve ip-address cp-13.43.0 (#45252)',
+        '- fix: resolve ip-address cp-13.43.0 (#45243)',
+        '45243',
+      ],
+      [
+        'chore(runway): cherry-pick fix: hide notifications (#34465)',
+        '- fix: hide notifications (#34411)',
+        '34411',
+      ],
+    ])(
+      'uses the original PR from a Runway cherry-pick body',
+      async (subject, originalSubject, originalPrNumber) => {
+        mockRunCommandAndSplit.mockResolvedValueOnce(['cherrypick']);
+        mockRunCommand
+          .mockResolvedValueOnce(subject)
+          .mockResolvedValueOnce(
+            `${originalSubject}\n\nCHANGELOG entry: Fixed the integration issue`,
+          );
+
+        const result = await getNewChangeEntries({
+          mostRecentTag: 'v1.0.0',
+          repoUrl,
+          loggedPrNumbers: [],
+          loggedDescriptions: [],
+          useChangelogEntry: true,
+          useShortPrLink: true,
+        });
+
+        expect(result).toStrictEqual([
+          {
+            description: `Fixed the integration issue (#${originalPrNumber})`,
+            subject: 'Fixed the integration issue',
+            hasChangelogEntry: true,
+          },
+        ]);
+      },
+    );
+
+    it('drops a Runway cherry-pick when its scoped original has a different entry', async () => {
+      mockRunCommandAndSplit.mockResolvedValueOnce(['original', 'cherrypick']);
+      mockRunCommand
+        .mockResolvedValueOnce(
+          'fix(settings): restore an account control (#45243)',
+        )
+        .mockResolvedValueOnce('CHANGELOG entry: Restored the account control')
+        .mockResolvedValueOnce(
+          'release(runway): cherry-pick fix: restore an account control cp-13.43.0 (#45252)',
+        )
+        .mockResolvedValueOnce(
+          '- fix(settings): restore an account control cp-13.43.0 (#45243)\n\nCHANGELOG entry: Restored account-control behavior',
+        );
+
+      const result = await getNewChangeEntries({
+        mostRecentTag: 'v1.0.0',
+        repoUrl,
+        loggedPrNumbers: [],
+        loggedDescriptions: [],
+        useChangelogEntry: true,
+        useShortPrLink: true,
+      });
+
+      expect(result).toStrictEqual([
+        {
+          description: 'Restored the account control (#45243)',
+          subject: 'Restored the account control',
+          hasChangelogEntry: true,
+        },
+      ]);
+    });
+
+    it('does not repeat a canonical Runway cherry-pick PR that is already logged', async () => {
+      mockRunCommandAndSplit.mockResolvedValueOnce(['cherrypick']);
+      mockRunCommand
+        .mockResolvedValueOnce(
+          'release(runway): cherry-pick fix: resolve ip-address cp-13.43.0 (#45252)',
+        )
+        .mockResolvedValueOnce(
+          '- fix: resolve ip-address cp-13.43.0 (#45243)\n\nCHANGELOG entry: Fixed the integration issue',
+        );
+
+      const result = await getNewChangeEntries({
+        mostRecentTag: 'v1.0.0',
+        repoUrl,
+        loggedPrNumbers: ['45243'],
+        loggedDescriptions: [],
+        useChangelogEntry: true,
+        useShortPrLink: true,
+      });
+
+      expect(result).toStrictEqual([]);
+    });
+
+    it('does not repeat a canonical cherry-pick PR that is already logged', async () => {
+      mockRunCommandAndSplit.mockResolvedValueOnce(['cherrypick']);
+      mockRunCommand
+        .mockResolvedValueOnce(
+          'Cherry-picking commits from main to release/8.2.1-ota for PR #33289 (#33328)',
+        )
+        .mockResolvedValueOnce('CHANGELOG entry: Fixed something important');
+
+      const result = await getNewChangeEntries({
+        mostRecentTag: 'v1.0.0',
+        repoUrl,
+        loggedPrNumbers: ['33289'],
+        loggedDescriptions: [],
+        useChangelogEntry: true,
+        useShortPrLink: true,
+      });
+
+      expect(result).toStrictEqual([]);
     });
 
     it('keeps two distinct PRs that merely share a description when neither is a cherry-pick', async () => {
@@ -588,13 +894,7 @@ describe('getNewChangeEntries', () => {
     beforeEach(() => {
       // eslint-disable-next-line node/no-process-env
       process.env.GITHUB_TOKEN = 'test-token';
-      // `resetMocks: true` wipes the constructor implementation between tests,
-      // so re-establish it here.
-      mockOctokit.mockImplementation(() => ({
-        rest: { pulls: { get: mockPullsGet } },
-      }));
-      // Default: PRs have no labels.
-      mockPullsGet.mockResolvedValue({ data: { labels: [] } });
+      mockPrLabels();
     });
 
     afterEach(() => {
@@ -1258,6 +1558,31 @@ describe('getNewChangeEntries', () => {
       ]);
     });
 
+    it('does not convert an imperative leading verb when disabled', async () => {
+      mockRunCommandAndSplit.mockResolvedValueOnce(['commit1']);
+      mockRunCommand
+        .mockResolvedValueOnce('chore: migrate events (#300)')
+        .mockResolvedValueOnce('CHANGELOG entry: Migrate perps events\n');
+
+      const result = await getNewChangeEntries({
+        mostRecentTag: 'v1.0.0',
+        repoUrl,
+        loggedPrNumbers: [],
+        loggedDescriptions: [],
+        useChangelogEntry: true,
+        useShortPrLink: true,
+        normalizeToPastTense: false,
+      });
+
+      expect(result).toStrictEqual([
+        {
+          description: 'Migrate perps events (#300)',
+          subject: 'Migrate perps events',
+          hasChangelogEntry: true,
+        },
+      ]);
+    });
+
     it('converts a doubled-consonant verb correctly', async () => {
       const result = await runWithEntry(
         'chore: skip step (#301)',
@@ -1500,10 +1825,6 @@ describe('getNewChangeEntries', () => {
     const originalCi = process.env.CI; // eslint-disable-line node/no-process-env
 
     beforeEach(() => {
-      mockOctokit.mockImplementation(() => ({
-        rest: { pulls: { get: mockPullsGet } },
-      }));
-      mockPullsGet.mockResolvedValue({ data: { labels: [] } });
       // eslint-disable-next-line node/no-process-env
       delete process.env.GITHUB_TOKEN;
       // eslint-disable-next-line node/no-process-env
@@ -1554,11 +1875,15 @@ describe('getNewChangeEntries', () => {
         .mockResolvedValueOnce('gh-cli-token\n') // gh auth token
         .mockResolvedValueOnce('feat: do a thing (#500)') // %s
         .mockResolvedValueOnce(''); // %b
+      const scope = mockPrLabels().matchHeader(
+        'authorization',
+        'token gh-cli-token',
+      );
 
       await run();
 
       expect(mockRunCommand).toHaveBeenCalledWith('gh', ['auth', 'token']);
-      expect(mockOctokit).toHaveBeenCalledWith({ auth: 'gh-cli-token' });
+      expect(scope.isDone()).toBe(true);
     });
 
     it('prefers GITHUB_TOKEN over the gh CLI when it is set', async () => {
@@ -1567,11 +1892,15 @@ describe('getNewChangeEntries', () => {
       mockRunCommand
         .mockResolvedValueOnce('feat: do a thing (#501)') // %s
         .mockResolvedValueOnce(''); // %b
+      const scope = mockPrLabels().matchHeader(
+        'authorization',
+        'token env-token',
+      );
 
       await run();
 
       expect(mockRunCommand).not.toHaveBeenCalledWith('gh', ['auth', 'token']);
-      expect(mockOctokit).toHaveBeenCalledWith({ auth: 'env-token' });
+      expect(scope.isDone()).toBe(true);
     });
 
     it('does not fall back to the gh CLI on CI and throws instead', async () => {

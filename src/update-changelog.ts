@@ -4,7 +4,7 @@ import {
   ChangeCategory,
   ConventionalCommitType,
   Version,
-  changelogVerbToCategory,
+  CHANGELOG_VERB_TO_CATEGORY,
   keywordsToIndicateExcluded,
 } from './constants';
 import { getNewChangeEntries } from './get-new-changes';
@@ -117,6 +117,23 @@ export type UpdateChangelogOptions = {
    * Whether to require PR numbers for all commits. If true, commits without PR numbers are filtered out.
    */
   requirePrNumbers?: boolean;
+  /**
+   * Whether to convert recognized leading imperative verbs to past tense.
+   */
+  normalizeToPastTense?: boolean;
+  /**
+   * Whether to exclude `chore:` commits that lack a changelog entry.
+   */
+  excludeChoreWithoutChangelogEntry?: boolean;
+  /**
+   * Whether to prevent automatically adding commits that precede an entry
+   * already present in the target changelog section.
+   */
+  preventBackfill?: boolean;
+  /**
+   * Whether to print commit-level update diagnostics to stderr.
+   */
+  verbose?: boolean;
 };
 
 /**
@@ -146,6 +163,10 @@ export type UpdateChangelogOptions = {
  * @param options.useChangelogEntry - Whether to use `CHANGELOG entry:` from the commit body and the no-changelog label.
  * @param options.useShortPrLink - Whether to use short PR links in the changelog.
  * @param options.requirePrNumbers - Whether to require PR numbers for all commits. If true, commits without PR numbers are filtered out.
+ * @param options.normalizeToPastTense - Whether to convert recognized leading imperative verbs to past tense.
+ * @param options.excludeChoreWithoutChangelogEntry - Whether to exclude `chore:` commits that lack a changelog entry.
+ * @param options.preventBackfill - Whether to skip commits older than the target changelog section frontier.
+ * @param options.verbose - Whether to print commit-level update diagnostics to stderr.
  * @returns The updated changelog text.
  */
 export async function updateChangelog({
@@ -161,6 +182,10 @@ export async function updateChangelog({
   useChangelogEntry = false,
   useShortPrLink = false,
   requirePrNumbers = false,
+  normalizeToPastTense = false,
+  excludeChoreWithoutChangelogEntry = false,
+  preventBackfill = false,
+  verbose = false,
 }: UpdateChangelogOptions): Promise<string | undefined> {
   const changelog = parseChangelog({
     changelogContent,
@@ -203,20 +228,35 @@ export async function updateChangelog({
     }
   }
 
+  const targetChanges = isReleaseCandidate
+    ? changelog.getReleaseChanges(currentVersion as Version)
+    : changelog.getUnreleasedChanges();
+  const targetSectionPrNumbers = Object.values(targetChanges)
+    .flat()
+    .flatMap((change) => change.prNumbers);
+
   const newChangeEntries = await getNewChangeEntries({
     mostRecentTag,
     repoUrl,
     loggedPrNumbers: getAllLoggedPrNumbers(changelog),
     loggedDescriptions: getAllLoggedDescriptions(changelog),
+    targetSectionPrNumbers,
     projectRootDirectory,
     useChangelogEntry,
     useShortPrLink,
     requirePrNumbers,
+    normalizeToPastTense,
+    preventBackfill,
+    verbose,
   });
 
   for (const entry of newChangeEntries.reverse()) {
     const category = autoCategorize
-      ? getCategory(entry.subject, entry.hasChangelogEntry)
+      ? getCategory(
+          entry.subject,
+          entry.hasChangelogEntry,
+          excludeChoreWithoutChangelogEntry,
+        )
       : ChangeCategory.Uncategorized;
 
     if (category !== ChangeCategory.Excluded) {
@@ -225,6 +265,11 @@ export async function updateChangelog({
         category,
         description: entry.description,
       });
+      if (verbose) {
+        console.error(
+          `[auto-changelog] emitted category=${category} description=${JSON.stringify(entry.description)}`,
+        );
+      }
     }
   }
 
@@ -241,11 +286,14 @@ export async function updateChangelog({
  * `CHANGELOG entry:`. When true, a `chore:`-prefixed change is categorized by
  * its leading verb instead of being excluded, so an author-provided entry is
  * respected.
+ * @param excludeChoreWithoutChangelogEntry - Whether to exclude `chore:`
+ * commits without a changelog entry.
  * @returns The category of the change.
  */
 export function getCategory(
   description: string,
   hasChangelogEntry = false,
+  excludeChoreWithoutChangelogEntry = false,
 ): ChangeCategory {
   // Check whether the commit description includes exclusion keywords
   if (checkIfDescriptionIndicatesExcluded(description)) {
@@ -299,7 +347,7 @@ export function getCategory(
       // an entry was authored, fall through so the entry's leading verb can
       // still categorize it.
       case ConventionalCommitType.CHORE:
-        if (!hasChangelogEntry) {
+        if (excludeChoreWithoutChangelogEntry && !hasChangelogEntry) {
           return ChangeCategory.Excluded;
         }
         descriptionForVerb = stripPrefix(description);
@@ -342,7 +390,7 @@ function getCategoryFromLeadingVerb(
     return undefined;
   }
 
-  return changelogVerbToCategory[firstWord.toLowerCase()];
+  return CHANGELOG_VERB_TO_CATEGORY[firstWord.toLowerCase()];
 }
 
 /**

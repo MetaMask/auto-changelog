@@ -1,6 +1,9 @@
 import { Octokit } from '@octokit/rest';
 
-import { ConventionalCommitType, leadingVerbToPastTense } from './constants';
+import {
+  ConventionalCommitType,
+  LEADING_VERB_TO_PAST_TENSE,
+} from './constants';
 import { getOwnerAndRepoFromUrl } from './repo';
 import { runCommand, runCommandAndSplit } from './run-command';
 
@@ -11,10 +14,14 @@ export type AddNewCommitsOptions = {
   repoUrl: string;
   loggedPrNumbers: string[];
   loggedDescriptions: string[];
+  targetSectionPrNumbers?: string[];
   projectRootDirectory?: string;
   useChangelogEntry: boolean;
   useShortPrLink: boolean;
   requirePrNumbers?: boolean;
+  normalizeToPastTense?: boolean;
+  preventBackfill?: boolean;
+  verbose?: boolean;
 };
 
 // Get array of all ConventionalCommitType values
@@ -82,6 +89,32 @@ function getCherryPickOriginalSubject(subject: string): string | undefined {
  */
 function getCherryPickOriginalPrNumber(subject: string): string | undefined {
   return subject.match(/for PR #(\d+)/iu)?.[1];
+}
+
+/**
+ * Determine whether a subject uses Runway's standard cherry-pick format.
+ *
+ * @param subject - The cherry-pick commit subject line.
+ * @returns `true` if the subject uses the standard Runway format.
+ */
+function isRunwayCherryPickSubject(subject: string): boolean {
+  return /^(?:release|chore)\(runway\):\s*cherry-pick\s+/iu.test(subject);
+}
+
+/**
+ * Extract the original PR number from the first non-empty line of a Runway
+ * cherry-pick body. Runway records the cherry-picked commit subject there as
+ * a Markdown list item, including its original trailing PR reference.
+ *
+ * @param body - The Runway cherry-pick commit body.
+ * @returns The original PR number when present.
+ */
+function getRunwayOriginalPrNumber(body: string): string | undefined {
+  const originalSubject = body
+    .split(/\r?\n/gu)
+    .find((line) => line.trim() !== '');
+
+  return originalSubject?.match(/^\s*[-*]\s+.*\(#(\d+)\)\s*$/u)?.[1];
 }
 
 /**
@@ -162,7 +195,7 @@ function normalizeCommitSubject(subject: string): string {
  * Convert the leading verb of a changelog entry to past tense.
  *
  * Only the first word is considered, and only when it is a known verb in
- * {@link leadingVerbToPastTense}. This keeps the transformation deterministic
+ * {@link LEADING_VERB_TO_PAST_TENSE}. This keeps the transformation deterministic
  * and low-risk: it never attempts to conjugate verbs elsewhere in the
  * sentence, and unknown leading words are returned unchanged.
  *
@@ -200,7 +233,7 @@ function convertLeadingVerbToPastTense(description: string): string {
 
   const firstWord = match[1];
   const firstWordLower = firstWord.toLowerCase();
-  const pastForm = leadingVerbToPastTense[firstWordLower];
+  const pastForm = LEADING_VERB_TO_PAST_TENSE[firstWordLower];
 
   if (pastForm === undefined) {
     return description;
@@ -235,7 +268,7 @@ function convertLeadingVerbToPastTense(description: string): string {
   // Coordination guard: a second coordinated imperative verb would be left in
   // present tense, producing mixed tense. Detect `... and <known-verb> ...`
   // (also `, and`) and skip conversion entirely if present.
-  const knownVerbs = Object.keys(leadingVerbToPastTense).join('|');
+  const knownVerbs = Object.keys(LEADING_VERB_TO_PAST_TENSE).join('|');
   const coordinationPattern = new RegExp(
     `\\band\\s+(?:${knownVerbs})\\b`,
     'iu',
@@ -388,6 +421,15 @@ function isOptOutValue(entry: string): boolean {
 }
 
 /**
+ * The parsed state of a `CHANGELOG entry:` field.
+ */
+type ChangelogEntryResult =
+  | { type: 'entry'; value: string }
+  | { type: 'empty' }
+  | { type: 'optOut' }
+  | { type: 'none' };
+
+/**
  * Extract the `CHANGELOG entry:` value(s) from a commit body.
  *
  * Each entry begins on a line starting with `CHANGELOG entry:` and may span
@@ -414,8 +456,7 @@ function isOptOutValue(entry: string): boolean {
  * that two, three, or more entries are preserved rather than truncated to the
  * first. Entries whose value is empty or an opt-out placeholder (`null`,
  * `N/A`, `TBD`, `none`, ...) are dropped before joining; if every entry is
- * empty/opt-out the commit is treated as "no changelog entry" (the literal
- * `'null'` is returned so it is excluded downstream).
+ * empty/opt-out the commit is treated as an explicit opt-out.
  *
  * Line endings are normalized to `\n` first, so `\r\n` (CRLF) and bare `\r`
  * bodies — common in squash-merge commit messages composed in GitHub's web UI
@@ -428,11 +469,10 @@ function isOptOutValue(entry: string): boolean {
  * previous implementation is removed, so an entry on the last line is found.
  *
  * @param body - The full commit body.
- * @returns The extracted entry/entries (wrapped lines joined into single
- * spaces, multiple entries joined with `; `, trimmed), or `undefined` if no
- * `CHANGELOG entry:` line is present.
+ * @returns A discriminated result for an extracted entry, empty entry,
+ * explicit opt-out, or no `CHANGELOG entry:` line.
  */
-function extractChangelogEntry(body: string): string | undefined {
+function extractChangelogEntry(body: string): ChangelogEntryResult {
   // Normalize CRLF / bare CR to LF so all downstream line handling (the
   // anchor match, the remainder split, and boundary detection) is line-ending
   // agnostic.
@@ -564,26 +604,25 @@ function extractChangelogEntry(body: string): string | undefined {
     // Join multiple entries with `; ` so 2, 3, or more distinct entries are
     // all preserved in the rendered changelog line. A real entry always wins
     // over a sibling `null` entry.
-    return entries.join('; ');
+    return { type: 'entry', value: entries.join('; ') };
   }
 
   if (sawNullEntry) {
-    // Every entry was `null` -> the author opted out; return the literal
-    // `'null'` so the commit is excluded downstream.
-    return 'null';
+    return { type: 'optOut' };
   }
 
   if (sawEntryLine) {
     // A `CHANGELOG entry:` line was present but empty -> fall back to the
     // subject downstream (distinct from the no-entry `undefined` case).
-    return '';
+    return { type: 'empty' };
   }
 
   // No `CHANGELOG entry:` line at all.
-  return undefined;
+  return { type: 'none' };
 }
 
 type Commit = {
+  hash: string;
   prNumber?: string;
   subject: string;
   description: string;
@@ -612,12 +651,14 @@ type Commit = {
  * @param commitHashes - The list of commit hashes.
  * @param repoUrl - The repository URL.
  * @param useChangelogEntry - Whether to use `CHANGELOG entry:` from the commit body and the no-changelog label.
+ * @param verbose - Whether to print commit-level diagnostics to stderr.
  * @returns Commit details for each commit, including description, PR number (if present), and merge commit indicator.
  */
 async function getCommits(
   commitHashes: string[],
   repoUrl: string,
   useChangelogEntry: boolean,
+  verbose: boolean,
 ): Promise<Commit[]> {
   // Only initialize Octokit if we need to fetch PR labels
   if (useChangelogEntry) {
@@ -639,63 +680,89 @@ async function getCommits(
       );
     }
 
+    if (verbose) {
+      console.error(
+        `[auto-changelog] commit=${commitHash} subject=${JSON.stringify(subject)}`,
+      );
+    }
+
     const subjectMatch = subject.match(/\(#(\d+)\)/u);
 
     let prNumber: string | undefined;
+    let sourcePrNumber: string | undefined;
     let description = subject;
     let isMergeCommit = false;
     let rawChangelogEntry: string | undefined;
+    let cherryPickOriginalPrNumber = getCherryPickOriginalPrNumber(subject);
 
     if (subjectMatch) {
       // Squash & Merge: the commit subject is parsed as `<description> (#<PR ID>)`
-      prNumber = subjectMatch[1];
+      sourcePrNumber = subjectMatch[1];
+      prNumber = cherryPickOriginalPrNumber ?? sourcePrNumber;
+      const isRunwayCherryPick = isRunwayCherryPickSubject(subject);
+      const body =
+        useChangelogEntry || isRunwayCherryPick
+          ? await runCommand('git', ['show', '-s', '--format=%b', commitHash])
+          : undefined;
+
+      if (isRunwayCherryPick && body) {
+        const runwayOriginalPrNumber = getRunwayOriginalPrNumber(body);
+        if (runwayOriginalPrNumber) {
+          prNumber = runwayOriginalPrNumber;
+          cherryPickOriginalPrNumber = runwayOriginalPrNumber;
+          if (verbose) {
+            console.error(
+              `[auto-changelog] commit=${commitHash} canonical-pr=${prNumber} source-pr=${sourcePrNumber} reason=runway-body`,
+            );
+          }
+        }
+      }
 
       if (useChangelogEntry) {
-        const body = await runCommand('git', [
-          'show',
-          '-s',
-          '--format=%b',
-          commitHash,
-        ]);
-
-        const changelogEntry = extractChangelogEntry(body);
+        const changelogEntry = extractChangelogEntry(body ?? '');
 
         // An empty entry (the `CHANGELOG entry:` label is present but has no
         // text after it, or only a boundary line follows) carries no usable
         // description. Treat it like a missing entry and fall back to the
         // subject rather than emitting a bare `(#<PR>)` bullet.
-        if (changelogEntry !== undefined && changelogEntry.length > 0) {
-          description = changelogEntry; // This may be string 'null' to indicate no description
+        if (changelogEntry.type === 'entry') {
+          description = changelogEntry.value;
 
           // Preserve the raw entry (minus outer backticks) for categorization.
-          if (description.toLowerCase() !== 'null') {
-            rawChangelogEntry = removeOuterBackticksIfPresent(description);
+          rawChangelogEntry = removeOuterBackticksIfPresent(description);
 
-            // Remove outer backticks if present. Example: `feat: new feature description` -> feat: new feature description
-            description = removeOuterBackticksIfPresent(description);
+          // Remove outer backticks if present. Example: `feat: new feature description` -> feat: new feature description
+          description = removeOuterBackticksIfPresent(description);
 
-            // Remove Conventional Commit prefix if present. Example: feat: new feature description -> new feature description
-            description = description
-              .split('; ')
-              .map(removeConventionalCommitPrefixIfPresent)
-              .map((entry) =>
-                entry.length > 0
-                  ? entry.charAt(0).toUpperCase() + entry.slice(1)
-                  : entry,
-              )
-              .join('; ');
+          // Remove Conventional Commit prefix if present. Example: feat: new feature description -> new feature description
+          description = description
+            .split('; ')
+            .map(removeConventionalCommitPrefixIfPresent)
+            .map((entry) =>
+              entry.length > 0
+                ? entry.charAt(0).toUpperCase() + entry.slice(1)
+                : entry,
+            )
+            .join('; ');
+        } else if (changelogEntry.type === 'optOut') {
+          if (verbose) {
+            console.error(
+              `[auto-changelog] commit=${commitHash} skipped reason=changelog-opt-out`,
+            );
           }
+          continue;
         } else {
           description = normalizeSubjectDescription(subject) ?? '';
         }
 
-        // Filter out entries marked as no-changelog (case-insensitive null check)
-        if (description.toLowerCase() !== 'null') {
-          const prLabels = await getPrLabels(repoUrl, prNumber);
-
-          if (prLabels.includes('no-changelog')) {
-            description = 'null'; // Has the no-changelog label, use string 'null' to indicate no description
+        const prLabels = await getPrLabels(repoUrl, sourcePrNumber);
+        if (prLabels.includes('no-changelog')) {
+          if (verbose) {
+            console.error(
+              `[auto-changelog] commit=${commitHash} skipped reason=no-changelog-label source-pr=${sourcePrNumber}`,
+            );
           }
+          continue;
         }
       } else {
         description = subject.match(/^(.+)\s\(#\d+\)/u)?.[1] ?? '';
@@ -717,22 +784,119 @@ async function getCommits(
       }
     }
 
-    // String 'null' is used to indicate no description
-    if (description !== 'null') {
-      commits.push({
-        prNumber,
-        subject,
-        description: description.trim(),
-        isMergeCommit,
-        isCherryPick: isCherryPickSubject(subject),
-        cherryPickOriginalSubject: getCherryPickOriginalSubject(subject),
-        cherryPickOriginalPrNumber: getCherryPickOriginalPrNumber(subject),
-        changelogEntry: rawChangelogEntry,
-      });
+    commits.push({
+      hash: commitHash,
+      prNumber,
+      subject,
+      description: description.trim(),
+      isMergeCommit,
+      isCherryPick: isCherryPickSubject(subject),
+      cherryPickOriginalSubject: getCherryPickOriginalSubject(subject),
+      cherryPickOriginalPrNumber,
+      changelogEntry: rawChangelogEntry,
+    });
+    if (verbose) {
+      console.error(
+        `[auto-changelog] commit=${commitHash} accepted source-pr=${sourcePrNumber ?? 'none'} canonical-pr=${prNumber ?? 'none'} cherry-pick=${isCherryPickSubject(subject)}`,
+      );
     }
   }
 
   return commits;
+}
+
+/**
+ * Resolve changelog PR numbers to commits reachable from `HEAD`.
+ *
+ * @param prNumbers - PR numbers in the target changelog section.
+ * @returns A mapping of PR numbers to their matching commit hashes.
+ */
+async function getCommitsForPrNumbers(prNumbers: string[]) {
+  const commitsByPrNumber = new Map<string, string>();
+  const targetPrNumbers = new Set(prNumbers);
+  const prNumberPattern = prNumbers.join('|');
+  const mergeCommitPrNumberPattern = `Merge pull request #(${prNumberPattern}) from`;
+  const subjectLines = await runCommandAndSplit('git', [
+    'log',
+    '--format=%H%x00%s',
+    '--extended-regexp',
+    `--grep=(\\(#(${prNumberPattern})\\)|${mergeCommitPrNumberPattern})`,
+    'HEAD',
+  ]);
+
+  for (const subjectLine of subjectLines) {
+    const [commitHash, subject] = subjectLine.split('\0');
+    if (!commitHash || !subject) {
+      continue;
+    }
+
+    const prNumber =
+      subject.match(/\(#(\d+)\)/u)?.[1] ??
+      subject.match(/Merge pull request #(\d+) from/u)?.[1];
+    if (prNumber) {
+      if (targetPrNumbers.has(prNumber) && !commitsByPrNumber.has(prNumber)) {
+        commitsByPrNumber.set(prNumber, commitHash);
+      }
+    }
+  }
+
+  return commitsByPrNumber;
+}
+
+/**
+ * Remove candidates that precede a commit already represented in the target
+ * changelog section. Unresolvable PRs do not establish a frontier.
+ *
+ * @param commits - Candidate commits.
+ * @param targetSectionPrNumbers - PR numbers already listed in the target section.
+ * @param verbose - Whether to print backfill diagnostics to stderr.
+ * @returns Candidate commits that do not precede the target section frontier.
+ */
+async function preventBackfillCommits(
+  commits: Commit[],
+  targetSectionPrNumbers: string[],
+  verbose: boolean,
+) {
+  const commitsByPrNumber = await getCommitsForPrNumbers(
+    targetSectionPrNumbers,
+  );
+
+  if (commitsByPrNumber.size === 0) {
+    return commits;
+  }
+
+  if (verbose) {
+    for (const [prNumber, commitHash] of commitsByPrNumber) {
+      console.error(
+        `[auto-changelog] frontier pr=${prNumber} commit=${commitHash}`,
+      );
+    }
+  }
+
+  const frontierCommitHashes = [...commitsByPrNumber.values()];
+  const ancestorCommitHashes = new Set(
+    await runCommandAndSplit('git', ['rev-list', ...frontierCommitHashes]),
+  );
+  const frontierByCommitHash = new Map(
+    [...commitsByPrNumber.entries()].map(([prNumber, commitHash]) => [
+      commitHash,
+      prNumber,
+    ]),
+  );
+
+  return commits.filter((commit) => {
+    if (!ancestorCommitHashes.has(commit.hash)) {
+      return true;
+    }
+
+    if (verbose) {
+      const frontierPrNumber = frontierByCommitHash.get(commit.hash);
+      console.error(
+        `[auto-changelog] skipped pr=${commit.prNumber ?? 'none'} reason=older-than-changelog-frontier${frontierPrNumber ? ` frontier-pr=${frontierPrNumber} frontier-commit=${commit.hash}` : ''}`,
+      );
+    }
+    return false;
+  });
 }
 
 /**
@@ -745,29 +909,40 @@ async function getCommits(
  * Cherry-pick de-duplication: a change cherry-picked onto an older release
  * branch and then merged forward appears twice in the next release's range —
  * once from the original (`main`-targeting) commit and once from the
- * release-automation cherry-pick (see {@link isCherryPickSubject}). Both carry
- * the same description but different PR numbers, so the PR-number check above
- * cannot collapse them. When a cherry-pick shares its description with a
- * non-cherry-pick commit in the same batch, the cherry-pick is dropped so the
- * original (which references the `main` PR) is the entry that survives.
+ * release-automation cherry-pick (see {@link isCherryPickSubject}). When the
+ * cherry-pick subject explicitly identifies the original PR, both commits use
+ * that canonical PR number and the cherry-pick is dropped without comparing
+ * descriptions. Other cherry-picks retain their source PR number and use the
+ * conservative description check below.
  *
  * @param commits - The list of commits to deduplicate.
  * @param loggedPrNumbers - PR numbers already in the changelog.
  * @param loggedDescriptions - Descriptions already in the changelog.
+ * @param normalizeToPastTense - Whether to convert recognized leading verbs.
+ * @param verbose - Whether to print deduplication diagnostics to stderr.
  * @returns Filtered list of commits without duplicates.
  */
 function deduplicateCommits(
   commits: Commit[],
   loggedPrNumbers: string[],
   loggedDescriptions: string[],
+  normalizeToPastTense: boolean,
+  verbose: boolean,
 ): Commit[] {
   const normalizedLoggedDescriptions = new Set(
-    loggedDescriptions.map(normalizeDescriptionForChangelog),
+    loggedDescriptions.map((description) =>
+      normalizeDescriptionForChangelog(description, normalizeToPastTense),
+    ),
   );
   const prTaggedCommitDescriptions = new Set(
     commits
       .filter((commit) => commit.prNumber !== undefined)
-      .map((commit) => normalizeDescriptionForChangelog(commit.description)),
+      .map((commit) =>
+        normalizeDescriptionForChangelog(
+          commit.description,
+          normalizeToPastTense,
+        ),
+      ),
   );
 
   return commits.filter(
@@ -778,8 +953,27 @@ function deduplicateCommits(
       cherryPickOriginalSubject,
       cherryPickOriginalPrNumber,
     }) => {
-      const normalizedDescription =
-        normalizeDescriptionForChangelog(description);
+      const normalizedDescription = normalizeDescriptionForChangelog(
+        description,
+        normalizeToPastTense,
+      );
+
+      if (
+        isCherryPick &&
+        cherryPickOriginalPrNumber !== undefined &&
+        commits.some(
+          (commit) =>
+            !commit.isCherryPick &&
+            commit.prNumber === cherryPickOriginalPrNumber,
+        )
+      ) {
+        if (verbose) {
+          console.error(
+            `[auto-changelog] skipped pr=${prNumber ?? 'none'} reason=canonical-original-in-range`,
+          );
+        }
+        return false;
+      }
 
       // Drop a cherry-pick only when its explicitly identified original is in
       // this batch. Matching descriptions alone can conflate unrelated PRs.
@@ -801,19 +995,43 @@ function deduplicateCommits(
         hasOriginalCommit &&
         prTaggedCommitDescriptions.has(normalizedDescription)
       ) {
+        if (verbose) {
+          console.error(
+            `[auto-changelog] skipped pr=${prNumber ?? 'none'} reason=cherry-pick-duplicate`,
+          );
+        }
         return false;
       }
 
       if (prNumber !== undefined) {
-        return !loggedPrNumbers.includes(prNumber);
+        const isNewPr = !loggedPrNumbers.includes(prNumber);
+        if (verbose && !isNewPr) {
+          console.error(
+            `[auto-changelog] skipped pr=${prNumber} reason=historical-pr`,
+          );
+        }
+        return isNewPr;
       }
 
       // Direct commit: skip if a PR-tagged commit with same description exists in this batch
       if (prTaggedCommitDescriptions.has(normalizedDescription)) {
+        if (verbose) {
+          console.error(
+            `[auto-changelog] skipped pr=none reason=duplicate-pr-description`,
+          );
+        }
         return false;
       }
 
-      return !normalizedLoggedDescriptions.has(normalizedDescription);
+      const isNewDescription = !normalizedLoggedDescriptions.has(
+        normalizedDescription,
+      );
+      if (verbose && !isNewDescription) {
+        console.error(
+          `[auto-changelog] skipped pr=none reason=historical-description`,
+        );
+      }
+      return isNewDescription;
     },
   );
 }
@@ -823,15 +1041,22 @@ function deduplicateCommits(
  * description-based duplicate comparison.
  *
  * @param description - The raw commit or changelog-entry description.
+ * @param normalizeToPastTense - Whether to convert recognized leading verbs.
  * @returns The normalized description.
  */
-function normalizeDescriptionForChangelog(description: string): string {
+function normalizeDescriptionForChangelog(
+  description: string,
+  normalizeToPastTense: boolean,
+): string {
   const [firstLine, ...remainingLines] = description.split('\n');
   const normalizedEntries = firstLine
     .split('; ')
-    .map((entry) =>
-      convertLeadingVerbToPastTense(normalizeTrailingPeriod(entry)),
-    )
+    .map((entry) => {
+      const normalizedEntry = normalizeTrailingPeriod(entry);
+      return normalizeToPastTense
+        ? convertLeadingVerbToPastTense(normalizedEntry)
+        : normalizedEntry;
+    })
     .join('; ');
 
   return [normalizedEntries, ...remainingLines].join('\n');
@@ -845,6 +1070,7 @@ function normalizeDescriptionForChangelog(description: string): string {
  * @param options.repoUrl - The GitHub repository URL for the current project.
  * @param options.loggedPrNumbers - A list of all pull request numbers included in the relevant parsed changelog.
  * @param options.loggedDescriptions - A list of all change descriptions included in the relevant parsed changelog.
+ * @param options.targetSectionPrNumbers - A list of PR numbers in the target changelog section.
  * @param options.projectRootDirectory - The root project directory, used to
  * filter results from various git commands. This path is assumed to be either
  * absolute, or relative to the current directory. Defaults to the root of the
@@ -852,6 +1078,9 @@ function normalizeDescriptionForChangelog(description: string): string {
  * @param options.useChangelogEntry - Whether to use `CHANGELOG entry:` from the commit body and the no-changelog label.
  * @param options.useShortPrLink - Whether to use short PR links in the changelog entries.
  * @param options.requirePrNumbers - Whether to require PR numbers for all commits. If true, commits without PR numbers are filtered out.
+ * @param options.normalizeToPastTense - Whether to convert recognized leading imperative verbs to past tense.
+ * @param options.preventBackfill - Whether to skip commits that precede the target changelog section frontier.
+ * @param options.verbose - Whether to print commit-level update diagnostics to stderr.
  * @returns A list of new change entries to add to the changelog, based on commits made since the last release.
  */
 export async function getNewChangeEntries({
@@ -859,11 +1088,16 @@ export async function getNewChangeEntries({
   repoUrl,
   loggedPrNumbers,
   loggedDescriptions,
+  targetSectionPrNumbers = [],
   projectRootDirectory,
   useChangelogEntry,
   useShortPrLink,
   requirePrNumbers = false,
+  normalizeToPastTense,
+  preventBackfill = false,
+  verbose = false,
 }: AddNewCommitsOptions) {
+  const shouldNormalizeToPastTense = normalizeToPastTense ?? true;
   const commitRange =
     mostRecentTag === null ? 'HEAD' : `${mostRecentTag}..HEAD`;
   const commitsHashesSinceLastRelease = await getCommitHashesInRange(
@@ -874,17 +1108,27 @@ export async function getNewChangeEntries({
     commitsHashesSinceLastRelease,
     repoUrl,
     useChangelogEntry,
+    verbose,
   );
 
   const filteredPrCommits = requirePrNumbers
     ? commits.filter((commit) => commit.prNumber !== undefined)
     : commits;
 
-  const newCommits = deduplicateCommits(
+  const deduplicatedCommits = deduplicateCommits(
     filteredPrCommits,
     loggedPrNumbers,
     loggedDescriptions,
+    shouldNormalizeToPastTense,
+    verbose,
   );
+  const newCommits = preventBackfill
+    ? await preventBackfillCommits(
+        deduplicatedCommits,
+        targetSectionPrNumbers,
+        verbose,
+      )
+    : deduplicatedCommits;
 
   return newCommits.map(
     ({ prNumber, subject, isMergeCommit, description, changelogEntry }) => {
@@ -899,7 +1143,10 @@ export async function getNewChangeEntries({
         newDescription = stripHtmlComments(newDescription);
       }
 
-      newDescription = normalizeDescriptionForChangelog(newDescription);
+      newDescription = normalizeDescriptionForChangelog(
+        newDescription,
+        shouldNormalizeToPastTense,
+      );
 
       // Categorization source precedence:
       // 1. The raw `CHANGELOG entry:` text, when present, so a user-facing
@@ -924,7 +1171,9 @@ export async function getNewChangeEntries({
 
         if (newDescription) {
           const lines = newDescription.split('\n');
-          lines[0] = `${lines[0]} ${suffix}`; // Append suffix to the first line (next lines are considered part of the description and ignored by the parsing logic)
+          // Append suffix to the first line. Next lines are considered part of
+          // the description and ignored by the parsing logic.
+          lines[0] = `${lines[0]} ${suffix}`;
           newDescription = lines.join('\n');
         } else {
           newDescription = suffix;

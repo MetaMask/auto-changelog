@@ -20,7 +20,6 @@ describe('getRepositoryUrl', () => {
     } else {
       process.env.PROJECT_CWD = originalProjectCwd;
     }
-    jest.restoreAllMocks();
   });
 
   it('reads the repository URL from an environment variable', () => {
@@ -96,8 +95,6 @@ describe('findNearestPackageJson', () => {
     expect(findNearestPackageJson()).toBe(
       path.join(projectRoot, 'package.json'),
     );
-
-    jest.restoreAllMocks();
   });
 
   it('returns null when no package.json exists up to the filesystem root', () => {

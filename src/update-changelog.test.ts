@@ -42,6 +42,23 @@ const changelogData = {
   useShortPrLink: true,
 };
 
+const releaseChangelog = `# Changelog
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+## [1.0.0]
+
+### Fixed
+- A previously listed change (#123)
+
+[Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/
+[1.0.0]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/v0.9.0...v1.0.0
+`;
+
 describe('updateChangelog', () => {
   it('should contain conventional support mappings categorization when autoCategorize is true', async () => {
     jest
@@ -100,6 +117,45 @@ describe('updateChangelog', () => {
 
     expect(result).toContain('### Added\n- New cool feature (#124)');
     expect(result).toContain('### Fixed\n- Fixed a critical bug (#123)');
+  });
+
+  it('logs emitted changelog entries when verbose is enabled', async () => {
+    jest
+      .spyOn(ChangeLogUtils, 'getNewChangeEntries')
+      .mockResolvedValue(getNewChangeEntriesMockData);
+    const errorSpy = jest
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined);
+
+    await ChangeLogManager.updateChangelog({
+      ...changelogData,
+      verbose: true,
+    });
+
+    expect(errorSpy).toHaveBeenCalledWith(
+      '[auto-changelog] emitted category=Fixed description="Fixed a critical bug (#123)"',
+    );
+    errorSpy.mockRestore();
+  });
+
+  it('passes only target release PRs to the backfill guard', async () => {
+    const getNewChangeEntriesSpy = jest
+      .spyOn(ChangeLogUtils, 'getNewChangeEntries')
+      .mockResolvedValue([]);
+
+    await ChangeLogManager.updateChangelog({
+      ...changelogData,
+      changelogContent: releaseChangelog,
+      currentVersion: '1.0.0',
+      preventBackfill: true,
+    });
+
+    expect(getNewChangeEntriesSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        preventBackfill: true,
+        targetSectionPrNumbers: ['123'],
+      }),
+    );
   });
 });
 
@@ -190,6 +246,13 @@ describe('getCategory', () => {
       );
     });
 
+    it.each([
+      'Migrated asset routes to CAIP-19 identifiers',
+      'Migrate asset routes to CAIP-19 identifiers',
+    ])('categorizes %s as Changed', (description) => {
+      expect(getCategory(description)).toBe(ChangeCategory.Changed);
+    });
+
     it('is case-insensitive on the leading verb', () => {
       expect(getCategory('fixed a lowercase-verb entry')).toBe(
         ChangeCategory.Fixed,
@@ -252,9 +315,9 @@ describe('getCategory', () => {
       ).toBe(ChangeCategory.Excluded);
     });
 
-    it('excludes a chore commit by default (no changelog entry)', () => {
+    it('includes a chore commit by default when it has no changelog entry', () => {
       expect(getCategory('chore: bump some internal dependency')).toBe(
-        ChangeCategory.Excluded,
+        ChangeCategory.Changed,
       );
     });
 
@@ -264,8 +327,20 @@ describe('getCategory', () => {
       );
     });
 
-    it('excludes a scoped chore commit with no changelog entry', () => {
+    it('includes a scoped chore commit by default when it has no changelog entry', () => {
       expect(getCategory('chore(deps): bump lockfile', false)).toBe(
+        ChangeCategory.Changed,
+      );
+    });
+
+    it('excludes a chore commit with no changelog entry when enabled', () => {
+      expect(
+        getCategory('chore: bump some internal dependency', false, true),
+      ).toBe(ChangeCategory.Excluded);
+    });
+
+    it('excludes a scoped chore commit with no changelog entry when enabled', () => {
+      expect(getCategory('chore(deps): bump lockfile', false, true)).toBe(
         ChangeCategory.Excluded,
       );
     });
