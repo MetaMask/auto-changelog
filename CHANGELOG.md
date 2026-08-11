@@ -9,11 +9,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [6.2.0]
 
-### Uncategorized
+### Added
 
-- feat: much better changelog parsing ([#292](https://github.com/MetaMask/auto-changelog/pull/292))
-- ci: Add missing top-level `permissions` to publish-release workflow ([#290](https://github.com/MetaMask/auto-changelog/pull/290))
-- ci: Upgrade Yarn to 4.16.0 and update `action-npm-publish` to v6 ([#289](https://github.com/MetaMask/auto-changelog/pull/289))
+- Add `--normalizeToPastTense` to convert recognized leading verbs in generated entries to past tense ([#292](https://github.com/MetaMask/auto-changelog/pull/292))
+- Add `--excludeChoreWithoutChangelogEntry` to omit `chore:` commits unless they include an authored `CHANGELOG entry:` ([#292](https://github.com/MetaMask/auto-changelog/pull/292))
+- Add `--verbose` to print parsing, filtering, deduplication, and emission decisions to stderr ([#292](https://github.com/MetaMask/auto-changelog/pull/292))
+- Add `--preventBackfill` to avoid restoring commits older than an existing PR-linked entry in the target changelog section ([#292](https://github.com/MetaMask/auto-changelog/pull/292))
+
+### Changed
+
+- Upgrade release tooling to Yarn 4.16.0 and `action-npm-publish` v6 ([#289](https://github.com/MetaMask/auto-changelog/pull/289))
+- Apply least-privilege default permissions to the publish-release workflow ([#290](https://github.com/MetaMask/auto-changelog/pull/290))
+
+### Fixed
+
+- Correctly parse authored `CHANGELOG entry:` values, including multiple, wrapped, CRLF, Markdown-link, and commented entries ([#292](https://github.com/MetaMask/auto-changelog/pull/292))
+- Respect explicit changelog opt-outs and `no-changelog` labels without emitting empty or malformed entries ([#292](https://github.com/MetaMask/auto-changelog/pull/292))
+- Use original PR numbers and suppress duplicate release-automation cherry-picks, including Runway cherry-picks ([#292](https://github.com/MetaMask/auto-changelog/pull/292))
+- Improve automatic categorization for authored chore entries and update, bump, and migrate descriptions ([#292](https://github.com/MetaMask/auto-changelog/pull/292))
+- Detect repository metadata and GitHub authentication more reliably when the CLI runs directly from a project checkout ([#292](https://github.com/MetaMask/auto-changelog/pull/292))
 
 ## [6.1.1]
 
@@ -161,7 +175,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Retain tag history on update command for renamed packages with new options ([#182](https://github.com/MetaMask/auto-changelog/pull/182))
-
   - Introduced --version-before-package-rename and --tag-prefix-before-package-rename options for update command.
 
 ## [3.4.3]
@@ -187,7 +200,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Retain tag history for renamed packages with new validation options ([#157](https://github.com/MetaMask/auto-changelog/pull/157))
-
   - Introduced --version-before-package-rename and --tag-prefix-before-package-rename options for validate command.
 
 ## [3.3.0]
