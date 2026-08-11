@@ -46,6 +46,37 @@ or
 
 `yarn run auto-changelog update --requirePrNumbers`
 
+#### Normalize leading verbs to past tense
+
+Convert recognized leading imperative verbs in generated entries to past tense,
+such as `Fix` to `Fixed` and `Update` to `Updated`.
+
+`yarn run auto-changelog update --normalizeToPastTense`
+
+#### Exclude unannotated chore commits
+
+Exclude `chore:` commits unless their body contains a `CHANGELOG entry:`. This
+is useful when unannotated chores are considered internal-only.
+
+`yarn run auto-changelog update --excludeChoreWithoutChangelogEntry`
+
+#### Print update diagnostics
+
+Print commit parsing, filtering, deduplication, and emitted-entry decisions to
+stderr. This is opt-in and does not change the generated changelog.
+
+`yarn run auto-changelog update --verbose`
+
+#### Prevent automatic backfill
+
+If a human or AI editor deliberately removes a commit, we want it to stay removed
+if auto-changelog is run again. With the `--preventBackfill` option, we skip a commit
+when it is an ancestor of a commit represented by a PR-linked entry already in the
+target section. The guard uses Git ancestry, not commit timestamps, and only applies
+when enabled.
+
+`yarn run auto-changelog update --preventBackfill`
+
 #### Update the current release section of the changelog
 
 `yarn run auto-changelog update --rc`
@@ -260,7 +291,6 @@ The project follows the same release process as the other libraries in the MetaM
    - This should trigger the [`action-publish-release`](https://github.com/MetaMask/action-publish-release) workflow to tag the final release commit and publish the release on GitHub.
 
 7. Publish the release on npm.
-
    - Wait for the `publish-release` GitHub Action workflow to finish. This should trigger a second job (`publish-npm`), which will wait for a run approval by the [`npm publishers`](https://github.com/orgs/MetaMask/teams/npm-publishers) team.
    - Approve the `publish-npm` job (or ask somebody on the npm publishers team to approve it for you).
    - Once the `publish-npm` job has finished, check npm to verify that it has been published.

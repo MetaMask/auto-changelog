@@ -9,7 +9,7 @@ import { format, Formatter, FormatterName } from './changelog';
 import { unreleased, Version } from './constants';
 import { readFile, writeFile } from './fs';
 import { createEmptyChangelog } from './init';
-import { getRepositoryUrl } from './repo';
+import { findNearestPackageJson, getRepositoryUrl } from './repo';
 import { PackageRename } from './shared-types';
 import { updateChangelog } from './update-changelog';
 import { error, validate } from './validate-command';
@@ -67,6 +67,23 @@ type UpdateOptions = {
    * Whether to require PR numbers for all commits. If true, commits without PR numbers are filtered out.
    */
   requirePrNumbers: boolean;
+  /**
+   * Whether to convert recognized leading imperative verbs to past tense.
+   */
+  normalizeToPastTense: boolean;
+  /**
+   * Whether to exclude `chore:` commits that lack a changelog entry.
+   */
+  excludeChoreWithoutChangelogEntry: boolean;
+  /**
+   * Whether to prevent automatically adding commits older than the target
+   * changelog section frontier.
+   */
+  preventBackfill: boolean;
+  /**
+   * Whether to print commit-level update diagnostics to stderr.
+   */
+  verbose: boolean;
 };
 
 /**
@@ -87,6 +104,10 @@ type UpdateOptions = {
  * @param options.useChangelogEntry - Whether to read `CHANGELOG entry:` from the commit body and the no-changelog label.
  * @param options.useShortPrLink - Whether to use short PR links in the changelog entries.
  * @param options.requirePrNumbers - Whether to require PR numbers for all commits. If true, commits without PR numbers are filtered out.
+ * @param options.normalizeToPastTense - Whether to convert recognized leading imperative verbs to past tense.
+ * @param options.excludeChoreWithoutChangelogEntry - Whether to exclude `chore:` commits without a changelog entry.
+ * @param options.preventBackfill - Whether to skip commits older than the target changelog section frontier.
+ * @param options.verbose - Whether to print commit-level update diagnostics to stderr.
  */
 async function update({
   changelogPath,
@@ -101,6 +122,10 @@ async function update({
   useChangelogEntry,
   useShortPrLink,
   requirePrNumbers,
+  normalizeToPastTense,
+  excludeChoreWithoutChangelogEntry,
+  preventBackfill,
+  verbose,
 }: UpdateOptions) {
   const changelogContent = await readFile(changelogPath);
 
@@ -117,6 +142,10 @@ async function update({
     useChangelogEntry,
     useShortPrLink,
     requirePrNumbers,
+    normalizeToPastTense,
+    excludeChoreWithoutChangelogEntry,
+    preventBackfill,
+    verbose,
   });
 
   if (newChangelogContent) {
@@ -260,6 +289,29 @@ async function main() {
               'Only include commits with PR numbers in the changelog. Commits without PR numbers will be filtered out',
             type: 'boolean',
           })
+          .option('normalizeToPastTense', {
+            default: false,
+            description:
+              'Convert recognized leading imperative verbs to past tense.',
+            type: 'boolean',
+          })
+          .option('excludeChoreWithoutChangelogEntry', {
+            default: false,
+            description:
+              'Exclude chore commits that do not have a CHANGELOG entry.',
+            type: 'boolean',
+          })
+          .option('preventBackfill', {
+            default: false,
+            description:
+              'Skip commits older than an entry in the target changelog section.',
+            type: 'boolean',
+          })
+          .option('verbose', {
+            default: false,
+            description: 'Print commit-level changelog update diagnostics.',
+            type: 'boolean',
+          })
           .epilog(updateEpilog),
     )
     .command(
@@ -362,6 +414,10 @@ async function main() {
     useChangelogEntry,
     useShortPrLink,
     requirePrNumbers,
+    normalizeToPastTense,
+    excludeChoreWithoutChangelogEntry,
+    preventBackfill,
+    verbose,
     // Dependency checking options
     checkDeps,
     fromRef,
@@ -419,9 +475,13 @@ async function main() {
     return changelog;
   };
 
+  // When a project root is given, use its `package.json`. Otherwise walk up
+  // from the current working directory to the nearest `package.json` (falling
+  // back to the cwd itself if none is found, so the error message below still
+  // points at a sensible path).
   const manifestPath = projectRootDirectory
     ? path.join(projectRootDirectory, 'package.json')
-    : path.resolve('package.json');
+    : (findNearestPackageJson() ?? path.resolve('package.json'));
 
   if (!currentVersion) {
     try {
@@ -511,6 +571,12 @@ async function main() {
       useChangelogEntry: Boolean(useChangelogEntry),
       useShortPrLink: Boolean(useShortPrLink),
       requirePrNumbers: Boolean(requirePrNumbers),
+      normalizeToPastTense: Boolean(normalizeToPastTense),
+      excludeChoreWithoutChangelogEntry: Boolean(
+        excludeChoreWithoutChangelogEntry,
+      ),
+      preventBackfill: Boolean(preventBackfill),
+      verbose: Boolean(verbose),
     });
   } else if (command === 'validate') {
     let packageRename: PackageRename | undefined;
