@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.2.0]
+
+### Uncategorized
+
+- feat: much better changelog parsing ([#292](https://github.com/MetaMask/auto-changelog/pull/292))
+- ci: Add missing top-level `permissions` to publish-release workflow ([#290](https://github.com/MetaMask/auto-changelog/pull/290))
+- ci: Upgrade Yarn to 4.16.0 and update `action-npm-publish` to v6 ([#289](https://github.com/MetaMask/auto-changelog/pull/289))
+
 ## [6.1.1]
 
 ### Fixed
@@ -313,7 +321,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Monorepo support ([#41](https://github.com/MetaMask/auto-changelog/pull/41))
   - Configurable repository URL, version, and changelog file path ([#33](https://github.com/MetaMask/auto-changelog/pull/33), [#31](https://github.com/MetaMask/auto-changelog/pull/31), [#30](https://github.com/MetaMask/auto-changelog/pull/30))
 
-[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v6.1.1...HEAD
+[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v6.2.0...HEAD
+[6.2.0]: https://github.com/MetaMask/auto-changelog/compare/v6.1.1...v6.2.0
 [6.1.1]: https://github.com/MetaMask/auto-changelog/compare/v6.1.0...v6.1.1
 [6.1.0]: https://github.com/MetaMask/auto-changelog/compare/v6.0.0...v6.1.0
 [6.0.0]: https://github.com/MetaMask/auto-changelog/compare/v5.3.2...v6.0.0
