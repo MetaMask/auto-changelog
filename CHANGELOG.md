@@ -16,11 +16,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `--verbose` to print parsing, filtering, deduplication, and emission decisions to stderr ([#292](https://github.com/MetaMask/auto-changelog/pull/292))
 - Add `--preventBackfill` to avoid restoring commits older than an existing PR-linked entry in the target changelog section ([#292](https://github.com/MetaMask/auto-changelog/pull/292))
 
-### Changed
-
-- Upgrade release tooling to Yarn 4.16.0 and `action-npm-publish` v6 ([#289](https://github.com/MetaMask/auto-changelog/pull/289))
-- Apply least-privilege default permissions to the publish-release workflow ([#290](https://github.com/MetaMask/auto-changelog/pull/290))
-
 ### Fixed
 
 - Correctly parse authored `CHANGELOG entry:` values, including multiple, wrapped, CRLF, Markdown-link, and commented entries ([#292](https://github.com/MetaMask/auto-changelog/pull/292))
