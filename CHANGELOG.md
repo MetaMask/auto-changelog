@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.2.0]
+
+### Added
+
+- Add `--normalizeToPastTense` to convert recognized leading verbs in generated entries to past tense ([#292](https://github.com/MetaMask/auto-changelog/pull/292))
+- Add `--excludeChoreWithoutChangelogEntry` to omit `chore:` commits unless they include an authored `CHANGELOG entry:` ([#292](https://github.com/MetaMask/auto-changelog/pull/292))
+- Add `--verbose` to print parsing, filtering, deduplication, and emission decisions to stderr ([#292](https://github.com/MetaMask/auto-changelog/pull/292))
+- Add `--preventBackfill` to avoid restoring commits older than an existing PR-linked entry in the target changelog section ([#292](https://github.com/MetaMask/auto-changelog/pull/292))
+
+### Fixed
+
+- Correctly parse authored `CHANGELOG entry:` values, including multiple, wrapped, CRLF, Markdown-link, and commented entries ([#292](https://github.com/MetaMask/auto-changelog/pull/292))
+- Respect explicit changelog opt-outs and `no-changelog` labels without emitting empty or malformed entries ([#292](https://github.com/MetaMask/auto-changelog/pull/292))
+- Use original PR numbers and suppress duplicate release-automation cherry-picks, including Runway cherry-picks ([#292](https://github.com/MetaMask/auto-changelog/pull/292))
+- Improve automatic categorization for authored chore entries and update, bump, and migrate descriptions ([#292](https://github.com/MetaMask/auto-changelog/pull/292))
+- Detect repository metadata and GitHub authentication more reliably when the CLI runs directly from a project checkout ([#292](https://github.com/MetaMask/auto-changelog/pull/292))
+
 ## [6.1.1]
 
 ### Fixed
@@ -153,7 +170,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Retain tag history on update command for renamed packages with new options ([#182](https://github.com/MetaMask/auto-changelog/pull/182))
-
   - Introduced --version-before-package-rename and --tag-prefix-before-package-rename options for update command.
 
 ## [3.4.3]
@@ -179,7 +195,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Retain tag history for renamed packages with new validation options ([#157](https://github.com/MetaMask/auto-changelog/pull/157))
-
   - Introduced --version-before-package-rename and --tag-prefix-before-package-rename options for validate command.
 
 ## [3.3.0]
@@ -313,7 +328,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Monorepo support ([#41](https://github.com/MetaMask/auto-changelog/pull/41))
   - Configurable repository URL, version, and changelog file path ([#33](https://github.com/MetaMask/auto-changelog/pull/33), [#31](https://github.com/MetaMask/auto-changelog/pull/31), [#30](https://github.com/MetaMask/auto-changelog/pull/30))
 
-[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v6.1.1...HEAD
+[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v6.2.0...HEAD
+[6.2.0]: https://github.com/MetaMask/auto-changelog/compare/v6.1.1...v6.2.0
 [6.1.1]: https://github.com/MetaMask/auto-changelog/compare/v6.1.0...v6.1.1
 [6.1.0]: https://github.com/MetaMask/auto-changelog/compare/v6.0.0...v6.1.0
 [6.0.0]: https://github.com/MetaMask/auto-changelog/compare/v5.3.2...v6.0.0
