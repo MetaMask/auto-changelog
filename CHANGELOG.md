@@ -9,9 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [6.2.1]
 
-### Uncategorized
+### Fixed
 
-- fix: add missing shebang to CLI entrypoint ([#295](https://github.com/MetaMask/auto-changelog/pull/295))
+- Add missing shebang to CLI entrypoint ([#295](https://github.com/MetaMask/auto-changelog/pull/295))
 
 ## [6.2.0]
 
