@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.2.1]
+
+### Fixed
+
+- Add missing shebang to CLI entrypoint ([#295](https://github.com/MetaMask/auto-changelog/pull/295))
+
 ## [6.2.0]
 
 ### Added
@@ -328,7 +334,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Monorepo support ([#41](https://github.com/MetaMask/auto-changelog/pull/41))
   - Configurable repository URL, version, and changelog file path ([#33](https://github.com/MetaMask/auto-changelog/pull/33), [#31](https://github.com/MetaMask/auto-changelog/pull/31), [#30](https://github.com/MetaMask/auto-changelog/pull/30))
 
-[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v6.2.0...HEAD
+[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v6.2.1...HEAD
+[6.2.1]: https://github.com/MetaMask/auto-changelog/compare/v6.2.0...v6.2.1
 [6.2.0]: https://github.com/MetaMask/auto-changelog/compare/v6.1.1...v6.2.0
 [6.1.1]: https://github.com/MetaMask/auto-changelog/compare/v6.1.0...v6.1.1
 [6.1.0]: https://github.com/MetaMask/auto-changelog/compare/v6.0.0...v6.1.0
