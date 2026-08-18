@@ -250,7 +250,7 @@ export async function updateChangelog({
     verbose,
   });
 
-  for (const entry of newChangeEntries.reverse()) {
+  for (const entry of newChangeEntries) {
     const category = autoCategorize
       ? getCategory(
           entry.subject,
