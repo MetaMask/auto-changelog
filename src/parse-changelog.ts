@@ -83,7 +83,7 @@ function isValidChangeCategory(category: string): category is ChangeCategory {
  * @returns The repository name, or null if it could not be determined.
  */
 function extractRepoName(repoUrl: string): string {
-  const match = repoUrl?.match(/github\.com\/[^/]+\/([^/]+)/u); // Match and capture the repo name
+  const match = repoUrl?.match(/github\.com\/[^/]+\/([^/]+?)(?:\.git)?$/u);
   return match ? match[1] : '';
 }
 
