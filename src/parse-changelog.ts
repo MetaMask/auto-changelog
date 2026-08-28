@@ -118,13 +118,14 @@ export function parseChangelog({
   shouldExtractPrLinks?: boolean;
 }) {
   const changelogLines = changelogContent.split(/(?:\r)?\n/u); // Split on either Windows or Unix line endings
+  const normalizedRepoUrl = repoUrl.replace(/\.git$/u, '');
   const changelog = new Changelog({
-    repoUrl,
+    repoUrl: normalizedRepoUrl,
     tagPrefix,
     formatter,
     packageRename,
   });
-  const repoName = extractRepoName(repoUrl);
+  const repoName = extractRepoName(normalizedRepoUrl);
 
   const unreleasedHeaderIndex = changelogLines.indexOf(`## [${unreleased}]`);
   if (unreleasedHeaderIndex === -1) {
