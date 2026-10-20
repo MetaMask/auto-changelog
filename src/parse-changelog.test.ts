@@ -965,6 +965,39 @@ describe('parseChangelog', () => {
       });
     });
 
+    it('should parse and stringify pull request links when repoUrl has a .git suffix', async () => {
+      const changelogContent = createChangelog(
+        COMMON_HEADER,
+        outdent`
+          ## [1.0.0]
+          ### Changed
+          - Change something else ([#100](${repoUrl}/pull/100))
+        `,
+        COMMON_REFERENCE_LINKS_1,
+      );
+
+      const changelog = parseChangelog({
+        changelogContent,
+        repoUrl: `${repoUrl}.git`,
+        shouldExtractPrLinks: true,
+      });
+
+      expect(changelog.getReleaseChanges('1.0.0')).toStrictEqual({
+        Changed: [
+          {
+            description: 'Change something else',
+            prNumbers: ['100'],
+          },
+        ],
+      });
+
+      const stringifiedChangelog = await changelog.toString();
+      expect(stringifiedChangelog).toContain(
+        `[#100](${repoUrl}/pull/100)`,
+      );
+      expect(stringifiedChangelog).not.toContain(`${repoUrl}.git/`);
+    });
+
     it('should parse changelog with pull request links at end of first line of multi-line change description', () => {
       const changelogContent = createChangelog(
         COMMON_HEADER,

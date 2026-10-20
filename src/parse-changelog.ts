@@ -83,7 +83,7 @@ function isValidChangeCategory(category: string): category is ChangeCategory {
  * @returns The repository name, or null if it could not be determined.
  */
 function extractRepoName(repoUrl: string): string {
-  const match = repoUrl?.match(/github\.com\/[^/]+\/([^/]+)/u); // Match and capture the repo name
+  const match = repoUrl?.match(/github\.com\/[^/]+\/([^/]+?)(?:\.git)?$/u);
   return match ? match[1] : '';
 }
 
@@ -118,13 +118,14 @@ export function parseChangelog({
   shouldExtractPrLinks?: boolean;
 }) {
   const changelogLines = changelogContent.split(/(?:\r)?\n/u); // Split on either Windows or Unix line endings
+  const normalizedRepoUrl = repoUrl.replace(/\.git$/u, '');
   const changelog = new Changelog({
-    repoUrl,
+    repoUrl: normalizedRepoUrl,
     tagPrefix,
     formatter,
     packageRename,
   });
-  const repoName = extractRepoName(repoUrl);
+  const repoName = extractRepoName(normalizedRepoUrl);
 
   const unreleasedHeaderIndex = changelogLines.indexOf(`## [${unreleased}]`);
   if (unreleasedHeaderIndex === -1) {
