@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.2.2]
+
+### Uncategorized
+
+- chore: align package metadata with template ([#300](https://github.com/MetaMask/auto-changelog/pull/300))
+- docs: add temporary migration notice ([#299](https://github.com/MetaMask/auto-changelog/pull/299))
+
 ## [6.2.1]
 
 ### Fixed
@@ -334,7 +341,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Monorepo support ([#41](https://github.com/MetaMask/auto-changelog/pull/41))
   - Configurable repository URL, version, and changelog file path ([#33](https://github.com/MetaMask/auto-changelog/pull/33), [#31](https://github.com/MetaMask/auto-changelog/pull/31), [#30](https://github.com/MetaMask/auto-changelog/pull/30))
 
-[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v6.2.1...HEAD
+[Unreleased]: https://github.com/MetaMask/auto-changelog/compare/v6.2.2...HEAD
+[6.2.2]: https://github.com/MetaMask/auto-changelog/compare/v6.2.1...v6.2.2
 [6.2.1]: https://github.com/MetaMask/auto-changelog/compare/v6.2.0...v6.2.1
 [6.2.0]: https://github.com/MetaMask/auto-changelog/compare/v6.1.1...v6.2.0
 [6.1.1]: https://github.com/MetaMask/auto-changelog/compare/v6.1.0...v6.1.1
