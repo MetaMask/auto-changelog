@@ -9,10 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [6.2.2]
 
-### Uncategorized
+### Added
 
-- chore: align package metadata with template ([#300](https://github.com/MetaMask/auto-changelog/pull/300))
-- docs: add temporary migration notice ([#299](https://github.com/MetaMask/auto-changelog/pull/299))
+- Add a temporary migration notice directing contributors to the `release-tools` monorepo ([#299](https://github.com/MetaMask/auto-changelog/pull/299))
+
+### Changed
+
+- Align package metadata and licensing with current MetaMask package conventions ([#300](https://github.com/MetaMask/auto-changelog/pull/300))
 
 ## [6.2.1]
 
