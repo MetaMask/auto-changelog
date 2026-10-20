@@ -2,6 +2,14 @@
   "name": "@metamask/auto-changelog",
   "version": "6.2.1",
   "description": "Utilities for validating and updating \"Keep a Changelog\" formatted changelogs",
+  "keywords": [
+    "Ethereum",
+    "MetaMask"
+  ],
+  "homepage": "https://github.com/MetaMask/auto-changelog#readme",
+  "bugs": {
+    "url": "https://github.com/MetaMask/auto-changelog/issues"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/MetaMask/auto-changelog.git"
